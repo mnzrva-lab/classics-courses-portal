@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { isoToZonedParts, isValidTimeZone } from '@/lib/timezone'
-import { saveStudyNotes, saveTranscript, updateSession } from './actions'
+import { addMaterial, deleteMaterial, saveStudyNotes, saveTranscript, updateMaterial, updateSession } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -60,6 +60,16 @@ function rebuildTranscript(sections: TranscriptSection[], paragraphs: Transcript
   return blocks.join('\n\n')
 }
 
+const materialTypeOptions = [
+  ['reading', 'Reading'],
+  ['slides', 'Slides'],
+  ['audio', 'Audio'],
+  ['video', 'Video'],
+  ['document', 'Document'],
+  ['link', 'Link'],
+  ['other', 'Other'],
+]
+
 export default async function AdminSessionPage({
   params,
   searchParams,
@@ -97,15 +107,17 @@ export default async function AdminSessionPage({
   const endParts = isoToZonedParts(session.ends_at, sourceTimezone)
   const sessionDate = session.session_date ?? startParts.date
 
-  const [{ data: studyNotes }, { data: transcript }, { data: teacherRows }, { data: teacherLinks }] = await Promise.all([
+  const [{ data: studyNotes }, { data: transcript }, { data: teacherRows }, { data: teacherLinks }, { data: materialRows }] = await Promise.all([
     supabase.from('study_notes').select('title, summary, content_markdown, status').eq('session_id', id).eq('language_code', 'en').maybeSingle(),
     supabase.from('transcripts').select('id, title, source_file_name, status').eq('session_id', id).eq('language_code', 'en').maybeSingle(),
     supabase.from('teachers').select('id, full_name').eq('active', true).order('full_name'),
     supabase.from('session_teachers').select('teacher_id').eq('session_id', id),
+    supabase.from('materials').select('id, material_type, title, url, mime_type, status, sort_order').eq('session_id', id).order('sort_order'),
   ])
 
   const teachers = (teacherRows ?? []) as Teacher[]
   const selectedTeacherIds = new Set((teacherLinks ?? []).map((link: any) => link.teacher_id))
+  const materials = materialRows ?? []
 
   let transcriptText = ''
   if (transcript?.id) {
@@ -122,9 +134,11 @@ export default async function AdminSessionPage({
       ? 'Session details saved.'
       : saved === 'notes'
         ? 'Study Notes saved.'
-        : saved === 'transcript'
-          ? 'Reference Transcript saved.'
-          : null
+        : saved === 'material'
+          ? 'Class materials saved.'
+          : saved === 'transcript'
+            ? 'Reference Transcript saved.'
+            : null
 
   return (
     <main className="container page">
@@ -189,9 +203,7 @@ export default async function AdminSessionPage({
             <input type="checkbox" name="required_for_completion" defaultChecked={session.required_for_completion} />
             Required for course completion
           </label>
-          <div className="actions">
-            <button className="button red" type="submit">Save session</button>
-          </div>
+          <div className="actions"><button className="button red" type="submit">Save session</button></div>
         </form>
       </section>
 
@@ -215,7 +227,69 @@ export default async function AdminSessionPage({
       </section>
 
       <section className="section card">
-        <div className="eyebrow">3 · Reference Transcript</div>
+        <div className="eyebrow">3 · Class materials</div>
+        <h2>Readings, slides, and resources</h2>
+        <p className="meta">Add stable links to PDFs, slide decks, readings, audio, video, or other class resources. Draft resources stay hidden from students.</p>
+
+        {materials.length ? (
+          <div style={{ marginBottom: 28 }}>
+            {materials.map((material: any) => (
+              <div key={material.id} style={{ padding: '18px 0', borderTop: '1px solid var(--line)' }}>
+                <form className="form-stack" action={updateMaterial.bind(null, session.id, material.id)}>
+                  <div className="grid two">
+                    <label>Type
+                      <select className="input" name="material_type" defaultValue={material.material_type}>
+                        {materialTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                      </select>
+                    </label>
+                    <label>Status
+                      <select className="input" name="material_status" defaultValue={material.status}>
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                        <option value="archived">Archived</option>
+                      </select>
+                    </label>
+                  </div>
+                  <label>Title<input className="input" name="material_title" defaultValue={material.title} required /></label>
+                  <label>Resource URL<input className="input" type="url" name="material_url" defaultValue={material.url} required /></label>
+                  <label>MIME type<input className="input" name="material_mime_type" defaultValue={material.mime_type ?? ''} placeholder="Optional, e.g. application/pdf" /></label>
+                  <div className="actions"><button className="button" type="submit">Save resource</button></div>
+                </form>
+                <form action={deleteMaterial.bind(null, session.id, material.id)} style={{ marginTop: 8 }}>
+                  <button className="button" type="submit">Remove resource</button>
+                </form>
+              </div>
+            ))}
+          </div>
+        ) : <p className="meta">No class materials have been added yet.</p>}
+
+        <div style={{ paddingTop: 20, borderTop: '1px solid var(--line)' }}>
+          <h3>Add resource</h3>
+          <form className="form-stack" action={addMaterial.bind(null, session.id)}>
+            <div className="grid two">
+              <label>Type
+                <select className="input" name="material_type" defaultValue="reading">
+                  {materialTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </select>
+              </label>
+              <label>Status
+                <select className="input" name="material_status" defaultValue="draft">
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </label>
+            </div>
+            <label>Title<input className="input" name="material_title" placeholder="Class reading" required /></label>
+            <label>Resource URL<input className="input" type="url" name="material_url" placeholder="Google Drive, PDF, slides, YouTube, etc." required /></label>
+            <label>MIME type<input className="input" name="material_mime_type" placeholder="Optional, e.g. application/pdf" /></label>
+            <div className="actions"><button className="button sage" type="submit">Add resource</button></div>
+          </form>
+        </div>
+      </section>
+
+      <section className="section card">
+        <div className="eyebrow">4 · Reference Transcript</div>
         <h2>Transcript importer</h2>
         <p className="meta">Paste the cleaned transcript. Use <strong>### Chapter title</strong> for chapter headings. Speaker labels such as <strong>Speaker 1:</strong>, <strong>Timothy Lowenhaupt:</strong>, and <strong>Brian Mendoza:</strong> are recognized. Optional timestamps like <strong>[12:34]</strong> or <strong>[01:12:34]</strong> are also recognized.</p>
         <form className="form-stack" action={saveTranscript.bind(null, session.id)}>
