@@ -1,28 +1,56 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { clearAllBookmarks, clearSearchHistory, deleteAllNotes, resetAllProgress, updatePrivacySettings } from './actions'
+import { clearAllBookmarks, clearSearchHistory, deleteAllNotes, resetAllProgress, resetCourseProgress, updatePrivacySettings } from './actions'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AccountPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
+export default async function AccountPage({ searchParams }: { searchParams: Promise<{ saved?: string; course?: string }> }) {
   const { saved } = await searchParams
   const supabase = await createClient()
   const { data } = await supabase.auth.getClaims()
   const userId = data?.claims?.sub as string | undefined
   if (!userId) redirect('/login')
 
-  const [{ data: settings }, { count: noteCount }, { count: courseBookmarkCount }, { count: sessionBookmarkCount }, { count: paragraphBookmarkCount }, { count: progressCount }, { count: searchCount }] = await Promise.all([
+  const [{ data: settings }, { count: noteCount }, { count: courseBookmarkCount }, { count: sessionBookmarkCount }, { count: paragraphBookmarkCount }, { data: progressRows }, { count: searchCount }] = await Promise.all([
     supabase.from('user_settings').select('save_notes, save_bookmarks, save_progress, save_search_history, track_classics_master, timezone').eq('user_id', userId).maybeSingle(),
     supabase.from('student_notes').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('user_course_bookmarks').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('user_session_bookmarks').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('user_paragraph_bookmarks').select('*', { count: 'exact', head: true }).eq('user_id', userId),
-    supabase.from('user_session_progress').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+    supabase.from('user_session_progress').select('session_id, completed_at, sessions(course_id, courses(title, canonical_number))').eq('user_id', userId),
     supabase.from('user_search_history').select('*', { count: 'exact', head: true }).eq('user_id', userId),
   ])
 
+  const progress = progressRows ?? []
   const bookmarkCount = (courseBookmarkCount ?? 0) + (sessionBookmarkCount ?? 0) + (paragraphBookmarkCount ?? 0)
+  const progressByCourse = new Map<string, { id: string; title: string; canonicalNumber: number | null; records: number; completed: number }>()
+
+  for (const item of progress as any[]) {
+    const session = item.sessions
+    const courseId = session?.course_id
+    if (!courseId) continue
+    const course = session?.courses
+    if (!progressByCourse.has(courseId)) {
+      progressByCourse.set(courseId, {
+        id: courseId,
+        title: course?.title ?? 'Course',
+        canonicalNumber: course?.canonical_number ?? null,
+        records: 0,
+        completed: 0,
+      })
+    }
+    const group = progressByCourse.get(courseId)!
+    group.records += 1
+    if (item.completed_at) group.completed += 1
+  }
+
+  const progressCourses = Array.from(progressByCourse.values()).sort((a, b) => {
+    const aNumber = a.canonicalNumber ?? 9999
+    const bNumber = b.canonicalNumber ?? 9999
+    return aNumber - bNumber || a.title.localeCompare(b.title)
+  })
+
   const message = saved === 'settings'
     ? 'Privacy settings saved.'
     : saved === 'search-history'
@@ -31,9 +59,11 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         ? 'All private notes deleted.'
         : saved === 'bookmarks-cleared'
           ? 'All bookmarks cleared.'
-          : saved === 'progress-reset'
-            ? 'Study progress reset.'
-            : null
+          : saved === 'course-reset'
+            ? 'Progress for that course was reset.'
+            : saved === 'progress-reset'
+              ? 'Study progress reset.'
+              : null
 
   return (
     <main className="container page">
@@ -91,11 +121,30 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           <div className="list">
             <div className="row"><strong>Notes</strong><span className="meta">{noteCount ?? 0}</span></div>
             <div className="row"><strong>Bookmarks</strong><span className="meta">{bookmarkCount}</span></div>
-            <div className="row"><strong>Progress records</strong><span className="meta">{progressCount ?? 0}</span></div>
+            <div className="row"><strong>Progress records</strong><span className="meta">{progress.length}</span></div>
             <div className="row"><strong>Saved searches</strong><span className="meta">{searchCount ?? 0}</span></div>
           </div>
         </div>
       </section>
+
+      {progressCourses.length ? (
+        <section className="section card">
+          <div className="eyebrow">Course progress</div>
+          <h2 style={{ fontSize: 32 }}>Reset one course</h2>
+          <p className="meta">This removes started/completed markers for every Course Offering and session under the selected course. Notes and bookmarks are not changed.</p>
+          {progressCourses.map((course) => (
+            <div key={course.id} style={{ padding: '18px 0', borderTop: '1px solid var(--line)' }}>
+              <strong>{course.canonicalNumber ? `Course ${course.canonicalNumber} · ` : ''}{course.title}</strong>
+              <div className="meta">{course.completed} completed · {course.records} progress record{course.records === 1 ? '' : 's'}</div>
+              <form className="form-stack" action={resetCourseProgress.bind(null, course.id)} style={{ marginTop: 12 }}>
+                <p className="meta">Type <strong>RESET COURSE</strong> to confirm.</p>
+                <input className="input" name="confirmation" autoComplete="off" />
+                <div className="actions"><button className="button" type="submit">Reset this course</button></div>
+              </form>
+            </div>
+          ))}
+        </section>
+      ) : null}
 
       <section className="section card">
         <div className="eyebrow">Clear data</div>
