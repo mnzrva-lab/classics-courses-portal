@@ -81,6 +81,33 @@ export async function clearAllBookmarks(formData: FormData) {
   redirect('/account?saved=bookmarks-cleared')
 }
 
+export async function resetCourseProgress(courseId: string, formData: FormData) {
+  if (!confirmation(formData, 'RESET COURSE')) throw new Error('Type RESET COURSE exactly to continue.')
+  const { supabase, userId } = await requireUser()
+
+  const { data: sessions, error: sessionError } = await supabase
+    .from('sessions')
+    .select('id')
+    .eq('course_id', courseId)
+
+  if (sessionError) throw new Error('Could not read course sessions.')
+  const sessionIds = (sessions ?? []).map((item) => item.id)
+
+  if (sessionIds.length > 0) {
+    const { error } = await supabase
+      .from('user_session_progress')
+      .delete()
+      .eq('user_id', userId)
+      .in('session_id', sessionIds)
+
+    if (error) throw new Error('Could not reset this course.')
+  }
+
+  revalidatePath('/account')
+  revalidatePath('/my-learning')
+  redirect(`/account?saved=course-reset&course=${encodeURIComponent(courseId)}`)
+}
+
 export async function resetAllProgress(formData: FormData) {
   if (!confirmation(formData, 'RESET PROGRESS')) throw new Error('Type RESET PROGRESS exactly to continue.')
   const { supabase, userId } = await requireUser()
