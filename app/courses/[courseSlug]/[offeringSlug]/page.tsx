@@ -1,18 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-
-function formatSourceTime(value: string | null, timeZone: string | null) {
-  if (!value) return 'Time to be added'
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: timeZone || 'UTC',
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  }).format(new Date(value))
-}
+import SessionTime from '@/components/session-time'
+import { toggleCourseBookmark } from './actions'
 
 export default async function OfferingPage({ params }: { params: Promise<{ courseSlug: string; offeringSlug: string }> }) {
   const { courseSlug, offeringSlug } = await params
@@ -37,15 +27,32 @@ export default async function OfferingPage({ params }: { params: Promise<{ cours
 
   if (!offering) notFound()
 
-  const { data: sessions } = await supabase
-    .from('sessions')
-    .select(`
-      id, slug, code, title, session_type, starts_at, ends_at, source_timezone, recording_url,
-      session_teachers(teachers(full_name))
-    `)
-    .eq('offering_id', offering.id)
-    .eq('status', 'published')
-    .order('sort_order', { ascending: true })
+  const [{ data: sessions }, { data: claimsData }] = await Promise.all([
+    supabase
+      .from('sessions')
+      .select(`
+        id, slug, code, title, session_type, starts_at, ends_at, source_timezone, recording_url,
+        session_teachers(teachers(full_name))
+      `)
+      .eq('offering_id', offering.id)
+      .eq('status', 'published')
+      .order('sort_order', { ascending: true }),
+    supabase.auth.getClaims(),
+  ])
+
+  const userId = claimsData?.claims?.sub as string | undefined
+  const returnPath = `/courses/${courseSlug}/${offeringSlug}`
+  let bookmarked = false
+
+  if (userId) {
+    const { data: bookmark } = await supabase
+      .from('user_course_bookmarks')
+      .select('course_id')
+      .eq('user_id', userId)
+      .eq('course_id', course.id)
+      .maybeSingle()
+    bookmarked = Boolean(bookmark)
+  }
 
   return (
     <main className="container page">
@@ -60,21 +67,34 @@ export default async function OfferingPage({ params }: { params: Promise<{ cours
         <div className="card sage">
           <div className="eyebrow">Course Offering</div>
           <h3>{offering.label}</h3>
-          <p className="meta">
-            {offering.starts_on} to {offering.ends_on}
-          </p>
+          <p className="meta">{offering.starts_on} to {offering.ends_on}</p>
         </div>
         <div className="card">
           <div className="eyebrow">Your study</div>
-          <h3>Save progress and notes</h3>
-          <p className="meta">Sign in when you want completion, bookmarks, and private notes to follow you across devices.</p>
-          <div className="actions"><Link className="button" href="/login">Sign in</Link></div>
+          <h3>{userId ? 'Save this course for later' : 'Save progress and notes'}</h3>
+          {userId ? (
+            <>
+              <p className="meta">Bookmarks, progress, and private notes follow your Google study account across devices.</p>
+              <div className="actions">
+                <form action={toggleCourseBookmark.bind(null, course.id, returnPath)}>
+                  <button className={bookmarked ? 'button sage' : 'button'} type="submit">{bookmarked ? '✓ Course bookmarked' : 'Bookmark course'}</button>
+                </form>
+                <Link className="button" href="/my-learning">My Learning</Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="meta">Sign in when you want completion, bookmarks, and private notes to follow you across devices.</p>
+              <div className="actions"><Link className="button" href="/login">Sign in</Link></div>
+            </>
+          )}
         </div>
       </section>
 
       <section className="section card">
         <div className="eyebrow">Sessions</div>
         <h2>Course schedule</h2>
+        <p className="meta">Times are shown in your local timezone by default. Use “Show source time” when you want to compare with the teaching location.</p>
         <div className="list">
           {(sessions ?? []).map((session: any) => {
             const teachers = (session.session_teachers ?? []).map((x: any) => x.teachers?.full_name).filter(Boolean)
@@ -83,7 +103,9 @@ export default async function OfferingPage({ params }: { params: Promise<{ cours
                 <div className="session-code">{session.code || '•'}</div>
                 <div>
                   <Link href={`/courses/${courseSlug}/${offeringSlug}/${session.slug}`}><strong>{session.title}</strong></Link>
-                  <div className="meta">{teachers.join(', ') || 'Teacher to be added'} · {formatSourceTime(session.starts_at, session.source_timezone)} source time</div>
+                  <div className="meta">
+                    {teachers.join(', ') || 'Teacher to be added'} · <SessionTime startsAt={session.starts_at} sourceTimezone={session.source_timezone} />
+                  </div>
                 </div>
                 <div className="actions" style={{ marginTop: 0 }}>
                   <Link className="button" href={`/courses/${courseSlug}/${offeringSlug}/${session.slug}`}>Open class</Link>
