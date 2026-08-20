@@ -10,6 +10,7 @@ type CourseRelation = {
 }
 
 type OfferingRelation = {
+  id: string
   slug: string
   label: string
 }
@@ -33,21 +34,21 @@ export default async function AdminPage() {
     .select(`
       id, code, title, session_type, status, session_date, recording_url,
       courses(slug, title, canonical_number),
-      course_offerings(slug, label),
+      course_offerings(id, slug, label),
       study_notes(status),
       transcripts(status)
     `)
     .order('starts_at', { ascending: true, nullsFirst: false })
 
   const sessions = data ?? []
-  const groups = new Map<string, { title: string; courseSlug: string | null; offeringSlug: string | null; sessions: typeof sessions }>()
+  const groups = new Map<string, { title: string; courseSlug: string | null; offeringId: string | null; offeringSlug: string | null; sessions: typeof sessions }>()
 
   for (const session of sessions) {
     const course = session.courses as unknown as CourseRelation | null
     const offering = session.course_offerings as unknown as OfferingRelation | null
     const title = `${course?.canonical_number ? `Course ${course.canonical_number} · ` : ''}${course?.title ?? 'Other program'}${offering ? ` · ${offering.label}` : ''}`
     const key = `${course?.slug ?? 'other'}:${offering?.slug ?? 'none'}`
-    if (!groups.has(key)) groups.set(key, { title, courseSlug: course?.slug ?? null, offeringSlug: offering?.slug ?? null, sessions: [] })
+    if (!groups.has(key)) groups.set(key, { title, courseSlug: course?.slug ?? null, offeringId: offering?.id ?? null, offeringSlug: offering?.slug ?? null, sessions: [] })
     groups.get(key)!.sessions.push(session)
   }
 
@@ -55,12 +56,12 @@ export default async function AdminPage() {
     <main className="container page">
       <div className="eyebrow">Admin</div>
       <h1>Teaching content</h1>
-      <p className="lead">Choose a session to edit its schedule, recording, Study Notes, and Reference Transcript.</p>
+      <p className="lead">Manage a Course Offering, then open individual sessions to add recordings, Study Notes, and Reference Transcripts.</p>
 
       <section className="grid two section">
         <div className="card">
           <div className="eyebrow">Workflow</div>
-          <h3>Session → Study Notes → Transcript</h3>
+          <h3>Course Offering → Session → Study Notes → Transcript</h3>
           <p className="meta">Keep unfinished material as Draft. Publish each part when it is ready for students.</p>
         </div>
         <div className="card">
@@ -74,11 +75,10 @@ export default async function AdminPage() {
         <section className="section card" key={key}>
           <div className="eyebrow">Course Offering</div>
           <h2>{group.title}</h2>
-          {group.courseSlug && group.offeringSlug ? (
-            <div className="actions" style={{ marginBottom: 12 }}>
-              <Link className="button" href={`/courses/${group.courseSlug}/${group.offeringSlug}`}>Open student view</Link>
-            </div>
-          ) : null}
+          <div className="actions" style={{ marginBottom: 12 }}>
+            {group.offeringId ? <Link className="button red" href={`/admin/offerings/${group.offeringId}`}>Manage Course Offering</Link> : null}
+            {group.courseSlug && group.offeringSlug ? <Link className="button" href={`/courses/${group.courseSlug}/${group.offeringSlug}`}>Open student view</Link> : null}
+          </div>
 
           {group.sessions.map((session) => {
             const notes = (session.study_notes ?? []) as Array<{ status: string }>
@@ -93,7 +93,7 @@ export default async function AdminPage() {
                     <div className="meta">{session.session_date ?? 'No date'} · {session.session_type} · session {session.status}</div>
                     <div className="meta">Study Notes: {notesStatus} · Transcript: {transcriptStatus} · Recording: {session.recording_url ? 'added' : 'missing'}</div>
                   </div>
-                  <Link className="button" href={`/admin/sessions/${session.id}`}>Edit</Link>
+                  <Link className="button" href={`/admin/sessions/${session.id}`}>Edit session</Link>
                 </div>
               </div>
             )
