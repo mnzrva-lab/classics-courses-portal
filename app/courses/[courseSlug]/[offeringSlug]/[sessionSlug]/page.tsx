@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { markSessionComplete, saveSessionNote } from './actions'
+import { markSessionComplete, saveSessionNote, toggleParagraphBookmark, toggleSessionBookmark } from './actions'
 
 type CourseRelation = {
   id: string
@@ -89,6 +89,20 @@ export default async function SessionPage({ params }: { params: Promise<{ course
     transcriptParagraphs = (paragraphs ?? []) as TranscriptParagraph[]
   }
 
+  let sessionBookmarked = false
+  const paragraphBookmarkIds = new Set<string>()
+  if (userId) {
+    const paragraphIds = transcriptParagraphs.map((paragraph) => paragraph.id)
+    const [{ data: sessionBookmark }, paragraphBookmarksResult] = await Promise.all([
+      supabase.from('user_session_bookmarks').select('session_id').eq('user_id', userId).eq('session_id', session.id).maybeSingle(),
+      paragraphIds.length > 0
+        ? supabase.from('user_paragraph_bookmarks').select('paragraph_id').eq('user_id', userId).in('paragraph_id', paragraphIds)
+        : Promise.resolve({ data: [] } as any),
+    ])
+    sessionBookmarked = Boolean(sessionBookmark)
+    for (const bookmark of paragraphBookmarksResult.data ?? []) paragraphBookmarkIds.add(bookmark.paragraph_id)
+  }
+
   const sectionMap = new Map(transcriptSections.map((section) => [section.id, section]))
   let previousSectionId: string | null | undefined = undefined
   const teachers = (session.session_teachers ?? []).map((item: any) => item.teachers?.full_name).filter(Boolean)
@@ -106,6 +120,11 @@ export default async function SessionPage({ params }: { params: Promise<{ course
         <div className="actions">
           {session.recording_url ? <a className="button red" href={session.recording_url} target="_blank" rel="noreferrer">Open recording</a> : <span className="meta">Recording coming soon.</span>}
           {session.audio_url ? <audio controls src={session.audio_url} /> : null}
+          {userId ? (
+            <form action={toggleSessionBookmark.bind(null, session.id, returnPath)}>
+              <button className="button" type="submit">{sessionBookmarked ? '★ Bookmarked' : '☆ Bookmark class'}</button>
+            </form>
+          ) : null}
         </div>
       </section>
 
@@ -177,14 +196,20 @@ export default async function SessionPage({ params }: { params: Promise<{ course
                   const showHeading = paragraph.section_id !== previousSectionId && Boolean(section)
                   previousSectionId = paragraph.section_id
                   const timestamp = formatTimestamp(paragraph.start_seconds)
+                  const bookmarked = paragraphBookmarkIds.has(paragraph.id)
                   return (
-                    <div key={paragraph.id} id={`paragraph-${paragraph.id}`} style={{ marginTop: showHeading ? 32 : 18 }}>
+                    <div key={paragraph.id} id={`paragraph-${paragraph.id}`} style={{ marginTop: showHeading ? 32 : 18, paddingBottom: 8, borderBottom: '1px solid var(--line)' }}>
                       {showHeading ? <h3 style={{ fontSize: 24, marginBottom: 14 }}>{section?.title}</h3> : null}
                       <div style={{ lineHeight: 1.75 }}>
                         {timestamp ? <span className="meta" style={{ marginRight: 8 }}>{timestamp}</span> : null}
                         {paragraph.speaker ? <strong>{paragraph.speaker}: </strong> : null}
                         <span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.body}</span>
                       </div>
+                      {userId ? (
+                        <form action={toggleParagraphBookmark.bind(null, paragraph.id, returnPath)} style={{ marginTop: 8 }}>
+                          <button className="button" type="submit" style={{ padding: '7px 10px', fontSize: 13 }}>{bookmarked ? '★ Saved passage' : '☆ Save passage'}</button>
+                        </form>
+                      ) : null}
                     </div>
                   )
                 })}
