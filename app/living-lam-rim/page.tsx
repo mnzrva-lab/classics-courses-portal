@@ -8,7 +8,7 @@ export default async function LivingLamRimPage() {
 
   const { data: course } = await supabase
     .from('courses')
-    .select('id, title, subtitle, description')
+    .select('id, slug, title, subtitle, description')
     .eq('kind', 'living_lam_rim')
     .eq('status', 'published')
     .maybeSingle()
@@ -16,8 +16,9 @@ export default async function LivingLamRimPage() {
   const { data: groups } = course
     ? await supabase
         .from('content_groups')
-        .select('id, slug, title, group_type, sort_order')
+        .select('id, slug, title, kind, sort_order')
         .eq('course_id', course.id)
+        .eq('status', 'published')
         .order('sort_order')
     : { data: [] as any[] }
 
@@ -50,14 +51,14 @@ export default async function LivingLamRimPage() {
             const groupSessions = sessionsByGroup.get(group.id) ?? []
             return (
               <div className="card" key={group.id} style={{ marginBottom: 20 }}>
-                <div className="eyebrow">{group.group_type || 'Term'}</div>
+                <div className="eyebrow">{group.kind || 'Term'}</div>
                 <h2>{group.title}</h2>
                 {groupSessions.length ? (
                   <div className="list">
                     {groupSessions.map((session: any) => {
                       const offering = session.course_offerings
-                      const href = offering?.slug && course
-                        ? `/courses/living-lam-rim/${offering.slug}/${session.slug}`
+                      const href = offering?.slug && course?.slug
+                        ? `/courses/${course.slug}/${offering.slug}/${session.slug}`
                         : null
                       return (
                         <div className="row" key={session.id}>
