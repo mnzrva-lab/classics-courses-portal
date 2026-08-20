@@ -36,7 +36,8 @@ export default async function AdminPage() {
       courses(slug, title, canonical_number),
       course_offerings(id, slug, label),
       study_notes(status),
-      transcripts(status)
+      transcripts(status),
+      materials(status)
     `)
     .order('starts_at', { ascending: true, nullsFirst: false })
 
@@ -56,18 +57,19 @@ export default async function AdminPage() {
     <main className="container page">
       <div className="eyebrow">Admin</div>
       <h1>Teaching content</h1>
-      <p className="lead">Manage a Course Offering, then open individual sessions to add recordings, Study Notes, and Reference Transcripts.</p>
+      <p className="lead">Manage Course Offerings, sessions, class materials, Study Notes, Reference Transcripts, and the meditation library.</p>
 
       <section className="grid two section">
         <div className="card">
           <div className="eyebrow">Workflow</div>
-          <h3>Course Offering → Session → Study Notes → Transcript</h3>
+          <h3>Offering → Session → Notes → Materials → Transcript</h3>
           <p className="meta">Keep unfinished material as Draft. Publish each part when it is ready for students.</p>
         </div>
         <div className="card">
-          <div className="eyebrow">Access</div>
-          <h3>Admin only</h3>
-          <p className="meta">Student accounts cannot open these editors or modify teaching content.</p>
+          <div className="eyebrow">Practice library</div>
+          <h3>Meditations</h3>
+          <p className="meta">Create a canonical meditation once, then connect versions from different source classes.</p>
+          <div className="actions"><Link className="button sage" href="/admin/meditations">Manage meditations</Link></div>
         </div>
       </section>
 
@@ -83,15 +85,17 @@ export default async function AdminPage() {
           {group.sessions.map((session) => {
             const notes = (session.study_notes ?? []) as Array<{ status: string }>
             const transcripts = (session.transcripts ?? []) as Array<{ status: string }>
+            const materials = (session.materials ?? []) as Array<{ status: string }>
             const notesStatus = notes[0]?.status ?? 'missing'
             const transcriptStatus = transcripts[0]?.status ?? 'missing'
+            const publishedMaterials = materials.filter((item) => item.status === 'published').length
             return (
               <div key={session.id} style={{ padding: '16px 0', borderTop: '1px solid var(--line)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
                   <div>
                     <strong>{session.code ? `${session.code} · ` : ''}{session.title}</strong>
                     <div className="meta">{session.session_date ?? 'No date'} · {session.session_type} · session {session.status}</div>
-                    <div className="meta">Study Notes: {notesStatus} · Transcript: {transcriptStatus} · Recording: {session.recording_url ? 'added' : 'missing'}</div>
+                    <div className="meta">Study Notes: {notesStatus} · Materials: {publishedMaterials} published · Transcript: {transcriptStatus} · Recording: {session.recording_url ? 'added' : 'missing'}</div>
                   </div>
                   <Link className="button" href={`/admin/sessions/${session.id}`}>Edit session</Link>
                 </div>
