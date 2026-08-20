@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import { submitTeachingSearch } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -43,10 +44,11 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
       <p className="lead">Search across published Reference Transcript paragraphs.</p>
 
       <section className="section card">
-        <form className="form-stack" method="get" action="/search">
+        <form className="form-stack" action={submitTeachingSearch}>
           <label>Search transcripts<input className="input" type="search" name="q" defaultValue={query} placeholder="karma, emptiness, death, meditation…" /></label>
           <div className="actions"><button className="button red" type="submit">Search</button></div>
         </form>
+        <p className="meta">Search history is not saved unless you turn it on in <Link href="/account">Privacy &amp; Data</Link>.</p>
       </section>
 
       {query ? (
