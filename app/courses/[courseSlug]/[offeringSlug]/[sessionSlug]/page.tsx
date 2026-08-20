@@ -3,6 +3,19 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { markSessionComplete, saveSessionNote } from './actions'
 
+type CourseRelation = {
+  id: string
+  slug: string
+  title: string
+  canonical_number: number | null
+}
+
+type OfferingRelation = {
+  id: string
+  slug: string
+  label: string
+}
+
 export default async function SessionPage({ params }: { params: Promise<{ courseSlug: string; offeringSlug: string; sessionSlug: string }> }) {
   const { courseSlug, offeringSlug, sessionSlug } = await params
   const supabase = await createClient()
@@ -23,6 +36,9 @@ export default async function SessionPage({ params }: { params: Promise<{ course
 
   if (!session) notFound()
 
+  const course = session.courses as unknown as CourseRelation
+  const offering = session.course_offerings as unknown as OfferingRelation
+
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub as string | undefined
 
@@ -42,7 +58,7 @@ export default async function SessionPage({ params }: { params: Promise<{ course
 
   return (
     <main className="container page">
-      <div className="eyebrow">{session.courses.title} · {session.course_offerings.label}</div>
+      <div className="eyebrow">{course.title} · {offering.label}</div>
       <h1 style={{ fontSize: 'clamp(38px, 6vw, 64px)' }}>{session.code ? `${session.code} · ` : ''}{session.title}</h1>
       <p className="lead">{teachers.join(', ')}</p>
 
@@ -122,7 +138,7 @@ export default async function SessionPage({ params }: { params: Promise<{ course
       </section>
 
       <section className="section">
-        <Link className="button" href={`/courses/${courseSlug}/${offeringSlug}`}>← Back to {session.course_offerings.label}</Link>
+        <Link className="button" href={`/courses/${courseSlug}/${offeringSlug}`}>← Back to {offering.label}</Link>
       </section>
     </main>
   )
