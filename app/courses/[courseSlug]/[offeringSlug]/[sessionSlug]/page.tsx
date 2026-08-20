@@ -80,7 +80,7 @@ export default async function SessionPage({ params }: { params: Promise<{ course
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub as string | undefined
 
-  const [{ data: progress }, { data: notes }, { data: studyNotes }, { data: transcript }, { data: materials }] = await Promise.all([
+  const [{ data: progress }, { data: notes }, { data: studyNotes }, { data: transcript }, { data: materials }, { data: userSettings }] = await Promise.all([
     userId
       ? supabase.from('user_session_progress').select('started_at, completed_at, last_opened_at').eq('user_id', userId).eq('session_id', session.id).maybeSingle()
       : Promise.resolve({ data: null } as any),
@@ -90,7 +90,14 @@ export default async function SessionPage({ params }: { params: Promise<{ course
     supabase.from('study_notes').select('title, summary, content_markdown, disclaimer').eq('session_id', session.id).eq('status', 'published').maybeSingle(),
     supabase.from('transcripts').select('id, title, disclaimer').eq('session_id', session.id).eq('status', 'published').maybeSingle(),
     supabase.from('materials').select('id, material_type, title, url, mime_type, storage_bucket, storage_path').eq('session_id', session.id).eq('status', 'published').order('sort_order'),
+    userId
+      ? supabase.from('user_settings').select('save_notes, save_bookmarks, save_progress').eq('user_id', userId).maybeSingle()
+      : Promise.resolve({ data: null } as any),
   ])
+
+  const canSaveNotes = userSettings?.save_notes ?? true
+  const canSaveBookmarks = userSettings?.save_bookmarks ?? true
+  const canSaveProgress = userSettings?.save_progress ?? true
 
   const resolvedMaterials = await Promise.all((materials ?? []).map(async (material: any) => {
     if (material.storage_bucket && material.storage_path) {
@@ -146,11 +153,11 @@ export default async function SessionPage({ params }: { params: Promise<{ course
         <div className="actions">
           {session.recording_url ? <a className="button red" href={session.recording_url} target="_blank" rel="noreferrer">Open recording</a> : <span className="meta">Recording coming soon.</span>}
           {session.audio_url ? <audio controls src={session.audio_url} /> : null}
-          {userId ? (
+          {userId && (canSaveBookmarks || sessionBookmarked) ? (
             <form action={toggleSessionBookmark.bind(null, session.id, returnPath)}>
               <button className="button" type="submit">{sessionBookmarked ? '★ Bookmarked' : '☆ Bookmark class'}</button>
             </form>
-          ) : null}
+          ) : userId ? <Link className="button" href="/account">Bookmarks are off</Link> : null}
         </div>
       </section>
 
@@ -159,16 +166,20 @@ export default async function SessionPage({ params }: { params: Promise<{ course
           <div className="eyebrow">Progress</div>
           <h3>{isCompleted ? '✓ Completed' : isInProgress ? 'In progress' : 'Not started'}</h3>
           {userId ? (
-            isCompleted ? (
-              <p className="meta">You can revisit this class anytime.</p>
-            ) : isInProgress ? (
-              <form action={markSessionComplete.bind(null, session.id, returnPath)}>
-                <button className="button sage" type="submit">Mark Complete</button>
-              </form>
+            canSaveProgress ? (
+              isCompleted ? (
+                <p className="meta">You can revisit this class anytime.</p>
+              ) : isInProgress ? (
+                <form action={markSessionComplete.bind(null, session.id, returnPath)}>
+                  <button className="button sage" type="submit">Mark Complete</button>
+                </form>
+              ) : (
+                <form action={startSessionProgress.bind(null, session.id, returnPath)}>
+                  <button className="button sage" type="submit">Start studying</button>
+                </form>
+              )
             ) : (
-              <form action={startSessionProgress.bind(null, session.id, returnPath)}>
-                <button className="button sage" type="submit">Start studying</button>
-              </form>
+              <p className="meta">Progress saving is off. <Link href="/account">Change Privacy &amp; Data settings</Link>.</p>
             )
           ) : (
             <div className="actions"><Link className="button" href="/login">Sign in to save progress</Link></div>
@@ -179,10 +190,14 @@ export default async function SessionPage({ params }: { params: Promise<{ course
           <div className="eyebrow">Private note</div>
           <h3>Save something for later</h3>
           {userId ? (
-            <form className="form-stack" action={saveSessionNote.bind(null, session.id, returnPath)}>
-              <textarea className="input" name="note" rows={5} placeholder="Write a private study note…" required />
-              <button className="button" type="submit">Save note</button>
-            </form>
+            canSaveNotes ? (
+              <form className="form-stack" action={saveSessionNote.bind(null, session.id, returnPath)}>
+                <textarea className="input" name="note" rows={5} placeholder="Write a private study note…" required />
+                <button className="button" type="submit">Save note</button>
+              </form>
+            ) : (
+              <p className="meta">Note saving is off. <Link href="/account">Change Privacy &amp; Data settings</Link>.</p>
+            )
           ) : (
             <div className="actions"><Link className="button" href="/login">Sign in to save notes</Link></div>
           )}
@@ -255,7 +270,7 @@ export default async function SessionPage({ params }: { params: Promise<{ course
                         {paragraph.speaker ? <strong>{paragraph.speaker}: </strong> : null}
                         <span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.body}</span>
                       </div>
-                      {userId ? (
+                      {userId && (canSaveBookmarks || bookmarked) ? (
                         <form action={toggleParagraphBookmark.bind(null, paragraph.id, returnPath)} style={{ marginTop: 8 }}>
                           <button className="button" type="submit" style={{ padding: '7px 10px', fontSize: 13 }}>{bookmarked ? '★ Saved passage' : '☆ Save passage'}</button>
                         </form>
