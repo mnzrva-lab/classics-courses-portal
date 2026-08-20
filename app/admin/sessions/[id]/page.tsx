@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic'
 
 type CourseRelation = { slug: string; title: string }
 type OfferingRelation = { slug: string; label: string }
+type Teacher = { id: string; full_name: string }
 
 type TranscriptSection = {
   id: string
@@ -59,9 +60,15 @@ function rebuildTranscript(sections: TranscriptSection[], paragraphs: Transcript
   return blocks.join('\n\n')
 }
 
-export default async function AdminSessionPage({ params, searchParams }: { params: Promise<{ id: string }>, searchParams: Promise<{ saved?: string }> }) {
+export default async function AdminSessionPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ saved?: string; created?: string }>
+}) {
   const { id } = await params
-  const { saved } = await searchParams
+  const { saved, created } = await searchParams
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub as string | undefined
@@ -90,10 +97,15 @@ export default async function AdminSessionPage({ params, searchParams }: { param
   const endParts = isoToZonedParts(session.ends_at, sourceTimezone)
   const sessionDate = session.session_date ?? startParts.date
 
-  const [{ data: studyNotes }, { data: transcript }] = await Promise.all([
+  const [{ data: studyNotes }, { data: transcript }, { data: teacherRows }, { data: teacherLinks }] = await Promise.all([
     supabase.from('study_notes').select('title, summary, content_markdown, status').eq('session_id', id).eq('language_code', 'en').maybeSingle(),
     supabase.from('transcripts').select('id, title, source_file_name, status').eq('session_id', id).eq('language_code', 'en').maybeSingle(),
+    supabase.from('teachers').select('id, full_name').eq('active', true).order('full_name'),
+    supabase.from('session_teachers').select('teacher_id').eq('session_id', id),
   ])
+
+  const teachers = (teacherRows ?? []) as Teacher[]
+  const selectedTeacherIds = new Set((teacherLinks ?? []).map((link: any) => link.teacher_id))
 
   let transcriptText = ''
   if (transcript?.id) {
@@ -104,15 +116,15 @@ export default async function AdminSessionPage({ params, searchParams }: { param
     transcriptText = rebuildTranscript((sections ?? []) as TranscriptSection[], (paragraphs ?? []) as TranscriptParagraph[])
   }
 
-  const savedMessage = saved === 'session'
-    ? 'Session details saved.'
-    : saved === 'notes'
-      ? 'Study Notes saved.'
-      : saved === 'transcript'
-        ? 'Reference Transcript saved.'
-        : null
-
-  const publicHref = course && offering ? `/courses/${course.slug}/${offering.slug}/${session.id}` : null
+  const savedMessage = created === '1'
+    ? 'Session created. You can now add content and publish it when ready.'
+    : saved === 'session'
+      ? 'Session details saved.'
+      : saved === 'notes'
+        ? 'Study Notes saved.'
+        : saved === 'transcript'
+          ? 'Reference Transcript saved.'
+          : null
 
   return (
     <main className="container page">
@@ -148,6 +160,21 @@ export default async function AdminSessionPage({ params, searchParams }: { param
             <label>Start time<input className="input" type="time" name="start_time" defaultValue={startParts.time} /></label>
             <label>End time<input className="input" type="time" name="end_time" defaultValue={endParts.time} /></label>
           </div>
+
+          {teachers.length ? (
+            <fieldset style={{ border: 0, padding: 0, margin: 0 }}>
+              <legend style={{ fontWeight: 700, marginBottom: 8 }}>Teacher</legend>
+              <div className="actions">
+                {teachers.map((teacher) => (
+                  <label key={teacher.id} className="button" style={{ cursor: 'pointer' }}>
+                    <input type="checkbox" name="teacher_id" value={teacher.id} defaultChecked={selectedTeacherIds.has(teacher.id)} style={{ marginRight: 8 }} />
+                    {teacher.full_name}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
+
           <label>Recording URL<input className="input" type="url" name="recording_url" defaultValue={session.recording_url ?? ''} placeholder="YouTube or Google Drive" /></label>
           <label>Audio URL<input className="input" type="url" name="audio_url" defaultValue={session.audio_url ?? ''} placeholder="Optional MP3 or M4A" /></label>
           <label>Zoom URL<input className="input" type="url" name="zoom_url" defaultValue={session.zoom_url ?? ''} /></label>
