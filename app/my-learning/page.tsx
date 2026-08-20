@@ -16,7 +16,7 @@ export default async function MyLearningPage() {
 
   if (!userId) redirect('/login')
 
-  const [{ data: progressRows }, { data: noteRows }, { data: courseBookmarkRows }] = await Promise.all([
+  const [{ data: progressRows }, { data: noteRows }, { data: courseBookmarkRows }, { data: settings }] = await Promise.all([
     supabase
       .from('user_session_progress')
       .select(`
@@ -38,11 +38,17 @@ export default async function MyLearningPage() {
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(6),
+    supabase
+      .from('user_settings')
+      .select('track_classics_master')
+      .eq('user_id', userId)
+      .maybeSingle(),
   ])
 
   const progress = progressRows ?? []
   const notes = noteRows ?? []
   const courseBookmarks = courseBookmarkRows ?? []
+  const trackClassicsMaster = settings?.track_classics_master ?? false
 
   const completedSessionIds = progress
     .filter((item: any) => item.completed_at)
@@ -110,11 +116,13 @@ export default async function MyLearningPage() {
       <p className="lead">Continue what you started, return to saved courses, and see your progress without turning study into a points system.</p>
 
       <section className="grid section">
-        <div className="card sage">
-          <div className="meta">Path of Classics Master</div>
-          <div className="stat">{classicsCompleted} / 18</div>
-          <div className="meta">canonical Classics Courses completed</div>
-        </div>
+        {trackClassicsMaster ? (
+          <div className="card sage">
+            <div className="meta">Path of Classics Master</div>
+            <div className="stat">{classicsCompleted} / 18</div>
+            <div className="meta">canonical Classics Courses completed</div>
+          </div>
+        ) : null}
         <div className="card">
           <div className="meta">Teaching sessions completed</div>
           <div className="stat">{completedSessionIds.length}</div>
@@ -209,9 +217,10 @@ export default async function MyLearningPage() {
 
       <section className="section card">
         <div className="eyebrow">Account</div>
-        <h3>Privacy & Data</h3>
-        <p className="meta">Notes, bookmarks, progress, and account settings are protected by your signed-in user ID.</p>
+        <h3>Privacy &amp; Data</h3>
+        <p className="meta">Choose what the portal remembers, export your private study data, or clear saved information.</p>
         <div className="actions">
+          <Link className="button red" href="/account">Privacy &amp; Data</Link>
           <Link className="button" href="/courses">Browse courses</Link>
           <Link className="button" href="/meditations">Meditations</Link>
           <form action="/auth/signout" method="post"><button className="button" type="submit">Sign out</button></form>
