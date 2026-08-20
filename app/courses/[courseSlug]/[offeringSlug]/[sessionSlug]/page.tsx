@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { markSessionComplete, saveSessionNote, toggleParagraphBookmark, toggleSessionBookmark } from './actions'
+import { markSessionComplete, saveSessionNote, startSessionProgress, toggleParagraphBookmark, toggleSessionBookmark } from './actions'
 
 type CourseRelation = {
   id: string
@@ -41,6 +41,19 @@ function formatTimestamp(seconds: number | null) {
     : `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
 }
 
+function materialLabel(type: string) {
+  const labels: Record<string, string> = {
+    reading: 'Reading',
+    slides: 'Slides',
+    audio: 'Audio',
+    video: 'Video',
+    document: 'Document',
+    link: 'Link',
+    other: 'Resource',
+  }
+  return labels[type] ?? 'Resource'
+}
+
 export default async function SessionPage({ params }: { params: Promise<{ courseSlug: string; offeringSlug: string; sessionSlug: string }> }) {
   const { courseSlug, offeringSlug, sessionSlug } = await params
   const supabase = await createClient()
@@ -67,15 +80,16 @@ export default async function SessionPage({ params }: { params: Promise<{ course
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub as string | undefined
 
-  const [{ data: progress }, { data: notes }, { data: studyNotes }, { data: transcript }] = await Promise.all([
+  const [{ data: progress }, { data: notes }, { data: studyNotes }, { data: transcript }, { data: materials }] = await Promise.all([
     userId
-      ? supabase.from('user_session_progress').select('completed_at, last_opened_at').eq('user_id', userId).eq('session_id', session.id).maybeSingle()
+      ? supabase.from('user_session_progress').select('started_at, completed_at, last_opened_at').eq('user_id', userId).eq('session_id', session.id).maybeSingle()
       : Promise.resolve({ data: null } as any),
     userId
       ? supabase.from('student_notes').select('id, note, updated_at').eq('user_id', userId).eq('session_id', session.id).order('updated_at', { ascending: false })
       : Promise.resolve({ data: [] } as any),
     supabase.from('study_notes').select('title, summary, content_markdown, disclaimer').eq('session_id', session.id).eq('status', 'published').maybeSingle(),
     supabase.from('transcripts').select('id, title, disclaimer').eq('session_id', session.id).eq('status', 'published').maybeSingle(),
+    supabase.from('materials').select('id, material_type, title, url, mime_type').eq('session_id', session.id).eq('status', 'published').order('sort_order'),
   ])
 
   let transcriptSections: TranscriptSection[] = []
@@ -107,6 +121,8 @@ export default async function SessionPage({ params }: { params: Promise<{ course
   let previousSectionId: string | null | undefined = undefined
   const teachers = (session.session_teachers ?? []).map((item: any) => item.teachers?.full_name).filter(Boolean)
   const returnPath = `/courses/${courseSlug}/${offeringSlug}/${sessionSlug}`
+  const isCompleted = Boolean(progress?.completed_at)
+  const isInProgress = Boolean(progress && !progress.completed_at)
 
   return (
     <main className="container page">
@@ -129,13 +145,19 @@ export default async function SessionPage({ params }: { params: Promise<{ course
       </section>
 
       <section className="grid two section">
-        <div className={progress?.completed_at ? 'card completed' : 'card'}>
+        <div className={isCompleted ? 'card completed' : isInProgress ? 'card sage' : 'card'}>
           <div className="eyebrow">Progress</div>
-          <h3>{progress?.completed_at ? '✓ Completed' : 'Mark this session complete'}</h3>
+          <h3>{isCompleted ? '✓ Completed' : isInProgress ? 'In progress' : 'Not started'}</h3>
           {userId ? (
-            progress?.completed_at ? <p className="meta">You can revisit this class anytime.</p> : (
+            isCompleted ? (
+              <p className="meta">You can revisit this class anytime.</p>
+            ) : isInProgress ? (
               <form action={markSessionComplete.bind(null, session.id, returnPath)}>
                 <button className="button sage" type="submit">Mark Complete</button>
+              </form>
+            ) : (
+              <form action={startSessionProgress.bind(null, session.id, returnPath)}>
+                <button className="button sage" type="submit">Start studying</button>
               </form>
             )
           ) : (
@@ -182,6 +204,24 @@ export default async function SessionPage({ params }: { params: Promise<{ course
           </>
         ) : <p className="meta">Study Notes have not been published for this session yet.</p>}
       </section>
+
+      {(materials ?? []).length > 0 && (
+        <section className="section card">
+          <div className="eyebrow">Class materials</div>
+          <h2 style={{ fontSize: 32 }}>Readings, slides, and resources</h2>
+          <div className="list">
+            {(materials ?? []).map((material: any) => (
+              <div key={material.id} style={{ padding: '14px 0', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                <div>
+                  <strong>{material.title}</strong>
+                  <div className="meta">{materialLabel(material.material_type)}{material.mime_type ? ` · ${material.mime_type}` : ''}</div>
+                </div>
+                <a className="button" href={material.url} target="_blank" rel="noreferrer">Open</a>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="section card">
         {transcript ? (
