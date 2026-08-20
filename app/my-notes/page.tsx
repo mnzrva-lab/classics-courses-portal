@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { deleteNote, updateNote } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -15,7 +16,21 @@ function clip(text: string, length = 240) {
   return text.length > length ? `${text.slice(0, length).trim()}…` : text
 }
 
-export default async function MyNotesPage() {
+function codeOrder(code: string | null | undefined) {
+  if (!code) return 9999
+  const match = code.match(/(\d+)/)
+  const value = match ? Number(match[1]) : 9999
+  const prefix = code.toUpperCase().startsWith('C') ? 0 : code.toUpperCase().startsWith('M') ? 100 : 200
+  return prefix + value
+}
+
+export default async function MyNotesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ sort?: string; saved?: string }>
+}) {
+  const { sort, saved } = await searchParams
+  const sortMode = sort === 'class' ? 'class' : 'latest'
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub as string | undefined
@@ -49,28 +64,111 @@ export default async function MyNotesPage() {
   const paragraphBookmarks = paragraphBookmarksResult.data ?? []
   const courseBookmarks = courseBookmarksResult.data ?? []
 
+  const courseGroups = new Map<string, any>()
+  for (const item of notes as any[]) {
+    const session = item.sessions
+    const course = session?.courses
+    const courseKey = course?.slug ?? 'other'
+    if (!courseGroups.has(courseKey)) {
+      courseGroups.set(courseKey, {
+        key: courseKey,
+        title: course?.title ?? 'Other program',
+        canonicalNumber: course?.canonical_number ?? null,
+        latest: item.updated_at,
+        sessions: new Map<string, any>(),
+      })
+    }
+
+    const courseGroup = courseGroups.get(courseKey)
+    if (new Date(item.updated_at).getTime() > new Date(courseGroup.latest).getTime()) courseGroup.latest = item.updated_at
+
+    const sessionKey = session?.id ?? `note-${item.id}`
+    if (!courseGroup.sessions.has(sessionKey)) {
+      courseGroup.sessions.set(sessionKey, {
+        key: sessionKey,
+        session,
+        latest: item.updated_at,
+        notes: [],
+      })
+    }
+
+    const sessionGroup = courseGroup.sessions.get(sessionKey)
+    if (new Date(item.updated_at).getTime() > new Date(sessionGroup.latest).getTime()) sessionGroup.latest = item.updated_at
+    sessionGroup.notes.push(item)
+  }
+
+  const groupedNotes = Array.from(courseGroups.values())
+    .map((group: any) => ({
+      ...group,
+      sessions: Array.from(group.sessions.values()).sort((a: any, b: any) => {
+        if (sortMode === 'latest') return new Date(b.latest).getTime() - new Date(a.latest).getTime()
+        return codeOrder(a.session?.code) - codeOrder(b.session?.code) || String(a.session?.title ?? '').localeCompare(String(b.session?.title ?? ''))
+      }),
+    }))
+    .sort((a: any, b: any) => {
+      if (sortMode === 'latest') return new Date(b.latest).getTime() - new Date(a.latest).getTime()
+      const aNumber = a.canonicalNumber ?? 9999
+      const bNumber = b.canonicalNumber ?? 9999
+      return aNumber - bNumber || String(a.title).localeCompare(String(b.title))
+    })
+
+  const savedMessage = saved === 'note' ? 'Note updated.' : saved === 'deleted' ? 'Note deleted.' : null
+
   return (
     <main className="container page">
       <div className="eyebrow">Your private study space</div>
       <h1 style={{ fontSize: 'clamp(38px, 6vw, 64px)' }}>My Notes</h1>
-      <p className="lead">Notes and bookmarks saved while you study, collected in one place.</p>
+      <p className="lead">Notes grouped by course and class, with your saved courses, classes, and transcript passages in the same study space.</p>
+
+      {savedMessage ? <div className="card completed section">{savedMessage}</div> : null}
 
       <section className="section card">
+        <div className="eyebrow">View</div>
+        <div className="actions">
+          <Link className="button" href="/my-notes?sort=latest">Latest activity</Link>
+          <Link className="button" href="/my-notes?sort=class">Course &amp; class order</Link>
+          <Link className="button" href="/account">Privacy &amp; Data</Link>
+        </div>
+      </section>
+
+      <section className="section">
         <div className="eyebrow">Private notes</div>
-        <h2 style={{ fontSize: 32 }}>Your notes</h2>
-        {notes.length ? notes.map((item: any) => {
-          const session = item.sessions
-          const href = sessionPath(session)
-          return (
-            <div key={item.id} style={{ padding: '16px 0', borderTop: '1px solid var(--line)' }}>
-              <div>{item.note}</div>
-              <div className="meta" style={{ marginTop: 8 }}>
-                {session?.code ? `${session.code} · ` : ''}{session?.title ?? 'Session'} · {new Date(item.updated_at).toLocaleDateString()}
-              </div>
-              {href ? <div className="actions"><Link className="button" href={href}>Open source class</Link></div> : null}
-            </div>
-          )
-        }) : <p className="meta">Notes you save from class pages will appear here.</p>}
+        <h2 style={{ fontSize: 32 }}>Course → class → note</h2>
+        {groupedNotes.length ? groupedNotes.map((courseGroup: any) => (
+          <div className="card" key={courseGroup.key} style={{ marginBottom: 22 }}>
+            <div className="eyebrow">{courseGroup.canonicalNumber ? `Course ${courseGroup.canonicalNumber}` : 'Program'}</div>
+            <h2 style={{ fontSize: 30 }}>{courseGroup.title}</h2>
+
+            {courseGroup.sessions.map((sessionGroup: any) => {
+              const session = sessionGroup.session
+              const href = sessionPath(session)
+              return (
+                <div key={sessionGroup.key} style={{ padding: '20px 0', borderTop: '1px solid var(--line)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', alignItems: 'baseline' }}>
+                    <div>
+                      <strong>{session?.code ? `${session.code} · ` : ''}{session?.title ?? 'Session'}</strong>
+                      {session?.course_offerings?.label ? <div className="meta">{session.course_offerings.label}</div> : null}
+                    </div>
+                    {href ? <Link className="button" href={href}>Open class</Link> : null}
+                  </div>
+
+                  {sessionGroup.notes.map((item: any) => (
+                    <div key={item.id} style={{ padding: '16px 0', borderTop: '1px solid var(--line)', marginTop: 14 }}>
+                      <form className="form-stack" action={updateNote.bind(null, item.id)}>
+                        <textarea className="input" name="note" rows={5} defaultValue={item.note} required />
+                        <div className="meta">Updated {new Date(item.updated_at).toLocaleString()}</div>
+                        <div className="actions"><button className="button" type="submit">Save changes</button></div>
+                      </form>
+                      <form action={deleteNote.bind(null, item.id)} style={{ marginTop: 8 }}>
+                        <button className="button" type="submit">Delete note</button>
+                      </form>
+                    </div>
+                  ))}
+                </div>
+              )
+            })}
+          </div>
+        )) : <div className="card"><p className="meta">Notes you save from class pages will appear here.</p></div>}
       </section>
 
       <section className="grid two section">
@@ -83,7 +181,7 @@ export default async function MyNotesPage() {
             return (
               <div key={item.session_id} style={{ padding: '14px 0', borderTop: '1px solid var(--line)' }}>
                 <strong>{session?.code ? `${session.code} · ` : ''}{session?.title ?? 'Session'}</strong>
-                <div className="meta">{session?.course_offerings?.label ?? ''}</div>
+                <div className="meta">{session?.courses?.title ?? ''}{session?.course_offerings?.label ? ` · ${session.course_offerings.label}` : ''}</div>
                 {href ? <div className="actions"><Link className="button" href={href}>Open</Link></div> : null}
               </div>
             )
@@ -124,7 +222,9 @@ export default async function MyNotesPage() {
                 {paragraph?.speaker ? <strong>{paragraph.speaker}: </strong> : null}
                 {clip(paragraph?.body ?? 'Saved transcript passage')}
               </div>
-              <div className="meta" style={{ marginTop: 8 }}>{session?.code ? `${session.code} · ` : ''}{session?.title ?? 'Reference Transcript'}</div>
+              <div className="meta" style={{ marginTop: 8 }}>
+                {session?.courses?.title ?? ''}{session?.course_offerings?.label ? ` · ${session.course_offerings.label}` : ''}{session?.code ? ` · ${session.code}` : ''}
+              </div>
               {href ? <div className="actions"><Link className="button" href={href}>Open passage</Link></div> : null}
             </div>
           )
