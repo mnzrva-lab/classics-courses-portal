@@ -48,3 +48,43 @@ export async function saveSessionNote(sessionId: string, returnPath: string, for
   revalidatePath(returnPath)
   revalidatePath('/my-learning')
 }
+
+export async function toggleSessionBookmark(sessionId: string, returnPath: string) {
+  const { supabase, userId } = await requireUser()
+  const { data: existing, error: readError } = await supabase
+    .from('user_session_bookmarks')
+    .select('session_id')
+    .eq('user_id', userId)
+    .eq('session_id', sessionId)
+    .maybeSingle()
+
+  if (readError) throw new Error('Could not read bookmark.')
+
+  const result = existing
+    ? await supabase.from('user_session_bookmarks').delete().eq('user_id', userId).eq('session_id', sessionId)
+    : await supabase.from('user_session_bookmarks').insert({ user_id: userId, session_id: sessionId })
+
+  if (result.error) throw new Error('Could not save bookmark.')
+  revalidatePath(returnPath)
+  revalidatePath('/my-learning')
+}
+
+export async function toggleParagraphBookmark(paragraphId: string, returnPath: string) {
+  const { supabase, userId } = await requireUser()
+  const { data: existing, error: readError } = await supabase
+    .from('user_paragraph_bookmarks')
+    .select('paragraph_id')
+    .eq('user_id', userId)
+    .eq('paragraph_id', paragraphId)
+    .maybeSingle()
+
+  if (readError) throw new Error('Could not read bookmark.')
+
+  const result = existing
+    ? await supabase.from('user_paragraph_bookmarks').delete().eq('user_id', userId).eq('paragraph_id', paragraphId)
+    : await supabase.from('user_paragraph_bookmarks').insert({ user_id: userId, paragraph_id: paragraphId })
+
+  if (result.error) throw new Error('Could not save bookmark.')
+  revalidatePath(returnPath)
+  revalidatePath('/my-learning')
+}
