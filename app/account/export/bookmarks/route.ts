@@ -1,6 +1,8 @@
 import { createClient } from '@/lib/supabase/server'
 
-export async function GET() {
+export async function GET(request: Request) {
+  const url = new URL(request.url)
+  const format = url.searchParams.get('format') === 'txt' ? 'txt' : 'md'
   const supabase = await createClient()
   const { data } = await supabase.auth.getClaims()
   const userId = data?.claims?.sub as string | undefined
@@ -29,49 +31,65 @@ export async function GET() {
     return new Response('Could not export bookmarks.', { status: 500 })
   }
 
-  const lines: string[] = [
-    '# My Study Bookmarks',
-    '',
-    `Exported: ${new Date().toISOString()}`,
-    '',
-    '## Courses',
-    '',
-  ]
+  const markdown: string[] = ['# My Study Bookmarks', '', `Exported: ${new Date().toISOString()}`, '', '## Courses', '']
+  const plain: string[] = ['MY STUDY BOOKMARKS', '', `Exported: ${new Date().toISOString()}`, '', 'COURSES', '']
 
   const courses = courseResult.data ?? []
-  if (courses.length === 0) lines.push('_No bookmarked courses._', '')
+  if (courses.length === 0) {
+    markdown.push('_No bookmarked courses._', '')
+    plain.push('No bookmarked courses.', '')
+  }
   for (const item of courses) {
     const course = item.courses as any
-    lines.push(`- ${course?.canonical_number ? `Course ${course.canonical_number} · ` : ''}${course?.title ?? 'Course'} (${item.created_at})`)
+    const text = `${course?.canonical_number ? `Course ${course.canonical_number} · ` : ''}${course?.title ?? 'Course'} (${item.created_at})`
+    markdown.push(`- ${text}`)
+    plain.push(`- ${text}`)
   }
 
-  lines.push('', '## Classes', '')
+  markdown.push('', '## Classes', '')
+  plain.push('', 'CLASSES', '')
   const sessions = sessionResult.data ?? []
-  if (sessions.length === 0) lines.push('_No bookmarked classes._', '')
+  if (sessions.length === 0) {
+    markdown.push('_No bookmarked classes._', '')
+    plain.push('No bookmarked classes.', '')
+  }
   for (const item of sessions) {
     const session = item.sessions as any
-    lines.push(`- ${session?.courses?.title ?? 'Course'}${session?.course_offerings?.label ? ` · ${session.course_offerings.label}` : ''} · ${session?.code ? `${session.code} · ` : ''}${session?.title ?? 'Session'} (${item.created_at})`)
+    const text = `${session?.courses?.title ?? 'Course'}${session?.course_offerings?.label ? ` · ${session.course_offerings.label}` : ''} · ${session?.code ? `${session.code} · ` : ''}${session?.title ?? 'Session'} (${item.created_at})`
+    markdown.push(`- ${text}`)
+    plain.push(`- ${text}`)
   }
 
-  lines.push('', '## Transcript Passages', '')
+  markdown.push('', '## Transcript Passages', '')
+  plain.push('', 'TRANSCRIPT PASSAGES', '')
   const paragraphs = paragraphResult.data ?? []
-  if (paragraphs.length === 0) lines.push('_No bookmarked transcript passages._', '')
+  if (paragraphs.length === 0) {
+    markdown.push('_No bookmarked transcript passages._', '')
+    plain.push('No bookmarked transcript passages.', '')
+  }
   for (const item of paragraphs) {
     const paragraph = item.transcript_paragraphs as any
     const session = paragraph?.transcripts?.sessions
-    lines.push(`### ${session?.code ? `${session.code} · ` : ''}${session?.title ?? 'Reference Transcript'}`)
-    lines.push('')
-    if (paragraph?.speaker) lines.push(`**${paragraph.speaker}:**`)
-    if (paragraph?.body) lines.push(paragraph.body)
-    lines.push('')
-    lines.push(`Saved: ${item.created_at}`)
-    lines.push('')
+    const title = `${session?.code ? `${session.code} · ` : ''}${session?.title ?? 'Reference Transcript'}`
+
+    markdown.push(`### ${title}`, '')
+    if (paragraph?.speaker) markdown.push(`**${paragraph.speaker}:**`)
+    if (paragraph?.body) markdown.push(paragraph.body)
+    markdown.push('', `Saved: ${item.created_at}`, '')
+
+    plain.push(title)
+    if (paragraph?.speaker) plain.push(`${paragraph.speaker}:`)
+    if (paragraph?.body) plain.push(paragraph.body)
+    plain.push('', `Saved: ${item.created_at}`, '', '----------------------------------------', '')
   }
 
-  return new Response(lines.join('\n'), {
+  const body = format === 'txt' ? plain.join('\n') : markdown.join('\n')
+  const contentType = format === 'txt' ? 'text/plain; charset=utf-8' : 'text/markdown; charset=utf-8'
+
+  return new Response(body, {
     headers: {
-      'Content-Type': 'text/markdown; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="classics-courses-bookmarks.md"',
+      'Content-Type': contentType,
+      'Content-Disposition': `attachment; filename="classics-courses-bookmarks.${format}"`,
       'Cache-Control': 'no-store',
     },
   })
