@@ -152,6 +152,17 @@ export async function updateSession(sessionId: string, formData: FormData) {
 
   if (error) throw new Error(error.message)
 
+  const teacherIds = Array.from(new Set(formData.getAll('teacher_id').map(String).filter(Boolean)))
+  const { error: deleteTeacherError } = await supabase.from('session_teachers').delete().eq('session_id', sessionId)
+  if (deleteTeacherError) throw new Error(deleteTeacherError.message)
+
+  if (teacherIds.length > 0) {
+    const { error: insertTeacherError } = await supabase.from('session_teachers').insert(
+      teacherIds.map((teacherId, index) => ({ session_id: sessionId, teacher_id: teacherId, sort_order: index }))
+    )
+    if (insertTeacherError) throw new Error(insertTeacherError.message)
+  }
+
   revalidatePath('/admin')
   revalidatePath('/', 'layout')
   redirect(`/admin/sessions/${sessionId}?saved=session`)
