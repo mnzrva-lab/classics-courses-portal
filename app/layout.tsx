@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -7,7 +8,21 @@ export const metadata: Metadata = {
   description: 'Classics Courses, Living Lam Rim, meditations, and study materials.',
 }
 
-export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  let isAdmin = false
+
+  try {
+    const supabase = await createClient()
+    const { data: claimsData } = await supabase.auth.getClaims()
+    const userId = claimsData?.claims?.sub as string | undefined
+    if (userId) {
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).single()
+      isAdmin = profile?.role === 'admin'
+    }
+  } catch {
+    isAdmin = false
+  }
+
   return (
     <html lang="en">
       <body>
@@ -21,6 +36,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
               <Link href="/meditations">Meditations</Link>
               <Link href="/search">Search</Link>
               <Link href="/my-learning">My Learning</Link>
+              {isAdmin ? <Link href="/admin">Admin</Link> : null}
             </nav>
           </header>
           {children}
