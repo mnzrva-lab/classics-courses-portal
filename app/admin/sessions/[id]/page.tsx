@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { isoToZonedParts, isValidTimeZone } from '@/lib/timezone'
 import { addMaterial, deleteMaterial, saveStudyNotes, saveTranscript, updateMaterial, updateSession } from './actions'
+import TextImportField from './text-import-field'
 import UploadMaterialForm from './upload-material-form'
 
 export const dynamic = 'force-dynamic'
@@ -218,11 +219,18 @@ export default async function AdminSessionPage({
       <section className="section card">
         <div className="eyebrow">2 · Study Notes</div>
         <h2>Study aid</h2>
-        <p className="meta">Paste the cleaned Study Notes here. The standard Study Notes disclaimer is added automatically.</p>
+        <p className="meta">Paste cleaned Study Notes or import a DOCX, Markdown, or text file. The standard Study Notes disclaimer is added automatically.</p>
         <form className="form-stack" action={saveStudyNotes.bind(null, session.id)}>
           <label>Title<input className="input" name="study_notes_title" defaultValue={studyNotes?.title ?? 'Study Notes'} /></label>
           <label>Short summary<textarea className="input" name="study_notes_summary" rows={3} defaultValue={studyNotes?.summary ?? ''} /></label>
-          <label>Study Notes<textarea className="input" name="study_notes_content" rows={18} defaultValue={studyNotes?.content_markdown ?? ''} placeholder="Paste Study Notes in Markdown or plain text" required /></label>
+          <TextImportField
+            name="study_notes_content"
+            label="Study Notes"
+            rows={18}
+            defaultValue={studyNotes?.content_markdown ?? ''}
+            placeholder="Paste Study Notes in Markdown or plain text"
+            help="DOCX imports as editable text in your browser. Review the content before saving or publishing."
+          />
           <label>Status
             <select className="input" name="study_notes_status" defaultValue={studyNotes?.status ?? 'draft'}>
               <option value="draft">Draft</option>
@@ -308,11 +316,18 @@ export default async function AdminSessionPage({
       <section className="section card">
         <div className="eyebrow">4 · Reference Transcript</div>
         <h2>Transcript importer</h2>
-        <p className="meta">Paste the cleaned transcript. Use <strong>### Chapter title</strong> for chapter headings. Speaker labels such as <strong>Speaker 1:</strong>, <strong>Timothy Lowenhaupt:</strong>, and <strong>Brian Mendoza:</strong> are recognized. Optional timestamps like <strong>[12:34]</strong> or <strong>[01:12:34]</strong> are also recognized.</p>
+        <p className="meta">Paste a cleaned transcript or import DOCX, Markdown, or text. Use <strong>### Chapter title</strong> for chapter headings. Speaker labels such as <strong>Speaker 1:</strong>, <strong>Timothy Lowenhaupt:</strong>, and <strong>Brian Mendoza:</strong> are recognized. Optional timestamps like <strong>[12:34]</strong> or <strong>[01:12:34]</strong> are also recognized.</p>
         <form className="form-stack" action={saveTranscript.bind(null, session.id)}>
           <label>Title<input className="input" name="transcript_title" defaultValue={transcript?.title ?? 'Reference Transcript'} /></label>
           <label>Source file name<input className="input" name="transcript_source_file_name" defaultValue={transcript?.source_file_name ?? ''} placeholder="Optional, for internal reference" /></label>
-          <label>Transcript<textarea className="input" name="transcript_content" rows={24} defaultValue={transcriptText} placeholder={'### Opening\n\nSpeaker 1: Transcript paragraph...'} required /></label>
+          <TextImportField
+            name="transcript_content"
+            label="Transcript"
+            rows={24}
+            defaultValue={transcriptText}
+            placeholder={'### Opening\n\nSpeaker 1: Transcript paragraph...'}
+            help="DOCX imports as editable plain text. After importing, add or verify ### chapter headings, speaker labels, timestamps, and image anchors before publishing."
+          />
           <label>Status
             <select className="input" name="transcript_status" defaultValue={transcript?.status ?? 'draft'}>
               <option value="draft">Draft</option>
