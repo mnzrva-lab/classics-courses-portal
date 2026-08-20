@@ -89,8 +89,18 @@ export default async function SessionPage({ params }: { params: Promise<{ course
       : Promise.resolve({ data: [] } as any),
     supabase.from('study_notes').select('title, summary, content_markdown, disclaimer').eq('session_id', session.id).eq('status', 'published').maybeSingle(),
     supabase.from('transcripts').select('id, title, disclaimer').eq('session_id', session.id).eq('status', 'published').maybeSingle(),
-    supabase.from('materials').select('id, material_type, title, url, mime_type').eq('session_id', session.id).eq('status', 'published').order('sort_order'),
+    supabase.from('materials').select('id, material_type, title, url, mime_type, storage_bucket, storage_path').eq('session_id', session.id).eq('status', 'published').order('sort_order'),
   ])
+
+  const resolvedMaterials = await Promise.all((materials ?? []).map(async (material: any) => {
+    if (material.storage_bucket && material.storage_path) {
+      const { data } = await supabase.storage
+        .from(material.storage_bucket)
+        .createSignedUrl(material.storage_path, 60 * 60)
+      return { ...material, resolved_url: data?.signedUrl ?? null }
+    }
+    return { ...material, resolved_url: material.url ?? null }
+  }))
 
   let transcriptSections: TranscriptSection[] = []
   let transcriptParagraphs: TranscriptParagraph[] = []
@@ -205,18 +215,18 @@ export default async function SessionPage({ params }: { params: Promise<{ course
         ) : <p className="meta">Study Notes have not been published for this session yet.</p>}
       </section>
 
-      {(materials ?? []).length > 0 && (
+      {resolvedMaterials.length > 0 && (
         <section className="section card">
           <div className="eyebrow">Class materials</div>
           <h2 style={{ fontSize: 32 }}>Readings, slides, and resources</h2>
           <div className="list">
-            {(materials ?? []).map((material: any) => (
+            {resolvedMaterials.map((material: any) => (
               <div key={material.id} style={{ padding: '14px 0', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                 <div>
                   <strong>{material.title}</strong>
                   <div className="meta">{materialLabel(material.material_type)}{material.mime_type ? ` · ${material.mime_type}` : ''}</div>
                 </div>
-                <a className="button" href={material.url} target="_blank" rel="noreferrer">Open</a>
+                {material.resolved_url ? <a className="button" href={material.resolved_url} target="_blank" rel="noreferrer">Open</a> : <span className="meta">File temporarily unavailable</span>}
               </div>
             ))}
           </div>
