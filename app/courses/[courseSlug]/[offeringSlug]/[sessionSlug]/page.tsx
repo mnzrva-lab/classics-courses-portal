@@ -16,6 +16,31 @@ type OfferingRelation = {
   label: string
 }
 
+type TranscriptSection = {
+  id: string
+  title: string
+  start_seconds: number | null
+}
+
+type TranscriptParagraph = {
+  id: string
+  section_id: string | null
+  speaker: string | null
+  body: string
+  start_seconds: number | null
+  sort_order: number
+}
+
+function formatTimestamp(seconds: number | null) {
+  if (seconds == null) return null
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+  return hours > 0
+    ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+    : `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+}
+
 export default async function SessionPage({ params }: { params: Promise<{ courseSlug: string; offeringSlug: string; sessionSlug: string }> }) {
   const { courseSlug, offeringSlug, sessionSlug } = await params
   const supabase = await createClient()
@@ -53,6 +78,19 @@ export default async function SessionPage({ params }: { params: Promise<{ course
     supabase.from('transcripts').select('id, title, disclaimer').eq('session_id', session.id).eq('status', 'published').maybeSingle(),
   ])
 
+  let transcriptSections: TranscriptSection[] = []
+  let transcriptParagraphs: TranscriptParagraph[] = []
+  if (transcript?.id) {
+    const [{ data: sections }, { data: paragraphs }] = await Promise.all([
+      supabase.from('transcript_sections').select('id, title, start_seconds').eq('transcript_id', transcript.id).order('sort_order'),
+      supabase.from('transcript_paragraphs').select('id, section_id, speaker, body, start_seconds, sort_order').eq('transcript_id', transcript.id).order('sort_order'),
+    ])
+    transcriptSections = (sections ?? []) as TranscriptSection[]
+    transcriptParagraphs = (paragraphs ?? []) as TranscriptParagraph[]
+  }
+
+  const sectionMap = new Map(transcriptSections.map((section) => [section.id, section]))
+  let previousSectionId: string | null | undefined = undefined
   const teachers = (session.session_teachers ?? []).map((item: any) => item.teachers?.full_name).filter(Boolean)
   const returnPath = `/courses/${courseSlug}/${offeringSlug}/${sessionSlug}`
 
@@ -120,21 +158,45 @@ export default async function SessionPage({ params }: { params: Promise<{ course
           <>
             <h2 style={{ fontSize: 32 }}>{studyNotes.title}</h2>
             {studyNotes.summary && <p className="lead" style={{ fontSize: 17 }}>{studyNotes.summary}</p>}
-            <div style={{ whiteSpace: 'pre-wrap' }}>{studyNotes.content_markdown}</div>
+            <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.75 }}>{studyNotes.content_markdown}</div>
             <p className="meta" style={{ marginTop: 18 }}>{studyNotes.disclaimer}</p>
           </>
         ) : <p className="meta">Study Notes have not been published for this session yet.</p>}
       </section>
 
       <section className="section card">
-        <div className="eyebrow">Reference Transcript</div>
         {transcript ? (
           <>
+            <p className="meta" style={{ marginBottom: 12 }}>{transcript.disclaimer}</p>
+            <div className="eyebrow">Reference Transcript</div>
             <h2 style={{ fontSize: 32 }}>{transcript.title}</h2>
-            <p className="meta">{transcript.disclaimer}</p>
-            <p>The paragraph reader will appear here after the transcript importer is connected.</p>
+            {transcriptParagraphs.length > 0 ? (
+              <div style={{ maxWidth: 820 }}>
+                {transcriptParagraphs.map((paragraph) => {
+                  const section = paragraph.section_id ? sectionMap.get(paragraph.section_id) : null
+                  const showHeading = paragraph.section_id !== previousSectionId && Boolean(section)
+                  previousSectionId = paragraph.section_id
+                  const timestamp = formatTimestamp(paragraph.start_seconds)
+                  return (
+                    <div key={paragraph.id} id={`paragraph-${paragraph.id}`} style={{ marginTop: showHeading ? 32 : 18 }}>
+                      {showHeading ? <h3 style={{ fontSize: 24, marginBottom: 14 }}>{section?.title}</h3> : null}
+                      <div style={{ lineHeight: 1.75 }}>
+                        {timestamp ? <span className="meta" style={{ marginRight: 8 }}>{timestamp}</span> : null}
+                        {paragraph.speaker ? <strong>{paragraph.speaker}: </strong> : null}
+                        <span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.body}</span>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            ) : <p className="meta">Transcript metadata is published, but no paragraphs have been imported yet.</p>}
           </>
-        ) : <p className="meta">Reference transcript has not been uploaded for this session yet.</p>}
+        ) : (
+          <>
+            <div className="eyebrow">Reference Transcript</div>
+            <p className="meta">Reference transcript has not been uploaded for this session yet.</p>
+          </>
+        )}
       </section>
 
       <section className="section">
