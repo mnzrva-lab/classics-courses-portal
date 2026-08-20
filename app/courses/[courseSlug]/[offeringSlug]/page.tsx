@@ -82,11 +82,11 @@ export default async function OfferingPage({ params }: { params: Promise<{ cours
               <div className="row" key={session.id}>
                 <div className="session-code">{session.code || '•'}</div>
                 <div>
-                  <strong>{session.title}</strong>
+                  <Link href={`/courses/${courseSlug}/${offeringSlug}/${session.slug}`}><strong>{session.title}</strong></Link>
                   <div className="meta">{teachers.join(', ') || 'Teacher to be added'} · {formatSourceTime(session.starts_at, session.source_timezone)} source time</div>
                 </div>
                 <div className="actions" style={{ marginTop: 0 }}>
-                  {session.recording_url ? <a className="button" href={session.recording_url} target="_blank" rel="noreferrer">Recording</a> : <span className="meta">Recording coming soon</span>}
+                  <Link className="button" href={`/courses/${courseSlug}/${offeringSlug}/${session.slug}`}>Open class</Link>
                 </div>
               </div>
             )
