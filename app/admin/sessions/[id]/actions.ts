@@ -9,6 +9,7 @@ import { isValidTimeZone, zonedLocalToIso } from '@/lib/timezone'
 const STUDY_NOTES_DISCLAIMER = 'These study notes were created from the class with the assistance of AI and are provided as a study aid. They may simplify or omit parts of the teaching. Please refer to the recording and transcript for the complete class.'
 const TRANSCRIPT_DISCLAIMER = 'This transcript was created by a student with AI and should be used for reference only. Please check them against the video and audio for accuracy of content.'
 const MATERIAL_TYPES = ['reading', 'slides', 'audio', 'video', 'document', 'link', 'other'] as const
+const TEACHING_MATERIALS_BUCKET = 'teaching-materials'
 
 async function requireAdmin() {
   const supabase = await createClient()
@@ -43,6 +44,18 @@ function validMaterialType(value: FormDataEntryValue | null) {
   const type = String(value ?? 'link')
   if (!MATERIAL_TYPES.includes(type as (typeof MATERIAL_TYPES)[number])) throw new Error('Invalid material type')
   return type
+}
+
+async function nextMaterialSortOrder(supabase: Awaited<ReturnType<typeof createClient>>, sessionId: string) {
+  const { data } = await supabase
+    .from('materials')
+    .select('sort_order')
+    .eq('session_id', sessionId)
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  return (data?.sort_order ?? -1) + 1
 }
 
 function timestampSeconds(value: string) {
@@ -82,7 +95,7 @@ function parseTranscript(rawText: string, transcriptId: string) {
   let paragraphOrder = 0
 
   for (const block of blocks) {
-    const headingMatch = block.match(/^###\s+(.+)$/s)
+    const headingMatch = block.match(/^###\s+([\s\S]+)$/)
     if (headingMatch) {
       const parsed = timestampSeconds(headingMatch[1].trim())
       const title = parsed.text || `Section ${sectionOrder + 1}`
@@ -199,14 +212,6 @@ export async function saveStudyNotes(sessionId: string, formData: FormData) {
 
 export async function addMaterial(sessionId: string, formData: FormData) {
   const supabase = await requireAdmin()
-  const { data: lastMaterial } = await supabase
-    .from('materials')
-    .select('sort_order')
-    .eq('session_id', sessionId)
-    .order('sort_order', { ascending: false })
-    .limit(1)
-    .maybeSingle()
-
   const { error } = await supabase.from('materials').insert({
     session_id: sessionId,
     material_type: validMaterialType(formData.get('material_type')),
@@ -214,7 +219,7 @@ export async function addMaterial(sessionId: string, formData: FormData) {
     url: requiredText(formData.get('material_url'), 'Material URL'),
     mime_type: optionalText(formData.get('material_mime_type')),
     status: validStatus(formData.get('material_status')),
-    sort_order: (lastMaterial?.sort_order ?? -1) + 1,
+    sort_order: await nextMaterialSortOrder(supabase, sessionId),
   })
 
   if (error) throw new Error(error.message)
@@ -223,14 +228,58 @@ export async function addMaterial(sessionId: string, formData: FormData) {
   redirect(`/admin/sessions/${sessionId}?saved=material`)
 }
 
+export async function registerUploadedMaterial(sessionId: string, formData: FormData) {
+  const supabase = await requireAdmin()
+  const storagePath = requiredText(formData.get('storage_path'), 'Uploaded file')
+  const originalName = requiredText(formData.get('original_name'), 'File name')
+  const expectedPrefix = `sessions/${sessionId}/`
+
+  if (!storagePath.startsWith(expectedPrefix) || storagePath.includes('..')) {
+    throw new Error('Invalid upload path.')
+  }
+
+  const { error } = await supabase.from('materials').insert({
+    session_id: sessionId,
+    material_type: validMaterialType(formData.get('material_type')),
+    title: optionalText(formData.get('material_title')) ?? originalName,
+    url: null,
+    mime_type: optionalText(formData.get('material_mime_type')),
+    status: validStatus(formData.get('material_status')),
+    sort_order: await nextMaterialSortOrder(supabase, sessionId),
+    storage_bucket: TEACHING_MATERIALS_BUCKET,
+    storage_path: storagePath,
+  })
+
+  if (error) {
+    await supabase.storage.from(TEACHING_MATERIALS_BUCKET).remove([storagePath])
+    throw new Error(error.message)
+  }
+
+  revalidatePath('/admin')
+  revalidatePath('/', 'layout')
+  redirect(`/admin/sessions/${sessionId}?saved=material`)
+}
+
 export async function updateMaterial(sessionId: string, materialId: string, formData: FormData) {
   const supabase = await requireAdmin()
+  const { data: existing, error: readError } = await supabase
+    .from('materials')
+    .select('storage_path')
+    .eq('id', materialId)
+    .eq('session_id', sessionId)
+    .single()
+
+  if (readError) throw new Error(readError.message)
+
+  const url = optionalText(formData.get('material_url'))
+  if (!url && !existing?.storage_path) throw new Error('Material URL is required for linked resources.')
+
   const { error } = await supabase
     .from('materials')
     .update({
       material_type: validMaterialType(formData.get('material_type')),
       title: requiredText(formData.get('material_title'), 'Material title'),
-      url: requiredText(formData.get('material_url'), 'Material URL'),
+      url,
       mime_type: optionalText(formData.get('material_mime_type')),
       status: validStatus(formData.get('material_status')),
       updated_at: new Date().toISOString(),
@@ -246,6 +295,20 @@ export async function updateMaterial(sessionId: string, materialId: string, form
 
 export async function deleteMaterial(sessionId: string, materialId: string) {
   const supabase = await requireAdmin()
+  const { data: existing, error: readError } = await supabase
+    .from('materials')
+    .select('storage_bucket, storage_path')
+    .eq('id', materialId)
+    .eq('session_id', sessionId)
+    .single()
+
+  if (readError) throw new Error(readError.message)
+
+  if (existing?.storage_bucket && existing.storage_path) {
+    const { error: storageError } = await supabase.storage.from(existing.storage_bucket).remove([existing.storage_path])
+    if (storageError) throw new Error(`Could not remove uploaded file: ${storageError.message}`)
+  }
+
   const { error } = await supabase.from('materials').delete().eq('id', materialId).eq('session_id', sessionId)
   if (error) throw new Error(error.message)
   revalidatePath('/admin')
