@@ -99,7 +99,7 @@ export async function toggleParagraphBookmark(paragraphId: string, returnPath: s
   const { supabase, userId } = await requireUser()
   const { data: existing, error: readError } = await supabase
     .from('user_paragraph_bookmarks')
-    .select('paragraph_id, transcript_paragraphs(transcripts(session_id))')
+    .select('paragraph_id')
     .eq('user_id', userId)
     .eq('paragraph_id', paragraphId)
     .maybeSingle()
