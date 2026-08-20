@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { isoToZonedParts, isValidTimeZone } from '@/lib/timezone'
 import { addMaterial, deleteMaterial, saveStudyNotes, saveTranscript, updateMaterial, updateSession } from './actions'
+import UploadMaterialForm from './upload-material-form'
 
 export const dynamic = 'force-dynamic'
 
@@ -70,6 +71,13 @@ const materialTypeOptions = [
   ['other', 'Other'],
 ]
 
+function storageFileName(path: string | null) {
+  if (!path) return null
+  const value = path.split('/').pop() ?? path
+  const firstDash = value.indexOf('-')
+  return firstDash >= 0 ? value.slice(firstDash + 1) : value
+}
+
 export default async function AdminSessionPage({
   params,
   searchParams,
@@ -112,7 +120,7 @@ export default async function AdminSessionPage({
     supabase.from('transcripts').select('id, title, source_file_name, status').eq('session_id', id).eq('language_code', 'en').maybeSingle(),
     supabase.from('teachers').select('id, full_name').eq('active', true).order('full_name'),
     supabase.from('session_teachers').select('teacher_id').eq('session_id', id),
-    supabase.from('materials').select('id, material_type, title, url, mime_type, status, sort_order').eq('session_id', id).order('sort_order'),
+    supabase.from('materials').select('id, material_type, title, url, mime_type, status, sort_order, storage_bucket, storage_path').eq('session_id', id).order('sort_order'),
   ])
 
   const teachers = (teacherRows ?? []) as Teacher[]
@@ -229,12 +237,13 @@ export default async function AdminSessionPage({
       <section className="section card">
         <div className="eyebrow">3 · Class materials</div>
         <h2>Readings, slides, and resources</h2>
-        <p className="meta">Add stable links to PDFs, slide decks, readings, audio, video, or other class resources. Draft resources stay hidden from students.</p>
+        <p className="meta">Upload smaller files directly to the private teaching-materials bucket, or add a stable external link. Draft uploads stay private. Published uploads receive temporary student access links when the class page loads.</p>
 
         {materials.length ? (
           <div style={{ marginBottom: 28 }}>
             {materials.map((material: any) => (
               <div key={material.id} style={{ padding: '18px 0', borderTop: '1px solid var(--line)' }}>
+                {material.storage_path ? <p className="meta">Uploaded file: {storageFileName(material.storage_path)} · private storage</p> : null}
                 <form className="form-stack" action={updateMaterial.bind(null, session.id, material.id)}>
                   <div className="grid two">
                     <label>Type
@@ -251,7 +260,7 @@ export default async function AdminSessionPage({
                     </label>
                   </div>
                   <label>Title<input className="input" name="material_title" defaultValue={material.title} required /></label>
-                  <label>Resource URL<input className="input" type="url" name="material_url" defaultValue={material.url} required /></label>
+                  <label>External resource URL<input className="input" type="url" name="material_url" defaultValue={material.url ?? ''} required={!material.storage_path} placeholder={material.storage_path ? 'Optional for uploaded files' : 'Google Drive, PDF, slides, YouTube, etc.'} /></label>
                   <label>MIME type<input className="input" name="material_mime_type" defaultValue={material.mime_type ?? ''} placeholder="Optional, e.g. application/pdf" /></label>
                   <div className="actions"><button className="button" type="submit">Save resource</button></div>
                 </form>
@@ -263,28 +272,36 @@ export default async function AdminSessionPage({
           </div>
         ) : <p className="meta">No class materials have been added yet.</p>}
 
-        <div style={{ paddingTop: 20, borderTop: '1px solid var(--line)' }}>
-          <h3>Add resource</h3>
-          <form className="form-stack" action={addMaterial.bind(null, session.id)}>
-            <div className="grid two">
-              <label>Type
-                <select className="input" name="material_type" defaultValue="reading">
-                  {materialTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                </select>
-              </label>
-              <label>Status
-                <select className="input" name="material_status" defaultValue="draft">
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </label>
-            </div>
-            <label>Title<input className="input" name="material_title" placeholder="Class reading" required /></label>
-            <label>Resource URL<input className="input" type="url" name="material_url" placeholder="Google Drive, PDF, slides, YouTube, etc." required /></label>
-            <label>MIME type<input className="input" name="material_mime_type" placeholder="Optional, e.g. application/pdf" /></label>
-            <div className="actions"><button className="button sage" type="submit">Add resource</button></div>
-          </form>
+        <div className="grid two" style={{ paddingTop: 20, borderTop: '1px solid var(--line)' }}>
+          <div>
+            <div className="eyebrow">Upload</div>
+            <h3>Upload a file</h3>
+            <UploadMaterialForm sessionId={session.id} />
+          </div>
+          <div>
+            <div className="eyebrow">External link</div>
+            <h3>Add linked resource</h3>
+            <form className="form-stack" action={addMaterial.bind(null, session.id)}>
+              <div className="grid two">
+                <label>Type
+                  <select className="input" name="material_type" defaultValue="reading">
+                    {materialTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                </label>
+                <label>Status
+                  <select className="input" name="material_status" defaultValue="draft">
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                </label>
+              </div>
+              <label>Title<input className="input" name="material_title" placeholder="Class reading" required /></label>
+              <label>Resource URL<input className="input" type="url" name="material_url" placeholder="Google Drive, PDF, slides, YouTube, etc." required /></label>
+              <label>MIME type<input className="input" name="material_mime_type" placeholder="Optional, e.g. application/pdf" /></label>
+              <div className="actions"><button className="button sage" type="submit">Add resource link</button></div>
+            </form>
+          </div>
         </div>
       </section>
 
