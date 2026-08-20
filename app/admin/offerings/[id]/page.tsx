@@ -43,7 +43,7 @@ export default async function AdminOfferingPage({
   const [{ data: offering }, { data: teacherRows }, { data: sessionRows }] = await Promise.all([
     supabase
       .from('course_offerings')
-      .select('id, label, location, year, language_codes, artwork_url, description, telegram_url, starts_on, ends_on, status, courses(id, slug, title, canonical_number)')
+      .select('id, slug, label, location, year, language_codes, artwork_url, description, telegram_url, starts_on, ends_on, status, courses(id, slug, title, canonical_number)')
       .eq('id', id)
       .single(),
     supabase.from('teachers').select('id, full_name, active').eq('active', true).order('full_name'),
@@ -88,7 +88,7 @@ export default async function AdminOfferingPage({
           </label>
           <div className="actions">
             <button className="button red" type="submit">Save Course Offering</button>
-            <Link className="button" href={`/courses/${course.slug}/${(offering as any).slug ?? ''}`}>Student view</Link>
+            <Link className="button" href={`/courses/${course.slug}/${offering.slug}`}>Student view</Link>
           </div>
         </form>
       </section>
