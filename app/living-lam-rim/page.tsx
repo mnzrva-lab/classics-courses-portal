@@ -16,7 +16,7 @@ export default async function LivingLamRimPage() {
   const { data: groups } = course
     ? await supabase
         .from('content_groups')
-        .select('id, slug, title, kind, sort_order')
+        .select('id, slug, label, title, kind, starts_on, ends_on, sort_order')
         .eq('course_id', course.id)
         .eq('status', 'published')
         .order('sort_order')
@@ -26,17 +26,15 @@ export default async function LivingLamRimPage() {
   const { data: sessions } = groupIds.length
     ? await supabase
         .from('sessions')
-        .select('id, slug, code, title, group_id, status, course_offerings(slug, label)')
+        .select('id, group_id, status')
         .in('group_id', groupIds)
         .eq('status', 'published')
-        .order('sort_order')
     : { data: [] as any[] }
 
-  const sessionsByGroup = new Map<string, any[]>()
+  const sessionCount = new Map<string, number>()
   for (const session of sessions ?? []) {
-    const list = sessionsByGroup.get((session as any).group_id) ?? []
-    list.push(session)
-    sessionsByGroup.set((session as any).group_id, list)
+    if (!session.group_id) continue
+    sessionCount.set(session.group_id, (sessionCount.get(session.group_id) ?? 0) + 1)
   }
 
   return (
@@ -46,38 +44,26 @@ export default async function LivingLamRimPage() {
       <p className="lead">Browse by term, then open the individual class you want to study.</p>
 
       {(groups ?? []).length ? (
-        <section className="section">
+        <section className="section grid two">
           {(groups ?? []).map((group: any) => {
-            const groupSessions = sessionsByGroup.get(group.id) ?? []
+            const count = sessionCount.get(group.id) ?? 0
+            const dateRange = group.starts_on || group.ends_on
+              ? [group.starts_on, group.ends_on].filter(Boolean).join(' to ')
+              : null
             return (
-              <div className="card" key={group.id} style={{ marginBottom: 20 }}>
-                <div className="eyebrow">{group.kind || 'Term'}</div>
-                <h2>{group.title}</h2>
-                {groupSessions.length ? (
-                  <div className="list">
-                    {groupSessions.map((session: any) => {
-                      const offering = session.course_offerings
-                      const href = offering?.slug && course?.slug
-                        ? `/courses/${course.slug}/${offering.slug}/${session.slug}`
-                        : null
-                      return (
-                        <div className="row" key={session.id}>
-                          <div className="session-code">{session.code || '•'}</div>
-                          <div><strong>{session.title}</strong></div>
-                          {href ? <Link className="button" href={href}>Open class</Link> : null}
-                        </div>
-                      )
-                    })}
-                  </div>
-                ) : <p className="meta">Classes for this term have not been published yet.</p>}
-              </div>
+              <Link className="card" key={group.id} href={`/living-lam-rim/${group.slug}`}>
+                <div className="eyebrow">{group.label || 'Term'}</div>
+                <h2 style={{ fontSize: 30, marginTop: 10 }}>{group.title || group.label}</h2>
+                {dateRange ? <p className="meta">{dateRange}</p> : null}
+                <div className="actions"><span className="pill">{count} published class{count === 1 ? '' : 'es'}</span></div>
+              </Link>
             )
           })}
         </section>
       ) : (
         <section className="section card">
           <h2>Living Lam Rim terms are being organized for the library.</h2>
-          <p className="meta">The production structure is ready for term → class navigation. Published terms will appear here automatically.</p>
+          <p className="meta">The production structure is ready for Term → Class navigation. Published terms will appear here automatically.</p>
         </section>
       )}
     </main>
