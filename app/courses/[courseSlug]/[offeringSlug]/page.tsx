@@ -51,7 +51,7 @@ export default async function OfferingPage({ params }: { params: Promise<{ cours
     supabase
       .from('sessions')
       .select(`
-        id, slug, code, title, session_type, starts_at, ends_at, source_timezone, recording_url,
+        id, slug, code, title, session_type, starts_at, ends_at, source_timezone, recording_url, required_for_completion,
         session_teachers(teachers(full_name))
       `)
       .eq('offering_id', offering.id)
@@ -78,16 +78,34 @@ export default async function OfferingPage({ params }: { params: Promise<{ cours
   const userId = claimsData?.claims?.sub as string | undefined
   const returnPath = `/courses/${courseSlug}/${offeringSlug}`
   let bookmarked = false
+  const progressBySession = new Map<string, { completed_at: string | null; last_opened_at: string | null }>()
 
   if (userId) {
-    const { data: bookmark } = await supabase
-      .from('user_course_bookmarks')
-      .select('course_id')
-      .eq('user_id', userId)
-      .eq('course_id', course.id)
-      .maybeSingle()
+    const sessionIds = (sessions ?? []).map((session: any) => session.id)
+    const [{ data: bookmark }, progressResult] = await Promise.all([
+      supabase
+        .from('user_course_bookmarks')
+        .select('course_id')
+        .eq('user_id', userId)
+        .eq('course_id', course.id)
+        .maybeSingle(),
+      sessionIds.length
+        ? supabase
+          .from('user_session_progress')
+          .select('session_id, completed_at, last_opened_at')
+          .eq('user_id', userId)
+          .in('session_id', sessionIds)
+        : Promise.resolve({ data: [] } as any),
+    ])
     bookmarked = Boolean(bookmark)
+    for (const item of progressResult.data ?? []) {
+      progressBySession.set(item.session_id, { completed_at: item.completed_at, last_opened_at: item.last_opened_at })
+    }
   }
+
+  const requiredSessions = (sessions ?? []).filter((session: any) => session.required_for_completion)
+  const completedRequired = requiredSessions.filter((session: any) => progressBySession.get(session.id)?.completed_at).length
+  const offeringCompleted = requiredSessions.length > 0 && completedRequired === requiredSessions.length
 
   const startsOn = formatDate(offering.starts_on)
   const endsOn = formatDate(offering.ends_on)
@@ -109,6 +127,7 @@ export default async function OfferingPage({ params }: { params: Promise<{ cours
             {dateRange ? <span className="pill">{dateRange}</span> : null}
             {offering.location ? <span className="pill">{offering.location}</span> : null}
             {offering.language_codes?.length ? <span className="pill">{offering.language_codes.join(' · ').toUpperCase()}</span> : null}
+            {userId && requiredSessions.length ? <span className="pill">{offeringCompleted ? '✓ Course Offering completed' : `${completedRequired} / ${requiredSessions.length} required sessions completed`}</span> : null}
           </div>
         </div>
         {offering.artwork_url ? (
@@ -132,12 +151,12 @@ export default async function OfferingPage({ params }: { params: Promise<{ cours
             <a className="button" href={`/courses/${courseSlug}/${offeringSlug}/calendar`}>Add full schedule to calendar</a>
           </div>
         </div>
-        <div className="card">
+        <div className={offeringCompleted ? 'card completed' : 'card'}>
           <div className="eyebrow">Your study</div>
-          <h3>{userId ? 'Save this course for later' : 'Save progress and notes'}</h3>
+          <h3>{userId ? (offeringCompleted ? '✓ Course Offering completed' : 'Your progress in this Course Offering') : 'Save progress and notes'}</h3>
           {userId ? (
             <>
-              <p className="meta">Bookmarks, progress, and private notes follow your Google study account across devices.</p>
+              {requiredSessions.length ? <p className="meta">{completedRequired} of {requiredSessions.length} required sessions completed. Progress follows the individual Course Offering, while the Path of Classics Master counts the canonical course only once.</p> : <p className="meta">Bookmarks, progress, and private notes follow your Google study account across devices.</p>}
               <div className="actions">
                 <form action={toggleCourseBookmark.bind(null, course.id, returnPath)}>
                   <button className={bookmarked ? 'button sage' : 'button'} type="submit">{bookmarked ? '✓ Course bookmarked' : 'Bookmark course'}</button>
@@ -180,17 +199,21 @@ export default async function OfferingPage({ params }: { params: Promise<{ cours
         <div className="list" style={{ marginTop: 18 }}>
           {(sessions ?? []).length ? (sessions ?? []).map((session: any) => {
             const teachers = (session.session_teachers ?? []).map((x: any) => x.teachers?.full_name).filter(Boolean)
+            const progress = progressBySession.get(session.id)
+            const completed = Boolean(progress?.completed_at)
+            const inProgress = Boolean(progress && !progress.completed_at)
             return (
-              <div className="row" key={session.id}>
+              <div className={completed ? 'row completed' : inProgress ? 'row sage' : 'row'} key={session.id}>
                 <div className="session-code">{session.code || '•'}</div>
                 <div>
                   <Link href={`/courses/${courseSlug}/${offeringSlug}/${session.slug}`}><strong>{session.title}</strong></Link>
                   <div className="meta">
                     {teachers.join(', ') || 'Teacher to be added'} · <SessionTime startsAt={session.starts_at} sourceTimezone={session.source_timezone} />
                   </div>
+                  {userId ? <div className="meta" style={{ marginTop: 4 }}>{completed ? '✓ Completed' : inProgress ? 'In progress' : 'Not started'}{session.required_for_completion ? ' · Required' : ''}</div> : session.required_for_completion ? <div className="meta" style={{ marginTop: 4 }}>Required</div> : null}
                 </div>
                 <div className="actions" style={{ marginTop: 0 }}>
-                  <Link className="button" href={`/courses/${courseSlug}/${offeringSlug}/${session.slug}`}>Open class</Link>
+                  <Link className="button" href={`/courses/${courseSlug}/${offeringSlug}/${session.slug}`}>{completed ? 'Review class' : inProgress ? 'Continue' : 'Open class'}</Link>
                 </div>
               </div>
             )
