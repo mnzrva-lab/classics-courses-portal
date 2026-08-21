@@ -38,8 +38,8 @@ export default async function TibetanFlashcardsPage({
       .maybeSingle(),
   ])
 
-  const progress = new Map((progressRows ?? []).map((item: any) => [item.term_id, item]))
-  const bookmarked = new Set((bookmarks ?? []).map((item: any) => item.term_id))
+  const progress = new Map<string, any>((progressRows ?? []).map((item: any) => [item.term_id, item] as const))
+  const bookmarked = new Set<string>((bookmarks ?? []).map((item: any) => item.term_id))
   const allTerms = terms ?? []
   const scopedTerms = scope === 'saved' ? allTerms.filter((item: any) => bookmarked.has(item.id)) : allTerms
   const ordered = [...scopedTerms].sort((a: any, b: any) => {
