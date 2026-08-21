@@ -78,6 +78,120 @@ function transcriptTextFromHtml(html: string) {
   return blocks.join('\n\n').trim()
 }
 
+function escapeMarkdownText(value: string) {
+  return value.replace(/\s+/g, ' ')
+}
+
+function inlineMarkdown(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) return escapeMarkdownText(node.textContent ?? '')
+  if (!(node instanceof HTMLElement)) return ''
+
+  const tag = node.tagName.toUpperCase()
+  if (tag === 'UL' || tag === 'OL' || tag === 'IMG') return ''
+
+  const content = Array.from(node.childNodes).map(inlineMarkdown).join('').replace(/\s+/g, ' ')
+  if (!content.trim()) return ''
+
+  if (tag === 'STRONG' || tag === 'B') return `**${content.trim()}**`
+  if (tag === 'EM' || tag === 'I') return `*${content.trim()}*`
+  if (tag === 'CODE') return `\`${content.trim()}\``
+  if (tag === 'A') {
+    const href = node.getAttribute('href')?.trim()
+    return href ? `[${content.trim()}](${href})` : content
+  }
+  if (tag === 'BR') return '\n'
+  return content
+}
+
+function listToMarkdown(list: Element, depth = 0): string[] {
+  const ordered = list.tagName.toUpperCase() === 'OL'
+  const rows: string[] = []
+  const children = Array.from(list.children).filter((child) => child.tagName.toUpperCase() === 'LI')
+
+  children.forEach((item, index) => {
+    const directContent = Array.from(item.childNodes)
+      .filter((node) => !(node instanceof HTMLElement && ['UL', 'OL'].includes(node.tagName.toUpperCase())))
+      .map(inlineMarkdown)
+      .join('')
+      .replace(/\s+/g, ' ')
+      .trim()
+
+    const prefix = ordered ? `${index + 1}.` : '-'
+    if (directContent) rows.push(`${'  '.repeat(depth)}${prefix} ${directContent}`)
+
+    for (const nested of Array.from(item.children).filter((child) => ['UL', 'OL'].includes(child.tagName.toUpperCase()))) {
+      rows.push(...listToMarkdown(nested, depth + 1))
+    }
+  })
+
+  return rows
+}
+
+function tableToMarkdown(table: Element) {
+  const rows = Array.from(table.querySelectorAll('tr')).map((row) =>
+    Array.from(row.querySelectorAll(':scope > th, :scope > td')).map((cell) =>
+      Array.from(cell.childNodes).map(inlineMarkdown).join('').replace(/\|/g, '\\|').trim()
+    )
+  ).filter((row) => row.length)
+
+  if (!rows.length) return ''
+  const width = Math.max(...rows.map((row) => row.length))
+  const normalized = rows.map((row) => [...row, ...Array(Math.max(0, width - row.length)).fill('')])
+  const header = normalized[0]
+  const body = normalized.slice(1)
+  return [
+    `| ${header.join(' | ')} |`,
+    `| ${header.map(() => '---').join(' | ')} |`,
+    ...body.map((row) => `| ${row.join(' | ')} |`),
+  ].join('\n')
+}
+
+function studyNotesMarkdownFromHtml(html: string) {
+  const document = new DOMParser().parseFromString(`<div id="notes-root">${html}</div>`, 'text/html')
+  const root = document.querySelector('#notes-root')
+  if (!root) return { markdown: '', imageCount: 0 }
+
+  const blocks: string[] = []
+  const imageCount = root.querySelectorAll('img').length
+
+  for (const element of Array.from(root.children)) {
+    const tag = element.tagName.toUpperCase()
+    const content = Array.from(element.childNodes).map(inlineMarkdown).join('').replace(/\s+/g, ' ').trim()
+
+    if (/^H[1-4]$/.test(tag)) {
+      const level = Math.min(4, Math.max(2, Number(tag.slice(1)) + 1))
+      if (content) blocks.push(`${'#'.repeat(level)} ${content}`)
+      continue
+    }
+
+    if (tag === 'P') {
+      if (content) blocks.push(content)
+      continue
+    }
+
+    if (tag === 'UL' || tag === 'OL') {
+      const lines = listToMarkdown(element)
+      if (lines.length) blocks.push(lines.join('\n'))
+      continue
+    }
+
+    if (tag === 'BLOCKQUOTE') {
+      if (content) blocks.push(content.split('\n').map((line) => `> ${line}`).join('\n'))
+      continue
+    }
+
+    if (tag === 'TABLE') {
+      const table = tableToMarkdown(element)
+      if (table) blocks.push(table)
+      continue
+    }
+
+    if (content) blocks.push(content)
+  }
+
+  return { markdown: blocks.join('\n\n').trim(), imageCount }
+}
+
 function sessionIdFromLocation() {
   if (typeof window === 'undefined') return null
   const match = window.location.pathname.match(/\/admin\/sessions\/([^/?#]+)/)
@@ -168,6 +282,37 @@ export default function TextImportField({
     }
   }
 
+  async function handleStudyNotesDocx(file: File) {
+    const result = await mammoth.convertToHtml(
+      { arrayBuffer: await file.arrayBuffer() },
+      {
+        styleMap: [
+          "p[style-name='Title'] => h1:fresh",
+          "p[style-name='Heading 1'] => h1:fresh",
+          "p[style-name='Heading 2'] => h2:fresh",
+          "p[style-name='Heading 3'] => h3:fresh",
+          "p[style-name='Heading 4'] => h4:fresh",
+        ],
+      }
+    )
+
+    const converted = studyNotesMarkdownFromHtml(result.value)
+    if (!converted.markdown) throw new Error('No Study Notes text could be read from this DOCX file.')
+
+    const warnings = result.messages.filter((item) => item.type === 'warning')
+    const imageMessage = converted.imageCount
+      ? ` ${converted.imageCount} embedded image${converted.imageCount === 1 ? ' was' : 's were'} detected. Images are not inserted into Study Notes yet; add important visuals under Class materials.`
+      : ''
+    const warningMessage = warnings.length
+      ? ` ${warnings.length} DOCX warning${warnings.length === 1 ? '' : 's'} reported.`
+      : ''
+
+    return {
+      text: converted.markdown,
+      message: `Imported ${file.name} with headings, emphasis, lists, links, and simple tables preserved.${imageMessage}${warningMessage} Review the formatting before saving.`,
+    }
+  }
+
   async function handleFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
     if (!file) return
@@ -186,12 +331,9 @@ export default function TextImportField({
           text = imported.text
           nextMessage = imported.message
         } else {
-          const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })
-          text = result.value
-          const warnings = result.messages.filter((item) => item.type === 'warning')
-          nextMessage = warnings.length
-            ? `Imported ${file.name}. Review the text before saving; ${warnings.length} DOCX warning${warnings.length === 1 ? '' : 's'} were reported.`
-            : `Imported ${file.name}. Review the text before saving.`
+          const imported = await handleStudyNotesDocx(file)
+          text = imported.text
+          nextMessage = imported.message
         }
       } else if (lower.endsWith('.md') || lower.endsWith('.txt')) {
         if (temporaryUploads.current.length) {
