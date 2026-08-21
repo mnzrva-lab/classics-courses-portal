@@ -4,7 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
 import SessionTime from '@/components/session-time'
-import { markSessionComplete, saveSessionNote, startSessionProgress, toggleParagraphBookmark, toggleSessionBookmark } from './actions'
+import PassageStudyTools from './passage-study-tools'
+import { markSessionComplete, saveSessionNote, startSessionProgress, toggleSessionBookmark } from './actions'
 
 type CourseRelation = {
   id: string
@@ -122,7 +123,7 @@ export default async function SessionPage({
     ? supabase.from('user_session_progress').select('started_at, completed_at, last_opened_at').eq('user_id', userId).eq('session_id', session.id).maybeSingle()
     : Promise.resolve({ data: null } as any)
   const notesPromise = userId
-    ? supabase.from('student_notes').select('id, note, updated_at').eq('user_id', userId).eq('session_id', session.id).order('updated_at', { ascending: false })
+    ? supabase.from('student_notes').select('id, note, paragraph_id, updated_at').eq('user_id', userId).eq('session_id', session.id).order('updated_at', { ascending: false })
     : Promise.resolve({ data: [] } as any)
   const studyNotesPromise = adminContentPreview
     ? supabase.from('study_notes').select('title, summary, content_markdown, disclaimer, status').eq('session_id', session.id).maybeSingle()
@@ -149,6 +150,12 @@ export default async function SessionPage({
   const canSaveNotes = userSettings?.save_notes ?? true
   const canSaveBookmarks = userSettings?.save_bookmarks ?? true
   const canSaveProgress = userSettings?.save_progress ?? true
+  const sessionNotes = (notes ?? []).filter((note: any) => !note.paragraph_id)
+  const passageNoteCounts = new Map<string, number>()
+  for (const note of notes ?? []) {
+    if (!note.paragraph_id) continue
+    passageNoteCounts.set(note.paragraph_id, (passageNoteCounts.get(note.paragraph_id) ?? 0) + 1)
+  }
 
   const resolvedMaterials = await Promise.all((materials ?? []).map(async (material: any) => {
     if (material.storage_bucket && material.storage_path) {
@@ -337,11 +344,11 @@ export default async function SessionPage({
         </div>
       </section>
 
-      {userId && (notes ?? []).length > 0 && (
+      {userId && sessionNotes.length > 0 && (
         <section className="section card">
-          <div className="eyebrow">Your Notes</div>
+          <div className="eyebrow">Your Class Notes</div>
           <div className="list">
-            {(notes ?? []).map((note: any) => (
+            {sessionNotes.map((note: any) => (
               <div key={note.id} style={{ padding: '12px 0', borderTop: '1px solid var(--line)' }}>
                 <div>{note.note}</div>
                 <div className="meta">{new Date(note.updated_at).toLocaleString()}</div>
@@ -415,6 +422,7 @@ export default async function SessionPage({
                   previousSectionId = paragraph.section_id
                   const timestamp = formatTimestamp(paragraph.start_seconds)
                   const bookmarked = paragraphBookmarkIds.has(paragraph.id)
+                  const noteCount = passageNoteCounts.get(paragraph.id) ?? 0
                   return (
                     <div key={paragraph.id} id={`paragraph-${paragraph.id}`} style={{ marginTop: showHeading ? 32 : 18, paddingBottom: 8, borderBottom: '1px solid var(--line)' }}>
                       {showHeading ? <h3 style={{ fontSize: 24, marginBottom: 14 }}>{section?.title}</h3> : null}
@@ -423,10 +431,16 @@ export default async function SessionPage({
                         {paragraph.speaker ? <strong>{paragraph.speaker}: </strong> : null}
                         <span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.body}</span>
                       </div>
-                      {userId && (canSaveBookmarks || bookmarked) ? (
-                        <form action={toggleParagraphBookmark.bind(null, paragraph.id, returnPath)} style={{ marginTop: 8 }}>
-                          <button className="button" type="submit" style={{ padding: '7px 10px', fontSize: 13 }}>{bookmarked ? '★ Bookmarked' : '☆ Bookmark'}</button>
-                        </form>
+                      {userId ? (
+                        <PassageStudyTools
+                          paragraphId={paragraph.id}
+                          sessionId={session.id}
+                          returnPath={returnPath}
+                          bookmarked={bookmarked}
+                          canSaveBookmarks={canSaveBookmarks}
+                          canSaveNotes={canSaveNotes}
+                          noteCount={noteCount}
+                        />
                       ) : null}
                       {renderTranscriptAssets(paragraph)}
                     </div>
