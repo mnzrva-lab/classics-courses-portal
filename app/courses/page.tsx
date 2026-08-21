@@ -19,16 +19,17 @@ export default async function CoursesPage() {
   return (
     <main className="container page">
       <div className="eyebrow">Classics library</div>
-      <h1 style={{ fontSize: 'clamp(38px, 6vw, 64px)' }}>The 18 Classics Courses</h1>
+      <h1>The 18 Classics Courses</h1>
       <p className="lead">Each canonical course may have more than one Course Offering. Choose the teaching you want to study.</p>
 
-      <section className="grid two section">
+      <section className="grid section">
         {(courses ?? []).map((course: any) => {
           const courseOfferings = (offerings ?? []).filter((offering: any) => offering.course_id === course.id)
           return (
             <article className="card" key={course.id}>
               <div className="pill">Course {course.canonical_number}</div>
               <h3 style={{ marginTop: 16 }}>{course.title}</h3>
+              {course.subtitle ? <p className="meta">{course.subtitle}</p> : null}
               {courseOfferings.length > 0 ? (
                 <div className="actions">
                   {courseOfferings.map((offering: any) => (
