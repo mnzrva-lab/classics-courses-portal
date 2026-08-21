@@ -97,7 +97,10 @@ export default async function AdminPage() {
                     <div className="meta">{session.session_date ?? 'No date'} · {session.session_type} · session {session.status}</div>
                     <div className="meta">Study Notes: {notesStatus} · Materials: {publishedMaterials} published · Transcript: {transcriptStatus} · Recording: {session.recording_url ? 'added' : 'missing'}</div>
                   </div>
-                  <Link className="button" href={`/admin/sessions/${session.id}`}>Edit session</Link>
+                  <div className="actions" style={{ marginTop: 0 }}>
+                    <Link className="button" href={`/admin/sessions/${session.id}`}>Edit session</Link>
+                    {transcriptStatus !== 'missing' ? <Link className="button" href={`/admin/sessions/${session.id}/revisions`}>Transcript history</Link> : null}
+                  </div>
                 </div>
               </div>
             )
