@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createSession, updateOffering } from './actions'
+import { assignSessionGroup, createContentGroup, updateContentGroup } from './structure-actions'
 import BulkTranscriptImport from './bulk-transcript-import'
 import BulkStudyNotesImport from './bulk-study-notes-import'
 
@@ -12,6 +13,7 @@ type CourseRelation = {
   slug: string
   title: string
   canonical_number: number | null
+  kind: string
 }
 
 type Teacher = {
@@ -28,15 +30,35 @@ type StudyNotesRelation = {
   status: string
 }
 
+type ContentGroup = {
+  id: string
+  kind: string
+  slug: string
+  label: string
+  title: string | null
+  starts_on: string | null
+  ends_on: string | null
+  status: string
+  sort_order: number
+}
+
+function groupTypeLabel(kind: string) {
+  if (kind === 'term') return 'Term'
+  if (kind === 'season') return 'Season'
+  if (kind === 'part') return 'Part'
+  if (kind === 'module') return 'Module'
+  return 'Section'
+}
+
 export default async function AdminOfferingPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ saved?: string }>
+  searchParams: Promise<{ saved?: string; created?: string }>
 }) {
   const { id } = await params
-  const { saved } = await searchParams
+  const { saved, created } = await searchParams
   const supabase = await createClient()
 
   const { data: claimsData } = await supabase.auth.getClaims()
@@ -50,20 +72,25 @@ export default async function AdminOfferingPage({
     return <main className="container page"><div className="card"><h1>Admin access required</h1></div></main>
   }
 
-  const [{ data: offering }, { data: teacherRows }, { data: sessionRows }] = await Promise.all([
+  const [{ data: offering }, { data: teacherRows }, { data: sessionRows }, { data: groupRows }] = await Promise.all([
     supabase
       .from('course_offerings')
-      .select('id, slug, label, location, year, language_codes, artwork_url, description, telegram_url, starts_on, ends_on, status, courses(id, slug, title, canonical_number)')
+      .select('id, slug, label, location, year, language_codes, artwork_url, description, telegram_url, starts_on, ends_on, status, courses(id, slug, title, canonical_number, kind)')
       .eq('id', id)
       .single(),
     supabase.from('teachers').select('id, full_name, active').eq('active', true).order('full_name'),
-    supabase.from('sessions').select('id, code, title, session_type, status, session_date, source_timezone, sort_order, transcripts(status), study_notes(status)').eq('offering_id', id).order('sort_order'),
+    supabase.from('sessions').select('id, code, title, session_type, status, session_date, source_timezone, sort_order, group_id, transcripts(status), study_notes(status)').eq('offering_id', id).order('sort_order'),
+    supabase.from('content_groups').select('id, kind, slug, label, title, starts_on, ends_on, status, sort_order').eq('offering_id', id).order('sort_order'),
   ])
 
   if (!offering) notFound()
   const course = offering.courses as unknown as CourseRelation
   const teachers = (teacherRows ?? []) as Teacher[]
   const sessions = sessionRows ?? []
+  const contentGroups = (groupRows ?? []) as ContentGroup[]
+  const groupMap = new Map(contentGroups.map((group) => [group.id, group]))
+  const supportsStructure = course.kind !== 'classics' || contentGroups.length > 0
+  const defaultGroupKind = course.kind === 'living_lam_rim' ? 'term' : course.kind === 'book' ? 'part' : 'module'
   const defaultTimezone = sessions.find((session) => session.source_timezone)?.source_timezone ?? 'Asia/Taipei'
   const bulkTranscriptSessions = sessions.map((session) => {
     const transcripts = (session.transcripts ?? []) as TranscriptRelation[]
@@ -84,13 +111,21 @@ export default async function AdminOfferingPage({
     }
   })
 
+  const notice = created === '1'
+    ? 'Course Offering created. Add its structure and sessions below while it remains Draft.'
+    : saved === 'offering'
+      ? 'Course Offering saved.'
+      : saved === 'structure'
+        ? 'Program structure saved.'
+        : null
+
   return (
     <main className="container page">
       <div className="eyebrow">Admin · Course Offering</div>
       <h1>{course.canonical_number ? `Course ${course.canonical_number} · ` : ''}{course.title}</h1>
       <p className="lead">Manage the offering itself and add teaching sessions without touching code.</p>
 
-      {saved === 'offering' ? <div className="card completed" style={{ marginTop: 20 }}>Course Offering saved.</div> : null}
+      {notice ? <div className="card completed" style={{ marginTop: 20 }}>{notice}</div> : null}
 
       <section className="section card">
         <div className="eyebrow">Course Offering</div>
@@ -117,24 +152,119 @@ export default async function AdminOfferingPage({
           <div className="actions">
             <button className="button red" type="submit">Save Course Offering</button>
             <Link className="button sage" href={`/admin/offerings/${offering.id}/review`}>Review content</Link>
-            <Link className="button" href={`/courses/${course.slug}/${offering.slug}`}>Student view</Link>
+            {offering.status === 'published' ? <Link className="button" href={`/courses/${course.slug}/${offering.slug}`}>Student view</Link> : null}
           </div>
         </form>
       </section>
 
+      {supportsStructure ? (
+        <section className="section card">
+          <div className="eyebrow">Program structure</div>
+          <h2 style={{ fontSize: 32 }}>{course.kind === 'living_lam_rim' ? 'Terms' : 'Parts and modules'}</h2>
+          <p className="meta">Use sections to organize a long-running program before students reach individual classes. Living Lam Rim uses Term → Class. Other programs can use Part or Module.</p>
+
+          {contentGroups.length ? (
+            <div style={{ marginTop: 24 }}>
+              {contentGroups.map((group) => (
+                <form key={group.id} className="form-stack" action={updateContentGroup.bind(null, offering.id, group.id)} style={{ padding: '20px 0', borderTop: '1px solid var(--line)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+                    <div>
+                      <strong>{group.label}{group.title ? ` · ${group.title}` : ''}</strong>
+                      <div className="meta">{groupTypeLabel(group.kind)} · {group.status} · /{group.slug}</div>
+                    </div>
+                  </div>
+                  <div className="grid two">
+                    <label>Type
+                      <select className="input" name="kind" defaultValue={group.kind}>
+                        <option value="term">Term</option>
+                        <option value="season">Season</option>
+                        <option value="part">Part</option>
+                        <option value="module">Module</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </label>
+                    <label>Label<input className="input" name="label" defaultValue={group.label} required /></label>
+                    <label>Title<input className="input" name="title" defaultValue={group.title ?? ''} placeholder="Optional descriptive title" /></label>
+                    <label>Sort order<input className="input" name="sort_order" type="number" min="0" defaultValue={group.sort_order} /></label>
+                    <label>Starts on<input className="input" name="starts_on" type="date" defaultValue={group.starts_on ?? ''} /></label>
+                    <label>Ends on<input className="input" name="ends_on" type="date" defaultValue={group.ends_on ?? ''} /></label>
+                  </div>
+                  <label>Status
+                    <select className="input" name="status" defaultValue={group.status}>
+                      <option value="draft">Draft</option>
+                      <option value="published">Published</option>
+                      <option value="archived">Archived</option>
+                    </select>
+                  </label>
+                  <div className="actions"><button className="button" type="submit">Save section</button></div>
+                </form>
+              ))}
+            </div>
+          ) : <p className="meta" style={{ marginTop: 20 }}>No terms or modules yet. Create the first one below.</p>}
+
+          <div className="note" style={{ marginTop: 24 }}>
+            <strong>Create section</strong>
+            <form className="form-stack" action={createContentGroup.bind(null, offering.id, course.id)} style={{ marginTop: 14 }}>
+              <div className="grid two">
+                <label>Type
+                  <select className="input" name="kind" defaultValue={defaultGroupKind}>
+                    <option value="term">Term</option>
+                    <option value="season">Season</option>
+                    <option value="part">Part</option>
+                    <option value="module">Module</option>
+                    <option value="other">Other</option>
+                  </select>
+                </label>
+                <label>Label<input className="input" name="label" placeholder={course.kind === 'living_lam_rim' ? 'Term 1' : 'Part 1'} required /></label>
+                <label>Title<input className="input" name="title" placeholder="Optional descriptive title" /></label>
+                <label>URL slug<input className="input" name="slug" placeholder="Optional, e.g. term-1" /></label>
+                <label>Starts on<input className="input" name="starts_on" type="date" /></label>
+                <label>Ends on<input className="input" name="ends_on" type="date" /></label>
+              </div>
+              <label>Status
+                <select className="input" name="status" defaultValue="draft">
+                  <option value="draft">Draft</option>
+                  <option value="published">Published</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </label>
+              <button className="button sage" type="submit">Create section</button>
+            </form>
+          </div>
+        </section>
+      ) : null}
+
       <section className="section card">
         <div className="eyebrow">Sessions</div>
         <h2 style={{ fontSize: 32 }}>Existing teaching sessions</h2>
+        {supportsStructure && contentGroups.length ? <p className="meta">Assign each class to its Term, Part, or Module here. The student library then uses that structure automatically.</p> : null}
         {sessions.length ? sessions.map((session) => {
           const transcripts = (session.transcripts ?? []) as TranscriptRelation[]
           const notes = (session.study_notes ?? []) as StudyNotesRelation[]
+          const group = session.group_id ? groupMap.get(session.group_id) : null
           return (
-            <div key={session.id} style={{ padding: '14px 0', borderTop: '1px solid var(--line)', display: 'flex', gap: 16, justifyContent: 'space-between', flexWrap: 'wrap' }}>
-              <div>
-                <strong>{session.code ? `${session.code} · ` : ''}{session.title}</strong>
-                <div className="meta">{session.session_date ?? 'No date'} · {session.session_type} · {session.status} · Study Notes: {notes[0]?.status ?? 'missing'} · Transcript: {transcripts[0]?.status ?? 'missing'}</div>
+            <div key={session.id} style={{ padding: '16px 0', borderTop: '1px solid var(--line)' }}>
+              <div style={{ display: 'flex', gap: 16, justifyContent: 'space-between', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+                <div>
+                  <strong>{session.code ? `${session.code} · ` : ''}{session.title}</strong>
+                  <div className="meta">{session.session_date ?? 'No date'} · {session.session_type} · {session.status} · Study Notes: {notes[0]?.status ?? 'missing'} · Transcript: {transcripts[0]?.status ?? 'missing'}</div>
+                  {group ? <div className="meta">{groupTypeLabel(group.kind)}: {group.label}{group.title ? ` · ${group.title}` : ''}</div> : supportsStructure ? <div className="meta">Not assigned to a section yet.</div> : null}
+                </div>
+                <div className="actions" style={{ marginTop: 0 }}>
+                  <Link className="button" href={`/admin/sessions/${session.id}`}>Edit</Link>
+                </div>
               </div>
-              <Link className="button" href={`/admin/sessions/${session.id}`}>Edit</Link>
+              {supportsStructure && contentGroups.length ? (
+                <form className="actions" action={assignSessionGroup.bind(null, offering.id, session.id)}>
+                  <select className="input" name="group_id" defaultValue={session.group_id ?? ''} style={{ maxWidth: 420 }}>
+                    <option value="">No section</option>
+                    {contentGroups.filter((item) => item.status !== 'archived').map((item) => (
+                      <option key={item.id} value={item.id}>{item.label}{item.title ? ` · ${item.title}` : ''}</option>
+                    ))}
+                  </select>
+                  <button className="button" type="submit">Save section assignment</button>
+                </form>
+              ) : null}
             </div>
           )
         }) : <p className="meta">No sessions have been added yet.</p>}
@@ -157,7 +287,7 @@ export default async function AdminOfferingPage({
       <section className="section card">
         <div className="eyebrow">Add session</div>
         <h2 style={{ fontSize: 32 }}>Create a class, meditation, review, or Q&amp;A</h2>
-        <p className="meta">New sessions can stay Draft until the details are ready. After creation, you can add Study Notes and the Reference Transcript.</p>
+        <p className="meta">New sessions can stay Draft until the details are ready. After creation, you can add Study Notes and the Reference Transcript.{supportsStructure ? ' If this program uses terms or modules, assign the new session in the Existing teaching sessions section after it is created.' : ''}</p>
 
         <form className="form-stack" action={createSession.bind(null, offering.id, course.id)}>
           <div className="grid two">
@@ -166,7 +296,7 @@ export default async function AdminOfferingPage({
                 <option value="class">Class</option>
                 <option value="meditation">Meditation</option>
                 <option value="review">Review</option>
-                <option value="qna">Q&A</option>
+                <option value="qna">Q&amp;A</option>
                 <option value="vows">Vows</option>
                 <option value="other">Other</option>
               </select>
