@@ -16,7 +16,13 @@ export default async function MyLearningPage() {
 
   if (!userId) redirect('/login')
 
-  const [{ data: progressRows }, { data: noteRows }, { data: courseBookmarkRows }, { data: settings }] = await Promise.all([
+  const [
+    { data: progressRows },
+    { data: noteRows },
+    { data: courseBookmarkRows },
+    { data: meditationBookmarkRows },
+    { data: settings },
+  ] = await Promise.all([
     supabase
       .from('user_session_progress')
       .select(`
@@ -39,6 +45,12 @@ export default async function MyLearningPage() {
       .order('created_at', { ascending: false })
       .limit(6),
     supabase
+      .from('user_meditation_bookmarks')
+      .select('meditation_id, created_at, meditations(slug, name, description, topics)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(6),
+    supabase
       .from('user_settings')
       .select('track_classics_master')
       .eq('user_id', userId)
@@ -48,6 +60,7 @@ export default async function MyLearningPage() {
   const progress = progressRows ?? []
   const notes = noteRows ?? []
   const courseBookmarks = courseBookmarkRows ?? []
+  const meditationBookmarks = meditationBookmarkRows ?? []
   const trackClassicsMaster = settings?.track_classics_master ?? false
 
   const completedSessionIds = progress
@@ -113,7 +126,7 @@ export default async function MyLearningPage() {
     <main className="container page">
       <div className="eyebrow">Your private study space</div>
       <h1 style={{ fontSize: 'clamp(38px, 6vw, 64px)' }}>My Learning</h1>
-      <p className="lead">Continue what you started, return to saved courses, and see your progress without turning study into a points system.</p>
+      <p className="lead">Continue what you started, return to saved courses and meditations, and see your progress without turning study into a points system.</p>
 
       <section className="grid section">
         {trackClassicsMaster ? (
@@ -194,25 +207,47 @@ export default async function MyLearningPage() {
         </div>
 
         <div className="card">
-          <div className="eyebrow">Recent Notes</div>
-          <h2 style={{ fontSize: 30 }}>Your study notes</h2>
-          {notes.length ? (
+          <div className="eyebrow">Saved Meditations</div>
+          <h2 style={{ fontSize: 30 }}>Practices to return to</h2>
+          {meditationBookmarks.length ? (
             <div className="list">
-              {notes.map((item: any) => {
-                const session = item.sessions
-                const href = sessionPath(session)
+              {meditationBookmarks.map((item: any) => {
+                const meditation = item.meditations
+                const href = meditation?.slug ? `/meditations/${meditation.slug}` : null
                 return (
-                  <div key={item.id} style={{ padding: '12px 0', borderTop: '1px solid var(--line)' }}>
-                    <div>{item.note}</div>
-                    <div className="meta">{session?.code ? `${session.code} · ` : ''}{session?.title ?? 'Session'} · {new Date(item.updated_at).toLocaleDateString()}</div>
-                    {href ? <div className="actions"><Link className="button" href={href}>Open source class</Link></div> : null}
+                  <div key={item.meditation_id} style={{ padding: '14px 0', borderTop: '1px solid var(--line)' }}>
+                    <strong>{meditation?.name ?? 'Meditation'}</strong>
+                    {meditation?.description ? <div className="meta" style={{ marginTop: 4 }}>{meditation.description}</div> : null}
+                    {(meditation?.topics ?? []).length ? <div className="meta" style={{ marginTop: 4 }}>{meditation.topics.join(' · ')}</div> : null}
+                    {href ? <div className="actions"><Link className="button" href={href}>Open meditation</Link></div> : null}
                   </div>
                 )
               })}
             </div>
-          ) : <p className="meta">Private notes you save from class pages will appear here.</p>}
-          <div className="actions"><Link className="button" href="/my-notes">All notes & bookmarks</Link></div>
+          ) : <p className="meta">Meditations you save will appear here.</p>}
+          <div className="actions"><Link className="button" href="/meditations">Browse meditations</Link></div>
         </div>
+      </section>
+
+      <section className="section card">
+        <div className="eyebrow">Recent Notes</div>
+        <h2 style={{ fontSize: 30 }}>Your study notes</h2>
+        {notes.length ? (
+          <div className="grid two">
+            {notes.map((item: any) => {
+              const session = item.sessions
+              const href = sessionPath(session)
+              return (
+                <div className="note" key={item.id}>
+                  <div>{item.note}</div>
+                  <div className="meta" style={{ marginTop: 8 }}>{session?.code ? `${session.code} · ` : ''}{session?.title ?? 'Session'} · {new Date(item.updated_at).toLocaleDateString()}</div>
+                  {href ? <div className="actions"><Link className="button" href={href}>Open source class</Link></div> : null}
+                </div>
+              )
+            })}
+          </div>
+        ) : <p className="meta">Private notes you save from class pages will appear here.</p>}
+        <div className="actions"><Link className="button" href="/my-notes">All notes &amp; bookmarks</Link></div>
       </section>
 
       <section className="section card">
