@@ -13,6 +13,7 @@ type OfferingRelation = {
   id: string
   slug: string
   label: string
+  status: string
 }
 
 export default async function AdminPage() {
@@ -29,27 +30,64 @@ export default async function AdminPage() {
     return <main className="container page"><div className="card"><h1>Admin access has not been assigned</h1><p>Your study account is working. Admin access is assigned separately.</p><Link className="button" href="/my-learning">Back to My Learning</Link></div></main>
   }
 
-  const { data } = await supabase
-    .from('sessions')
-    .select(`
-      id, code, title, session_type, status, session_date, recording_url,
-      courses(slug, title, canonical_number),
-      course_offerings(id, slug, label),
-      study_notes(status),
-      transcripts(status),
-      materials(status)
-    `)
-    .order('starts_at', { ascending: true, nullsFirst: false })
+  const [{ data: offeringRows }, { data: sessionRows }] = await Promise.all([
+    supabase
+      .from('course_offerings')
+      .select('id, slug, label, status, sort_order, courses(slug, title, canonical_number)')
+      .order('sort_order', { ascending: true }),
+    supabase
+      .from('sessions')
+      .select(`
+        id, code, title, session_type, status, session_date, recording_url,
+        courses(slug, title, canonical_number),
+        course_offerings(id, slug, label, status),
+        study_notes(status),
+        transcripts(status),
+        materials(status)
+      `)
+      .order('starts_at', { ascending: true, nullsFirst: false }),
+  ])
 
-  const sessions = data ?? []
-  const groups = new Map<string, { title: string; courseSlug: string | null; offeringId: string | null; offeringSlug: string | null; sessions: typeof sessions }>()
+  const sessions = sessionRows ?? []
+  type SessionRow = (typeof sessions)[number]
+  type Group = {
+    title: string
+    courseSlug: string | null
+    offeringId: string | null
+    offeringSlug: string | null
+    offeringStatus: string | null
+    sessions: SessionRow[]
+  }
+  const groups = new Map<string, Group>()
+
+  for (const offeringRow of offeringRows ?? []) {
+    const course = offeringRow.courses as unknown as CourseRelation | null
+    const title = `${course?.canonical_number ? `Course ${course.canonical_number} · ` : ''}${course?.title ?? 'Other program'} · ${offeringRow.label}`
+    groups.set(`offering:${offeringRow.id}`, {
+      title,
+      courseSlug: course?.slug ?? null,
+      offeringId: offeringRow.id,
+      offeringSlug: offeringRow.slug,
+      offeringStatus: offeringRow.status,
+      sessions: [],
+    })
+  }
 
   for (const session of sessions) {
     const course = session.courses as unknown as CourseRelation | null
     const offering = session.course_offerings as unknown as OfferingRelation | null
+    const key = offering?.id ? `offering:${offering.id}` : `${course?.slug ?? 'other'}:none`
     const title = `${course?.canonical_number ? `Course ${course.canonical_number} · ` : ''}${course?.title ?? 'Other program'}${offering ? ` · ${offering.label}` : ''}`
-    const key = `${course?.slug ?? 'other'}:${offering?.slug ?? 'none'}`
-    if (!groups.has(key)) groups.set(key, { title, courseSlug: course?.slug ?? null, offeringId: offering?.id ?? null, offeringSlug: offering?.slug ?? null, sessions: [] })
+    if (!groups.has(key)) {
+      groups.set(key, {
+        title,
+        courseSlug: course?.slug ?? null,
+        offeringId: offering?.id ?? null,
+        offeringSlug: offering?.slug ?? null,
+        offeringStatus: offering?.status ?? null,
+        sessions: [],
+      })
+    }
     groups.get(key)!.sessions.push(session)
   }
 
@@ -82,15 +120,15 @@ export default async function AdminPage() {
 
       {[...groups.entries()].map(([key, group]) => (
         <section className="section card" key={key}>
-          <div className="eyebrow">Course Offering</div>
+          <div className="eyebrow">Course Offering{group.offeringStatus ? ` · ${group.offeringStatus}` : ''}</div>
           <h2>{group.title}</h2>
           <div className="actions" style={{ marginBottom: 12 }}>
             {group.offeringId ? <Link className="button red" href={`/admin/offerings/${group.offeringId}`}>Manage Course Offering</Link> : null}
             {group.offeringId ? <Link className="button sage" href={`/admin/offerings/${group.offeringId}/review`}>Review content</Link> : null}
-            {group.courseSlug && group.offeringSlug ? <Link className="button" href={`/courses/${group.courseSlug}/${group.offeringSlug}`}>Open student view</Link> : null}
+            {group.courseSlug && group.offeringSlug && group.offeringStatus === 'published' ? <Link className="button" href={`/courses/${group.courseSlug}/${group.offeringSlug}`}>Open student view</Link> : null}
           </div>
 
-          {group.sessions.map((session) => {
+          {group.sessions.length ? group.sessions.map((session) => {
             const notes = (session.study_notes ?? []) as Array<{ status: string }>
             const transcripts = (session.transcripts ?? []) as Array<{ status: string }>
             const materials = (session.materials ?? []) as Array<{ status: string }>
@@ -112,7 +150,7 @@ export default async function AdminPage() {
                 </div>
               </div>
             )
-          })}
+          }) : <p className="meta">No sessions yet. Open this Course Offering to add the first class or meditation.</p>}
         </section>
       ))}
     </main>
