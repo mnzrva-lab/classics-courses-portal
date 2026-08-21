@@ -134,16 +134,28 @@ export default async function SessionPage({
   const materialsPromise = adminContentPreview
     ? supabase.from('materials').select('id, material_type, title, url, mime_type, storage_bucket, storage_path, status').eq('session_id', session.id).order('sort_order')
     : supabase.from('materials').select('id, material_type, title, url, mime_type, storage_bucket, storage_path, status').eq('session_id', session.id).eq('status', 'published').order('sort_order')
+  const offeringMaterialsPromise = adminContentPreview
+    ? supabase.from('materials').select('id, material_type, title, url, mime_type, storage_bucket, storage_path, status').eq('offering_id', offering.id).is('session_id', null).order('sort_order')
+    : supabase.from('materials').select('id, material_type, title, url, mime_type, storage_bucket, storage_path, status').eq('offering_id', offering.id).is('session_id', null).eq('status', 'published').order('sort_order')
   const userSettingsPromise = userId
     ? supabase.from('user_settings').select('save_notes, save_bookmarks, save_progress').eq('user_id', userId).maybeSingle()
     : Promise.resolve({ data: null } as any)
 
-  const [{ data: progress }, { data: notes }, { data: studyNotes }, { data: transcript }, { data: materials }, { data: userSettings }] = await Promise.all([
+  const [
+    { data: progress },
+    { data: notes },
+    { data: studyNotes },
+    { data: transcript },
+    { data: materials },
+    { data: offeringMaterials },
+    { data: userSettings },
+  ] = await Promise.all([
     progressPromise,
     notesPromise,
     studyNotesPromise,
     transcriptPromise,
     materialsPromise,
+    offeringMaterialsPromise,
     userSettingsPromise,
   ])
 
@@ -157,15 +169,22 @@ export default async function SessionPage({
     passageNoteCounts.set(note.paragraph_id, (passageNoteCounts.get(note.paragraph_id) ?? 0) + 1)
   }
 
-  const resolvedMaterials = await Promise.all((materials ?? []).map(async (material: any) => {
-    if (material.storage_bucket && material.storage_path) {
-      const { data } = await supabase.storage
-        .from(material.storage_bucket)
-        .createSignedUrl(material.storage_path, 60 * 60)
-      return { ...material, resolved_url: data?.signedUrl ?? null }
-    }
-    return { ...material, resolved_url: material.url ?? null }
-  }))
+  async function resolveMaterials(rows: any[]) {
+    return Promise.all(rows.map(async (material: any) => {
+      if (material.storage_bucket && material.storage_path) {
+        const { data } = await supabase.storage
+          .from(material.storage_bucket)
+          .createSignedUrl(material.storage_path, 60 * 60)
+        return { ...material, resolved_url: data?.signedUrl ?? null }
+      }
+      return { ...material, resolved_url: material.url ?? null }
+    }))
+  }
+
+  const [resolvedMaterials, resolvedOfferingMaterials] = await Promise.all([
+    resolveMaterials(materials ?? []),
+    resolveMaterials(offeringMaterials ?? []),
+  ])
 
   let transcriptSections: TranscriptSection[] = []
   let transcriptParagraphs: TranscriptParagraph[] = []
@@ -248,6 +267,22 @@ export default async function SessionPage({
     return renderAssetList(legacyAssetsByPosition.get(paragraph.sort_order) ?? [])
   }
 
+  function renderMaterialRows(rows: any[]) {
+    return (
+      <div className="list">
+        {rows.map((material: any) => (
+          <div key={material.id} style={{ padding: '14px 0', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+            <div>
+              <strong>{material.title}</strong>
+              <div className="meta">{materialLabel(material.material_type)}{material.mime_type ? ` · ${material.mime_type}` : ''}{adminContentPreview && material.status !== 'published' ? ` · ${material.status}` : ''}</div>
+            </div>
+            {material.resolved_url ? <a className="button" href={material.resolved_url} target="_blank" rel="noreferrer">Open</a> : <span className="meta">File temporarily unavailable</span>}
+          </div>
+        ))}
+      </div>
+    )
+  }
+
   let previousSectionId: string | null | undefined = undefined
   const teachers = (session.session_teachers ?? []).map((item: any) => item.teachers?.full_name).filter(Boolean)
   const publicReturnPath = `/courses/${courseSlug}/${offeringSlug}/${sessionSlug}`
@@ -282,7 +317,8 @@ export default async function SessionPage({
         <div className="actions" style={{ marginTop: 10 }}>
           <a className="button" href="#recording">Recording</a>
           <a className="button" href="#study-notes">Study Notes</a>
-          {resolvedMaterials.length > 0 ? <a className="button" href="#materials">Materials</a> : null}
+          {resolvedOfferingMaterials.length > 0 ? <a className="button" href="#course-materials">Course materials</a> : null}
+          {resolvedMaterials.length > 0 ? <a className="button" href="#materials">Class materials</a> : null}
           <a className="button" href="#transcript">Reference Transcript</a>
           {userId ? <Link className="button" href="/my-notes">My Notes</Link> : null}
         </div>
@@ -372,21 +408,20 @@ export default async function SessionPage({
         ) : <p className="meta">Study Notes have not been published for this session yet.</p>}
       </section>
 
+      {resolvedOfferingMaterials.length > 0 && (
+        <section id="course-materials" className="section card" style={{ scrollMarginTop: 96 }}>
+          <div className="eyebrow">Course materials</div>
+          <h2 style={{ fontSize: 32 }}>Shared resources for {offering.label}</h2>
+          <p className="meta">These materials belong to the whole Course Offering and are available from each class.</p>
+          {renderMaterialRows(resolvedOfferingMaterials)}
+        </section>
+      )}
+
       {resolvedMaterials.length > 0 && (
         <section id="materials" className="section card" style={{ scrollMarginTop: 96 }}>
           <div className="eyebrow">Class materials</div>
-          <h2 style={{ fontSize: 32 }}>Readings, slides, and resources</h2>
-          <div className="list">
-            {resolvedMaterials.map((material: any) => (
-              <div key={material.id} style={{ padding: '14px 0', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-                <div>
-                  <strong>{material.title}</strong>
-                  <div className="meta">{materialLabel(material.material_type)}{material.mime_type ? ` · ${material.mime_type}` : ''}{adminContentPreview && material.status !== 'published' ? ` · ${material.status}` : ''}</div>
-                </div>
-                {material.resolved_url ? <a className="button" href={material.resolved_url} target="_blank" rel="noreferrer">Open</a> : <span className="meta">File temporarily unavailable</span>}
-              </div>
-            ))}
-          </div>
+          <h2 style={{ fontSize: 32 }}>Resources for this class</h2>
+          {renderMaterialRows(resolvedMaterials)}
         </section>
       )}
 
