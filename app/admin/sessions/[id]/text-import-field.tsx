@@ -6,6 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 
 const TRANSCRIPT_ASSETS_BUCKET = 'transcript-assets'
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024
+const TRANSCRIPT_ASSET_SET_MARKER = '[[TRANSCRIPT_ASSET_SET]]'
 
 type Props = {
   name: string
@@ -39,7 +40,7 @@ function transcriptTextFromHtml(html: string) {
   const root = document.querySelector('#docx-root')
   if (!root) return ''
 
-  const blocks: string[] = []
+  const blocks: string[] = [TRANSCRIPT_ASSET_SET_MARKER]
 
   for (const element of Array.from(root.children)) {
     const tag = element.tagName.toUpperCase()
@@ -78,6 +79,12 @@ function transcriptTextFromHtml(html: string) {
   return blocks.join('\n\n').trim()
 }
 
+function sessionIdFromLocation() {
+  if (typeof window === 'undefined') return null
+  const match = window.location.pathname.match(/\/admin\/sessions\/([^/?#]+)/)
+  return match ? decodeURIComponent(match[1]) : null
+}
+
 export default function TextImportField({
   name,
   label,
@@ -92,6 +99,7 @@ export default function TextImportField({
   const [message, setMessage] = useState<string | null>(null)
   const [reading, setReading] = useState(false)
   const temporaryUploads = useRef<string[]>([])
+  const shouldPreserveTranscriptImages = preserveTranscriptImages || name === 'transcript_content'
 
   async function removeTemporaryUploads(paths: string[]) {
     if (!paths.length) return
@@ -100,7 +108,8 @@ export default function TextImportField({
   }
 
   async function handleTranscriptDocx(file: File) {
-    if (!sessionId) throw new Error('A session is required before transcript images can be imported.')
+    const resolvedSessionId = sessionId ?? sessionIdFromLocation()
+    if (!resolvedSessionId) throw new Error('A session is required before transcript images can be imported.')
 
     const supabase = createClient()
     const uploadedPaths: string[] = []
@@ -118,7 +127,7 @@ export default function TextImportField({
             if (bytes.byteLength > MAX_IMAGE_BYTES) throw new Error('An embedded transcript image is larger than 20 MB.')
 
             const extension = imageExtension(image.contentType)
-            const storagePath = `transcripts/${sessionId}/${crypto.randomUUID()}.${extension}`
+            const storagePath = `transcripts/${resolvedSessionId}/${crypto.randomUUID()}.${extension}`
             const { error } = await supabase.storage
               .from(TRANSCRIPT_ASSETS_BUCKET)
               .upload(storagePath, new Blob([bytes], { type: image.contentType }), {
@@ -144,7 +153,7 @@ export default function TextImportField({
       const warnings = result.messages.filter((item) => item.type === 'warning')
       const imageMessage = uploadedPaths.length
         ? ` ${uploadedPaths.length} embedded image${uploadedPaths.length === 1 ? '' : 's'} preserved in source order.`
-        : ''
+        : ' No embedded transcript images were found.'
       const warningMessage = warnings.length
         ? ` ${warnings.length} DOCX warning${warnings.length === 1 ? '' : 's'} reported.`
         : ''
@@ -172,7 +181,7 @@ export default function TextImportField({
       let nextMessage = ''
 
       if (lower.endsWith('.docx')) {
-        if (preserveTranscriptImages) {
+        if (shouldPreserveTranscriptImages) {
           const imported = await handleTranscriptDocx(file)
           text = imported.text
           nextMessage = imported.message
