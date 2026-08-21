@@ -1,107 +1,160 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-type SyncPoint = {
+type Point = {
   id: string
   seconds: number
+  element: HTMLElement
+  timestamp: HTMLElement
 }
 
-type TranscriptSyncProps = {
-  enabled: boolean
-  points: SyncPoint[]
+function parseTimestamp(value: string) {
+  const match = value.trim().match(/^(?:(\d{1,2}):)?(\d{1,2}):(\d{2})$/)
+  if (!match) return null
+  const hours = Number(match[1] ?? 0)
+  const minutes = Number(match[2])
+  const seconds = Number(match[3])
+  if (minutes > 59 || seconds > 59) return null
+  return hours * 3600 + minutes * 60 + seconds
 }
 
-type TranscriptTimestampProps = {
-  seconds: number
-  label: string
-  enabled: boolean
+function scanTranscript() {
+  const points: Point[] = []
+  const paragraphs = document.querySelectorAll<HTMLElement>('#transcript [id^="paragraph-"]')
+
+  paragraphs.forEach((paragraph) => {
+    const id = paragraph.id.replace(/^paragraph-/, '')
+    const timestamp = paragraph.querySelector<HTMLElement>(':scope > div .meta')
+    if (!id || !timestamp) return
+    const seconds = parseTimestamp(timestamp.textContent ?? '')
+    if (seconds == null) return
+
+    paragraph.dataset.transcriptParagraph = id
+    paragraph.dataset.transcriptStart = String(seconds)
+    timestamp.dataset.transcriptSeek = String(seconds)
+    timestamp.classList.add('transcript-timestamp')
+    timestamp.setAttribute('role', 'button')
+    timestamp.setAttribute('tabindex', '0')
+    timestamp.setAttribute('aria-label', `Play recording from ${timestamp.textContent?.trim() ?? 'this timestamp'}`)
+
+    points.push({ id, seconds, element: paragraph, timestamp })
+  })
+
+  return points.sort((a, b) => a.seconds - b.seconds)
 }
 
-export function TranscriptTimestamp({ seconds, label, enabled }: TranscriptTimestampProps) {
-  if (!enabled) return <span className="meta transcript-time-static">{label}</span>
+function activePoint(points: Point[], seconds: number) {
+  let low = 0
+  let high = points.length - 1
+  let result: Point | null = null
 
-  function seek() {
-    window.dispatchEvent(new CustomEvent('recording-seek', { detail: { seconds } }))
+  while (low <= high) {
+    const middle = Math.floor((low + high) / 2)
+    if (points[middle].seconds <= seconds + 0.35) {
+      result = points[middle]
+      low = middle + 1
+    } else {
+      high = middle - 1
+    }
   }
-
-  return (
-    <button
-      className="transcript-timestamp"
-      type="button"
-      onClick={seek}
-      title={`Play recording from ${label}`}
-      aria-label={`Play recording from ${label}`}
-    >
-      {label}
-    </button>
-  )
+  return result
 }
 
-export default function TranscriptSync({ enabled, points }: TranscriptSyncProps) {
-  const orderedPoints = useMemo(
-    () => [...points].sort((a, b) => a.seconds - b.seconds),
-    [points],
-  )
-  const [activeId, setActiveId] = useState<string | null>(null)
-  const [followPlayback, setFollowPlayback] = useState(false)
+export default function TranscriptSync() {
+  const pointsRef = useRef<Point[]>([])
+  const activeIdRef = useRef<string | null>(null)
+  const followRef = useRef(false)
+  const [available, setAvailable] = useState(false)
+  const [follow, setFollow] = useState(false)
 
   useEffect(() => {
-    if (!enabled || orderedPoints.length === 0) return
+    followRef.current = follow
+  }, [follow])
+
+  useEffect(() => {
+    pointsRef.current = scanTranscript()
+
+    function refreshPoints() {
+      pointsRef.current = scanTranscript()
+    }
+
+    function seekFromElement(target: EventTarget | null) {
+      const element = target instanceof HTMLElement ? target.closest<HTMLElement>('[data-transcript-seek]') : null
+      if (!element) return false
+      const seconds = Number(element.dataset.transcriptSeek)
+      if (!Number.isFinite(seconds)) return false
+      window.dispatchEvent(new CustomEvent('recording-seek', { detail: { seconds } }))
+      return true
+    }
+
+    function onClick(event: MouseEvent) {
+      if (seekFromElement(event.target)) event.preventDefault()
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Enter' && event.key !== ' ') return
+      if (seekFromElement(event.target)) event.preventDefault()
+    }
 
     function onRecordingTime(event: Event) {
       const seconds = (event as CustomEvent<{ seconds?: number }>).detail?.seconds
       if (typeof seconds !== 'number' || !Number.isFinite(seconds)) return
+      if (!available) setAvailable(true)
+      if (!pointsRef.current.length) refreshPoints()
 
-      let nextId: string | null = null
-      for (const point of orderedPoints) {
-        if (point.seconds > seconds + 0.35) break
-        nextId = point.id
+      const current = activePoint(pointsRef.current, seconds)
+      if (!current || current.id === activeIdRef.current) return
+
+      for (const point of pointsRef.current) {
+        const isCurrent = point.id === current.id
+        point.element.classList.toggle('is-current', isCurrent)
+        if (isCurrent) point.element.setAttribute('aria-current', 'true')
+        else point.element.removeAttribute('aria-current')
       }
-      setActiveId(nextId)
+      activeIdRef.current = current.id
+
+      if (followRef.current) {
+        const rect = current.element.getBoundingClientRect()
+        const comfortablyVisible = rect.top >= 120 && rect.bottom <= window.innerHeight - 90
+        if (!comfortablyVisible) current.element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
     }
 
+    document.addEventListener('click', onClick)
+    document.addEventListener('keydown', onKeyDown)
     window.addEventListener('recording-time', onRecordingTime)
-    return () => window.removeEventListener('recording-time', onRecordingTime)
-  }, [enabled, orderedPoints])
+    window.addEventListener('hashchange', refreshPoints)
 
-  useEffect(() => {
-    const paragraphs = document.querySelectorAll<HTMLElement>('[data-transcript-paragraph]')
-    paragraphs.forEach((element) => {
-      const isCurrent = Boolean(activeId) && element.dataset.transcriptParagraph === activeId
-      element.classList.toggle('is-current', isCurrent)
-      if (isCurrent) element.setAttribute('aria-current', 'true')
-      else element.removeAttribute('aria-current')
-    })
-
-    if (followPlayback && activeId) {
-      const active = document.querySelector<HTMLElement>(`[data-transcript-paragraph="${CSS.escape(activeId)}"]`)
-      active?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    return () => {
+      document.removeEventListener('click', onClick)
+      document.removeEventListener('keydown', onKeyDown)
+      window.removeEventListener('recording-time', onRecordingTime)
+      window.removeEventListener('hashchange', refreshPoints)
+      for (const point of pointsRef.current) {
+        point.element.classList.remove('is-current')
+        point.element.removeAttribute('aria-current')
+      }
+      pointsRef.current = []
+      activeIdRef.current = null
     }
-  }, [activeId, followPlayback])
+  }, [available])
 
-  useEffect(() => () => {
-    document.querySelectorAll<HTMLElement>('[data-transcript-paragraph]').forEach((element) => {
-      element.classList.remove('is-current')
-      element.removeAttribute('aria-current')
-    })
-  }, [])
-
-  if (!enabled || orderedPoints.length === 0) return null
+  if (!available || pointsRef.current.length === 0) return null
 
   return (
-    <div className="note transcript-sync-controls">
+    <div className="transcript-sync-floating" aria-label="Transcript playback controls">
       <div>
-        <strong>Synced with the recording</strong>
-        <div className="meta">Click a timestamp to jump to that moment. While the YouTube recording plays, the nearest timestamped paragraph is highlighted.</div>
+        <strong>Synced transcript</strong>
+        <div className="meta">Timestamps jump to the matching moment.</div>
       </div>
       <button
-        className={followPlayback ? 'button sage' : 'button'}
+        className={follow ? 'button sage' : 'button'}
         type="button"
-        onClick={() => setFollowPlayback((value) => !value)}
-        aria-pressed={followPlayback}
+        onClick={() => setFollow((value) => !value)}
+        aria-pressed={follow}
       >
-        {followPlayback ? 'Following playback' : 'Follow playback'}
+        {follow ? 'Following' : 'Follow playback'}
       </button>
     </div>
   )
