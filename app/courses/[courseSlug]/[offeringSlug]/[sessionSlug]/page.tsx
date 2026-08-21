@@ -34,6 +34,7 @@ type TranscriptParagraph = {
 type TranscriptAsset = {
   id: string
   after_paragraph_sort_order: number
+  after_paragraph_id: string | null
   storage_bucket: string
   storage_path: string
   mime_type: string | null
@@ -154,8 +155,8 @@ export default async function SessionPage({
   if (transcript?.id) {
     const [{ data: sections }, { data: paragraphs }, { data: assets }] = await Promise.all([
       supabase.from('transcript_sections').select('id, title, start_seconds').eq('transcript_id', transcript.id).order('sort_order'),
-      supabase.from('transcript_paragraphs').select('id, section_id, speaker, body, start_seconds, sort_order').eq('transcript_id', transcript.id).order('sort_order'),
-      supabase.from('transcript_assets').select('id, after_paragraph_sort_order, storage_bucket, storage_path, mime_type, alt_text, caption, sort_order').eq('transcript_id', transcript.id).order('sort_order'),
+      supabase.from('transcript_paragraphs').select('id, section_id, speaker, body, start_seconds, sort_order').eq('transcript_id', transcript.id).eq('is_active', true).order('sort_order'),
+      supabase.from('transcript_assets').select('id, after_paragraph_sort_order, after_paragraph_id, storage_bucket, storage_path, mime_type, alt_text, caption, sort_order').eq('transcript_id', transcript.id).order('sort_order'),
     ])
     transcriptSections = (sections ?? []) as TranscriptSection[]
     transcriptParagraphs = (paragraphs ?? []) as TranscriptParagraph[]
@@ -182,15 +183,22 @@ export default async function SessionPage({
   }
 
   const sectionMap = new Map(transcriptSections.map((section) => [section.id, section]))
-  const assetsByPosition = new Map<number, ResolvedTranscriptAsset[]>()
-  for (const asset of transcriptAssets) {
-    if (!assetsByPosition.has(asset.after_paragraph_sort_order)) assetsByPosition.set(asset.after_paragraph_sort_order, [])
-    assetsByPosition.get(asset.after_paragraph_sort_order)!.push(asset)
-  }
-  for (const assets of assetsByPosition.values()) assets.sort((a, b) => a.sort_order - b.sort_order)
+  const assetsByParagraphId = new Map<string, ResolvedTranscriptAsset[]>()
+  const legacyAssetsByPosition = new Map<number, ResolvedTranscriptAsset[]>()
 
-  function renderTranscriptAssets(position: number) {
-    const assets = assetsByPosition.get(position) ?? []
+  for (const asset of transcriptAssets) {
+    if (asset.after_paragraph_id) {
+      if (!assetsByParagraphId.has(asset.after_paragraph_id)) assetsByParagraphId.set(asset.after_paragraph_id, [])
+      assetsByParagraphId.get(asset.after_paragraph_id)!.push(asset)
+    } else {
+      if (!legacyAssetsByPosition.has(asset.after_paragraph_sort_order)) legacyAssetsByPosition.set(asset.after_paragraph_sort_order, [])
+      legacyAssetsByPosition.get(asset.after_paragraph_sort_order)!.push(asset)
+    }
+  }
+  for (const assets of assetsByParagraphId.values()) assets.sort((a, b) => a.sort_order - b.sort_order)
+  for (const assets of legacyAssetsByPosition.values()) assets.sort((a, b) => a.sort_order - b.sort_order)
+
+  function renderAssetList(assets: ResolvedTranscriptAsset[]) {
     if (!assets.length) return null
     return assets.map((asset) => (
       <figure key={asset.id} style={{ margin: '20px 0 8px' }}>
@@ -206,6 +214,16 @@ export default async function SessionPage({
         {asset.caption ? <figcaption className="meta" style={{ marginTop: 8 }}>{asset.caption}</figcaption> : null}
       </figure>
     ))
+  }
+
+  function renderLeadingTranscriptAssets() {
+    return renderAssetList(legacyAssetsByPosition.get(-1) ?? [])
+  }
+
+  function renderTranscriptAssets(paragraph: TranscriptParagraph) {
+    const stableAssets = assetsByParagraphId.get(paragraph.id)
+    if (stableAssets?.length) return renderAssetList(stableAssets)
+    return renderAssetList(legacyAssetsByPosition.get(paragraph.sort_order) ?? [])
   }
 
   let previousSectionId: string | null | undefined = undefined
@@ -336,7 +354,7 @@ export default async function SessionPage({
             <h2 style={{ fontSize: 32 }}>{transcript.title}</h2>
             {transcriptParagraphs.length > 0 ? (
               <div style={{ maxWidth: 820 }}>
-                {renderTranscriptAssets(-1)}
+                {renderLeadingTranscriptAssets()}
                 {transcriptParagraphs.map((paragraph) => {
                   const section = paragraph.section_id ? sectionMap.get(paragraph.section_id) : null
                   const showHeading = paragraph.section_id !== previousSectionId && Boolean(section)
@@ -353,16 +371,16 @@ export default async function SessionPage({
                       </div>
                       {userId && (canSaveBookmarks || bookmarked) ? (
                         <form action={toggleParagraphBookmark.bind(null, paragraph.id, returnPath)} style={{ marginTop: 8 }}>
-                          <button className="button" type="submit" style={{ padding: '7px 10px', fontSize: 13 }}>{bookmarked ? '★ Saved passage' : '☆ Save passage'}</button>
+                          <button className="button" type="submit" style={{ padding: '7px 10px', fontSize: 13 }}>{bookmarked ? '★ Bookmarked' : '☆ Bookmark'}</button>
                         </form>
                       ) : null}
-                      {renderTranscriptAssets(paragraph.sort_order)}
+                      {renderTranscriptAssets(paragraph)}
                     </div>
                   )
                 })}
               </div>
             ) : transcriptAssets.length > 0 ? (
-              <div style={{ maxWidth: 820 }}>{renderTranscriptAssets(-1)}</div>
+              <div style={{ maxWidth: 820 }}>{renderLeadingTranscriptAssets()}</div>
             ) : <p className="meta">Transcript metadata is published, but no paragraphs have been imported yet.</p>}
           </>
         ) : (
