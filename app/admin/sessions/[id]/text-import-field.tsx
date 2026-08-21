@@ -1,7 +1,11 @@
 'use client'
 
-import { ChangeEvent, useState } from 'react'
+import { ChangeEvent, useRef, useState } from 'react'
 import mammoth from 'mammoth'
+import { createClient } from '@/lib/supabase/client'
+
+const TRANSCRIPT_ASSETS_BUCKET = 'transcript-assets'
+const MAX_IMAGE_BYTES = 20 * 1024 * 1024
 
 type Props = {
   name: string
@@ -10,12 +14,150 @@ type Props = {
   rows: number
   placeholder?: string
   help?: string
+  sessionId?: string
+  preserveTranscriptImages?: boolean
 }
 
-export default function TextImportField({ name, label, defaultValue = '', rows, placeholder, help }: Props) {
+function imageExtension(contentType: string) {
+  const known: Record<string, string> = {
+    'image/png': 'png',
+    'image/jpeg': 'jpg',
+    'image/jpg': 'jpg',
+    'image/gif': 'gif',
+    'image/webp': 'webp',
+    'image/svg+xml': 'svg',
+  }
+  return known[contentType.toLowerCase()] ?? 'bin'
+}
+
+function isTranscriptDisclaimer(text: string) {
+  return text.startsWith('This transcript was created by a student with AI and should be used for reference only.')
+}
+
+function transcriptTextFromHtml(html: string) {
+  const document = new DOMParser().parseFromString(`<div id="docx-root">${html}</div>`, 'text/html')
+  const root = document.querySelector('#docx-root')
+  if (!root) return ''
+
+  const blocks: string[] = []
+
+  for (const element of Array.from(root.children)) {
+    const tag = element.tagName.toUpperCase()
+    const text = (element.textContent ?? '').replace(/\s+/g, ' ').trim()
+
+    if (tag === 'H1') continue
+
+    if (tag === 'H2' || tag === 'H3' || tag === 'H4') {
+      if (text) blocks.push(`### ${text}`)
+      continue
+    }
+
+    if (tag === 'P') {
+      if (text && !isTranscriptDisclaimer(text)) blocks.push(text)
+
+      for (const image of Array.from(element.querySelectorAll('img'))) {
+        const source = image.getAttribute('src') ?? ''
+        if (!source.startsWith('transcript-asset:')) continue
+        const marker = source.slice('transcript-asset:'.length)
+        blocks.push(`[[TRANSCRIPT_IMAGE|${marker}]]`)
+      }
+      continue
+    }
+
+    if (tag === 'UL' || tag === 'OL') {
+      for (const item of Array.from(element.querySelectorAll(':scope > li'))) {
+        const itemText = (item.textContent ?? '').replace(/\s+/g, ' ').trim()
+        if (itemText) blocks.push(itemText)
+      }
+      continue
+    }
+
+    if (text && !isTranscriptDisclaimer(text)) blocks.push(text)
+  }
+
+  return blocks.join('\n\n').trim()
+}
+
+export default function TextImportField({
+  name,
+  label,
+  defaultValue = '',
+  rows,
+  placeholder,
+  help,
+  sessionId,
+  preserveTranscriptImages = false,
+}: Props) {
   const [value, setValue] = useState(defaultValue ?? '')
   const [message, setMessage] = useState<string | null>(null)
   const [reading, setReading] = useState(false)
+  const temporaryUploads = useRef<string[]>([])
+
+  async function removeTemporaryUploads(paths: string[]) {
+    if (!paths.length) return
+    const supabase = createClient()
+    await supabase.storage.from(TRANSCRIPT_ASSETS_BUCKET).remove(paths)
+  }
+
+  async function handleTranscriptDocx(file: File) {
+    if (!sessionId) throw new Error('A session is required before transcript images can be imported.')
+
+    const supabase = createClient()
+    const uploadedPaths: string[] = []
+
+    try {
+      const result = await mammoth.convertToHtml(
+        { arrayBuffer: await file.arrayBuffer() },
+        {
+          styleMap: [
+            "p[style-name='Title'] => h1:fresh",
+            "p[style-name='Heading 3'] => h3:fresh",
+          ],
+          convertImage: mammoth.images.imgElement(async (image) => {
+            const bytes = await image.readAsArrayBuffer()
+            if (bytes.byteLength > MAX_IMAGE_BYTES) throw new Error('An embedded transcript image is larger than 20 MB.')
+
+            const extension = imageExtension(image.contentType)
+            const storagePath = `transcripts/${sessionId}/${crypto.randomUUID()}.${extension}`
+            const { error } = await supabase.storage
+              .from(TRANSCRIPT_ASSETS_BUCKET)
+              .upload(storagePath, new Blob([bytes], { type: image.contentType }), {
+                cacheControl: '3600',
+                contentType: image.contentType,
+                upsert: false,
+              })
+
+            if (error) throw new Error(`Could not upload an embedded transcript image: ${error.message}`)
+            uploadedPaths.push(storagePath)
+            return { src: `transcript-asset:${storagePath}|${image.contentType}` }
+          }),
+        }
+      )
+
+      const text = transcriptTextFromHtml(result.value)
+      if (!text) throw new Error('No transcript text could be read from this DOCX file.')
+
+      const previousUploads = temporaryUploads.current
+      temporaryUploads.current = uploadedPaths
+      await removeTemporaryUploads(previousUploads)
+
+      const warnings = result.messages.filter((item) => item.type === 'warning')
+      const imageMessage = uploadedPaths.length
+        ? ` ${uploadedPaths.length} embedded image${uploadedPaths.length === 1 ? '' : 's'} preserved in source order.`
+        : ''
+      const warningMessage = warnings.length
+        ? ` ${warnings.length} DOCX warning${warnings.length === 1 ? '' : 's'} reported.`
+        : ''
+
+      return {
+        text,
+        message: `Imported ${file.name}.${imageMessage}${warningMessage} Review the transcript before saving.`,
+      }
+    } catch (error) {
+      await removeTemporaryUploads(uploadedPaths)
+      throw error
+    }
+  }
 
   async function handleFile(event: ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0]
@@ -27,20 +169,34 @@ export default function TextImportField({ name, label, defaultValue = '', rows, 
     try {
       const lower = file.name.toLowerCase()
       let text = ''
+      let nextMessage = ''
 
       if (lower.endsWith('.docx')) {
-        const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })
-        text = result.value
-        const warnings = result.messages.filter((item) => item.type === 'warning')
-        setMessage(warnings.length ? `Imported ${file.name}. Review the text before saving; ${warnings.length} DOCX warning${warnings.length === 1 ? '' : 's'} were reported.` : `Imported ${file.name}. Review the text before saving.`)
+        if (preserveTranscriptImages) {
+          const imported = await handleTranscriptDocx(file)
+          text = imported.text
+          nextMessage = imported.message
+        } else {
+          const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() })
+          text = result.value
+          const warnings = result.messages.filter((item) => item.type === 'warning')
+          nextMessage = warnings.length
+            ? `Imported ${file.name}. Review the text before saving; ${warnings.length} DOCX warning${warnings.length === 1 ? '' : 's'} were reported.`
+            : `Imported ${file.name}. Review the text before saving.`
+        }
       } else if (lower.endsWith('.md') || lower.endsWith('.txt')) {
+        if (temporaryUploads.current.length) {
+          await removeTemporaryUploads(temporaryUploads.current)
+          temporaryUploads.current = []
+        }
         text = await file.text()
-        setMessage(`Imported ${file.name}. Review the text before saving.`)
+        nextMessage = `Imported ${file.name}. Review the text before saving.`
       } else {
         throw new Error('Use a .docx, .md, or .txt file.')
       }
 
       setValue(text.trim())
+      setMessage(nextMessage)
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not read this file.')
     } finally {
