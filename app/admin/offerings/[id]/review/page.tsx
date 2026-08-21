@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import ConfirmSubmitButton from './confirm-submit-button'
 import {
   publishDraftContent,
   setMaterialsVisibility,
@@ -142,6 +143,12 @@ export default async function OfferingReviewPage({
         </div>
       </section>
 
+      <section className="section card sage">
+        <div className="eyebrow">Publishing safety</div>
+        <h2 style={{ fontSize: 32 }}>Preview is safe. Publish changes visibility.</h2>
+        <p className="meta">This staging site uses the shared content database. Publishing here changes the content status itself, so a confirmation is required before every publishing action. Use Draft previews freely; publish only when the content is genuinely ready for students.</p>
+      </section>
+
       <section className="section card">
         <div className="eyebrow">Publishing model</div>
         <h2 style={{ fontSize: 32 }}>Session visibility and content visibility are separate</h2>
@@ -196,11 +203,11 @@ export default async function OfferingReviewPage({
                   <div className="actions">
                     {session.status === 'draft' ? (
                       <form action={setSessionVisibility.bind(null, offering.id, session.id, 'published')}>
-                        <button className="button red" type="submit">Publish session</button>
+                        <ConfirmSubmitButton className="button red" confirmMessage={`Publish ${session.code ? `${session.code} · ` : ''}${session.title} for students?`}>Publish session</ConfirmSubmitButton>
                       </form>
                     ) : session.status === 'published' ? (
                       <form action={setSessionVisibility.bind(null, offering.id, session.id, 'draft')}>
-                        <button className="button" type="submit">Return session to Draft</button>
+                        <ConfirmSubmitButton confirmMessage={`Return ${session.code ? `${session.code} · ` : ''}${session.title} to Draft? Students will no longer be able to open it.`}>Return session to Draft</ConfirmSubmitButton>
                       </form>
                     ) : <span className="meta">Archived sessions can be changed in the session editor.</span>}
                   </div>
@@ -218,11 +225,11 @@ export default async function OfferingReviewPage({
                   <div className="actions">
                     {notes?.status === 'draft' ? (
                       <form action={setStudyNotesVisibility.bind(null, offering.id, session.id, 'published')}>
-                        <button className="button red" type="submit">Publish Study Notes</button>
+                        <ConfirmSubmitButton className="button red" confirmMessage={`Publish Study Notes for ${session.code || session.title}?`}>Publish Study Notes</ConfirmSubmitButton>
                       </form>
                     ) : notes?.status === 'published' ? (
                       <form action={setStudyNotesVisibility.bind(null, offering.id, session.id, 'draft')}>
-                        <button className="button" type="submit">Return Notes to Draft</button>
+                        <ConfirmSubmitButton confirmMessage={`Return the Study Notes for ${session.code || session.title} to Draft?`}>Return Notes to Draft</ConfirmSubmitButton>
                       </form>
                     ) : null}
                   </div>
@@ -239,11 +246,11 @@ export default async function OfferingReviewPage({
                   <div className="actions">
                     {transcript?.status === 'draft' ? (
                       <form action={setTranscriptVisibility.bind(null, offering.id, session.id, 'published')}>
-                        <button className="button red" type="submit">Publish Transcript</button>
+                        <ConfirmSubmitButton className="button red" confirmMessage={`Publish the Reference Transcript for ${session.code || session.title}?`}>Publish Transcript</ConfirmSubmitButton>
                       </form>
                     ) : transcript?.status === 'published' ? (
                       <form action={setTranscriptVisibility.bind(null, offering.id, session.id, 'draft')}>
-                        <button className="button" type="submit">Return Transcript to Draft</button>
+                        <ConfirmSubmitButton confirmMessage={`Return the Reference Transcript for ${session.code || session.title} to Draft?`}>Return Transcript to Draft</ConfirmSubmitButton>
                       </form>
                     ) : null}
                     {transcript ? <Link className="button" href={`/admin/sessions/${session.id}/revisions`}>Revision history</Link> : null}
@@ -256,12 +263,12 @@ export default async function OfferingReviewPage({
                   <div className="actions">
                     {draftMaterials > 0 ? (
                       <form action={setMaterialsVisibility.bind(null, offering.id, session.id, 'published')}>
-                        <button className="button red" type="submit">Publish Draft materials</button>
+                        <ConfirmSubmitButton className="button red" confirmMessage={`Publish all ${draftMaterials} Draft class material${draftMaterials === 1 ? '' : 's'} for ${session.code || session.title}?`}>Publish Draft materials</ConfirmSubmitButton>
                       </form>
                     ) : null}
                     {publishedMaterials > 0 ? (
                       <form action={setMaterialsVisibility.bind(null, offering.id, session.id, 'draft')}>
-                        <button className="button" type="submit">Return materials to Draft</button>
+                        <ConfirmSubmitButton confirmMessage={`Return all ${publishedMaterials} published class material${publishedMaterials === 1 ? '' : 's'} for ${session.code || session.title} to Draft?`}>Return materials to Draft</ConfirmSubmitButton>
                       </form>
                     ) : null}
                   </div>
@@ -273,7 +280,7 @@ export default async function OfferingReviewPage({
                   <div className="actions">
                     {hasDraftContent ? (
                       <form action={publishDraftContent.bind(null, offering.id, session.id)}>
-                        <button className="button sage" type="submit">Publish all Draft content</button>
+                        <ConfirmSubmitButton className="button sage" confirmMessage={`Publish every existing Draft content item for ${session.code || session.title}? The session visibility itself will not change.`}>Publish all Draft content</ConfirmSubmitButton>
                       </form>
                     ) : <span className="meta">No Draft content waiting to publish.</span>}
                   </div>
