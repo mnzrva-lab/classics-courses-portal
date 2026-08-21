@@ -57,14 +57,20 @@ export default async function AdminPage() {
     <main className="container page">
       <div className="eyebrow">Admin</div>
       <h1>Teaching content</h1>
-      <p className="lead">Manage Course Offerings, sessions, class materials, Study Notes, Reference Transcripts, and the meditation library.</p>
+      <p className="lead">Manage Course Offerings, sessions, teachers, class materials, Study Notes, Reference Transcripts, and the meditation library.</p>
 
-      <section className="grid two section">
+      <section className="grid section">
         <div className="card">
           <div className="eyebrow">Workflow</div>
           <h3>Offering → Session → Notes → Materials → Transcript</h3>
           <p className="meta">Keep unfinished material as Draft. Publish each part when it is ready for students.</p>
           <div className="actions"><Link className="button red" href="/admin/offerings/new">Create Course Offering</Link></div>
+        </div>
+        <div className="card">
+          <div className="eyebrow">People</div>
+          <h3>Teachers</h3>
+          <p className="meta">Add teachers once, then assign them to any class or meditation from the session editor.</p>
+          <div className="actions"><Link className="button" href="/admin/teachers">Manage teachers</Link></div>
         </div>
         <div className="card">
           <div className="eyebrow">Practice library</div>
