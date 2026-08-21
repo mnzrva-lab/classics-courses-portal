@@ -102,6 +102,16 @@ h3 { font-size: 22px; margin-bottom: 8px; }
   border-top: 1px solid var(--line);
 }
 .row:first-child { border-top: 0; }
+.row.sage,
+.row.completed {
+  padding: 14px 12px;
+  border-top-color: transparent;
+  border-radius: 14px;
+}
+.row.sage { background: rgba(221, 233, 230, .72); }
+.row.completed { background: #E7EFE8; }
+.row.sage + .row,
+.row.completed + .row { border-top-color: transparent; }
 .session-code { font-weight: 800; }
 .auth-wrap { min-height: 65vh; display: grid; place-items: center; }
 .auth-card { width: min(480px, 100%); text-align: center; }
