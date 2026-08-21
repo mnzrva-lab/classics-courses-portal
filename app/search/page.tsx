@@ -29,6 +29,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         )
       `)
       .textSearch('search_vector', query, { type: 'websearch', config: 'english' })
+      .eq('is_active', true)
       .eq('transcripts.status', 'published')
       .eq('transcripts.sessions.status', 'published')
       .eq('transcripts.sessions.courses.status', 'published')
@@ -69,10 +70,10 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
                 <div style={{ lineHeight: 1.7, marginTop: 6 }}>
                   {result.speaker ? <strong>{result.speaker}: </strong> : null}{clip(result.body)}
                 </div>
-                {href ? <div className="actions"><Link className="button" href={href}>Open passage</Link></div> : null}
+                {href ? <div className="actions"><Link className="button" href={href}>Open result</Link></div> : null}
               </div>
             )
-          }) : <p className="meta">No published transcript passages matched this search.</p>}
+          }) : <p className="meta">No published transcript text matched this search.</p>}
         </section>
       ) : (
         <section className="section card"><p className="meta">Enter a word or phrase to search published transcripts.</p></section>
