@@ -252,6 +252,7 @@ export default async function SessionPage({
   const teachers = (session.session_teachers ?? []).map((item: any) => item.teachers?.full_name).filter(Boolean)
   const publicReturnPath = `/courses/${courseSlug}/${offeringSlug}/${sessionSlug}`
   const returnPath = adminContentPreview ? `${publicReturnPath}?contentPreview=1` : publicReturnPath
+  const citationCourse = course.canonical_number ? `Course ${course.canonical_number}` : course.title
   const isCompleted = Boolean(progress?.completed_at)
   const isInProgress = Boolean(progress && !progress.completed_at)
 
@@ -423,6 +424,8 @@ export default async function SessionPage({
                   const timestamp = formatTimestamp(paragraph.start_seconds)
                   const bookmarked = paragraphBookmarkIds.has(paragraph.id)
                   const noteCount = passageNoteCounts.get(paragraph.id) ?? 0
+                  const reference = [citationCourse, offering.label, session.title, timestamp].filter(Boolean).join(' · ')
+                  const passagePath = `${publicReturnPath}#paragraph-${paragraph.id}`
                   return (
                     <div key={paragraph.id} id={`paragraph-${paragraph.id}`} style={{ marginTop: showHeading ? 32 : 18, paddingBottom: 8, borderBottom: '1px solid var(--line)' }}>
                       {showHeading ? <h3 style={{ fontSize: 24, marginBottom: 14 }}>{section?.title}</h3> : null}
@@ -431,17 +434,17 @@ export default async function SessionPage({
                         {paragraph.speaker ? <strong>{paragraph.speaker}: </strong> : null}
                         <span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.body}</span>
                       </div>
-                      {userId ? (
-                        <PassageStudyTools
-                          paragraphId={paragraph.id}
-                          sessionId={session.id}
-                          returnPath={returnPath}
-                          bookmarked={bookmarked}
-                          canSaveBookmarks={canSaveBookmarks}
-                          canSaveNotes={canSaveNotes}
-                          noteCount={noteCount}
-                        />
-                      ) : null}
+                      <PassageStudyTools
+                        paragraphId={paragraph.id}
+                        sessionId={session.id}
+                        returnPath={returnPath}
+                        bookmarked={userId ? bookmarked : false}
+                        canSaveBookmarks={Boolean(userId && canSaveBookmarks)}
+                        canSaveNotes={Boolean(userId && canSaveNotes)}
+                        noteCount={userId ? noteCount : 0}
+                        reference={reference}
+                        passagePath={passagePath}
+                      />
                       {renderTranscriptAssets(paragraph)}
                     </div>
                   )
