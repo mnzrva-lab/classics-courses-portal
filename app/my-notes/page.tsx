@@ -42,12 +42,13 @@ function includesQuery(values: Array<string | null | undefined>, query: string) 
 export default async function MyNotesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string; saved?: string; q?: string }>
+  searchParams: Promise<{ sort?: string; saved?: string; q?: string; passage?: string }>
 }) {
-  const { sort, saved, q } = await searchParams
+  const { sort, saved, q, passage } = await searchParams
   const sortMode = sort === 'class' ? 'class' : 'latest'
   const searchText = (q ?? '').trim()
   const normalizedSearch = searchText.toLowerCase()
+  const passageId = (passage ?? '').trim()
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub as string | undefined
@@ -81,36 +82,40 @@ export default async function MyNotesPage({
   const paragraphBookmarks = paragraphBookmarksResult.data ?? []
   const courseBookmarks = courseBookmarksResult.data ?? []
 
-  const visibleNotes = normalizedSearch
-    ? (notes as any[]).filter((item) => {
-        const session = item.sessions
-        const paragraph = item.transcript_paragraphs
-        return includesQuery([
-          item.note,
-          paragraph?.body,
-          paragraph?.speaker,
-          session?.code,
-          session?.title,
-          session?.courses?.title,
-          session?.course_offerings?.label,
-        ], normalizedSearch)
-      })
-    : notes
+  const visibleNotes = passageId
+    ? (notes as any[]).filter((item) => item.paragraph_id === passageId)
+    : normalizedSearch
+      ? (notes as any[]).filter((item) => {
+          const session = item.sessions
+          const paragraph = item.transcript_paragraphs
+          return includesQuery([
+            item.note,
+            paragraph?.body,
+            paragraph?.speaker,
+            session?.code,
+            session?.title,
+            session?.courses?.title,
+            session?.course_offerings?.label,
+          ], normalizedSearch)
+        })
+      : notes
 
-  const visibleParagraphBookmarks = normalizedSearch
-    ? (paragraphBookmarks as any[]).filter((item) => {
-        const paragraph = item.transcript_paragraphs
-        const session = paragraph?.transcripts?.sessions
-        return includesQuery([
-          paragraph?.body,
-          paragraph?.speaker,
-          session?.code,
-          session?.title,
-          session?.courses?.title,
-          session?.course_offerings?.label,
-        ], normalizedSearch)
-      })
-    : paragraphBookmarks
+  const visibleParagraphBookmarks = passageId
+    ? (paragraphBookmarks as any[]).filter((item) => item.paragraph_id === passageId)
+    : normalizedSearch
+      ? (paragraphBookmarks as any[]).filter((item) => {
+          const paragraph = item.transcript_paragraphs
+          const session = paragraph?.transcripts?.sessions
+          return includesQuery([
+            paragraph?.body,
+            paragraph?.speaker,
+            session?.code,
+            session?.title,
+            session?.courses?.title,
+            session?.course_offerings?.label,
+          ], normalizedSearch)
+        })
+      : paragraphBookmarks
 
   const courseGroups = new Map<string, any>()
   for (const item of visibleNotes as any[]) {
@@ -169,6 +174,13 @@ export default async function MyNotesPage({
       <p className="lead">Keep class notes and notes tied to exact transcript passages, together with your saved courses, classes, and passages.</p>
 
       {savedMessage ? <div className="card completed section">{savedMessage}</div> : null}
+      {passageId ? (
+        <div className="card sage section">
+          <strong>Showing notes for one transcript passage</strong>
+          <div className="meta">This view opens directly from the passage in the class transcript.</div>
+          <div className="actions"><Link className="button" href="/my-notes">Show all My Notes</Link></div>
+        </div>
+      ) : null}
 
       <section className="section card">
         <div className="eyebrow">Find something you saved</div>
@@ -179,7 +191,7 @@ export default async function MyNotesPage({
           </label>
           <div className="actions">
             <button className="button red" type="submit">Search My Notes</button>
-            {searchText ? <Link className="button" href={`/my-notes?sort=${sortMode}`}>Clear search</Link> : null}
+            {searchText || passageId ? <Link className="button" href={`/my-notes?sort=${sortMode}`}>Clear filters</Link> : null}
           </div>
         </form>
       </section>
@@ -187,8 +199,8 @@ export default async function MyNotesPage({
       <section className="section card">
         <div className="eyebrow">View</div>
         <div className="actions">
-          <Link className="button" href={`/my-notes?sort=latest${searchText ? `&q=${encodeURIComponent(searchText)}` : ''}`}>Latest activity</Link>
-          <Link className="button" href={`/my-notes?sort=class${searchText ? `&q=${encodeURIComponent(searchText)}` : ''}`}>Course &amp; class order</Link>
+          <Link className="button" href={`/my-notes?sort=latest${searchText ? `&q=${encodeURIComponent(searchText)}` : ''}${passageId ? `&passage=${encodeURIComponent(passageId)}` : ''}`}>Latest activity</Link>
+          <Link className="button" href={`/my-notes?sort=class${searchText ? `&q=${encodeURIComponent(searchText)}` : ''}${passageId ? `&passage=${encodeURIComponent(passageId)}` : ''}`}>Course &amp; class order</Link>
           <Link className="button" href="/account">Privacy &amp; Data</Link>
         </div>
       </section>
@@ -249,10 +261,10 @@ export default async function MyNotesPage({
               )
             })}
           </div>
-        )) : <div className="card"><p className="meta">{searchText ? 'No private notes matched this search.' : 'Notes you save from class pages will appear here.'}</p></div>}
+        )) : <div className="card"><p className="meta">{passageId ? 'No private notes have been saved for this passage yet.' : searchText ? 'No private notes matched this search.' : 'Notes you save from class pages will appear here.'}</p></div>}
       </section>
 
-      {!searchText ? (
+      {!searchText && !passageId ? (
         <section className="grid two section">
           <div className="card">
             <div className="eyebrow">Class bookmarks</div>
@@ -313,7 +325,7 @@ export default async function MyNotesPage({
               {href ? <div className="actions"><Link className="button" href={href}>{currentParagraph ? 'Open passage' : 'Open current class'}</Link></div> : null}
             </div>
           )
-        }) : <p className="meta">{searchText ? 'No saved transcript passages matched this search.' : 'Bookmark transcript text and it will appear here.'}</p>}
+        }) : <p className="meta">{passageId ? 'This passage is not bookmarked.' : searchText ? 'No saved transcript passages matched this search.' : 'Bookmark transcript text and it will appear here.'}</p>}
       </section>
 
       <section className="section"><Link className="button" href="/my-learning">← My Learning</Link></section>
