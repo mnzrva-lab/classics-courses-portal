@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import MarkdownContent from '@/components/markdown-content'
 import { markSessionComplete, saveSessionNote, startSessionProgress, toggleParagraphBookmark, toggleSessionBookmark } from './actions'
 
 type CourseRelation = {
@@ -322,7 +323,7 @@ export default async function SessionPage({
           <>
             <h2 style={{ fontSize: 32 }}>{studyNotes.title}</h2>
             {studyNotes.summary && <p className="lead" style={{ fontSize: 17 }}>{studyNotes.summary}</p>}
-            <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.75 }}>{studyNotes.content_markdown}</div>
+            <MarkdownContent content={studyNotes.content_markdown} />
             <p className="meta" style={{ marginTop: 18 }}>{studyNotes.disclaimer}</p>
           </>
         ) : <p className="meta">Study Notes have not been published for this session yet.</p>}
