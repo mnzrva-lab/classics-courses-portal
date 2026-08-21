@@ -105,6 +105,7 @@ export default async function AdminPage() {
           <div className="actions">
             <Link className="button red" href="/admin/courses">Manage courses &amp; programs</Link>
             <Link className="button" href="/admin/offerings/new">Create Course Offering</Link>
+            <Link className="button sage" href="/admin/bulk-sessions">Bulk create sessions</Link>
           </div>
         </div>
         <div className="card">
