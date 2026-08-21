@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { isValidTimeZone, zonedLocalToIso } from '@/lib/timezone'
+import { reconcileParagraphIds } from '@/lib/transcript-reconcile'
 
 const STUDY_NOTES_DISCLAIMER = 'These study notes were created from the class with the assistance of AI and are provided as a study aid. They may simplify or omit parts of the teaching. Please refer to the recording and transcript for the complete class.'
 const TRANSCRIPT_DISCLAIMER = 'This transcript was created by a student with AI and should be used for reference only. Please check them against the video and audio for accuracy of content.'
@@ -363,65 +364,74 @@ export async function saveTranscript(sessionId: string, formData: FormData) {
 
   const transcriptId = existing?.id ?? randomUUID()
   const { sections, paragraphs, assets } = parseTranscript(rawText, transcriptId)
-  const expectedAssetPrefix = `transcripts/${sessionId}/`
+  if (paragraphs.length === 0) throw new Error('No transcript paragraphs were found.')
 
+  const expectedAssetPrefix = `transcripts/${sessionId}/`
   for (const asset of assets) {
     if (!asset.storage_path.startsWith(expectedAssetPrefix) || asset.storage_path.includes('..')) {
       throw new Error('The transcript contains an invalid image reference. Re-import the DOCX before saving.')
     }
   }
 
-  const { data: existingAssets, error: existingAssetsError } = existing?.id
-    ? await supabase.from('transcript_assets').select('storage_bucket, storage_path').eq('transcript_id', transcriptId)
+  const { data: existingParagraphs, error: paragraphsError } = existing?.id
+    ? await supabase
+      .from('transcript_paragraphs')
+      .select('id, speaker, body, start_seconds, sort_order, is_active')
+      .eq('transcript_id', transcriptId)
+      .order('sort_order')
     : { data: [], error: null }
-  if (existingAssetsError) throw new Error(existingAssetsError.message)
 
-  const { error: transcriptError } = await supabase.from('transcripts').upsert({
-    id: transcriptId,
-    session_id: sessionId,
-    language_code: 'en',
-    title,
-    disclaimer: TRANSCRIPT_DISCLAIMER,
-    source_file_name: optionalText(formData.get('transcript_source_file_name')),
-    status,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'session_id,language_code' })
+  if (paragraphsError) throw new Error(paragraphsError.message)
 
-  if (transcriptError) throw new Error(transcriptError.message)
+  const reconciliation = reconcileParagraphIds(existingParagraphs ?? [], paragraphs)
+  const paragraphPayload = paragraphs.map((paragraph, index) => ({
+    id: reconciliation.matchedIds[index] ?? randomUUID(),
+    section_id: paragraph.section_id,
+    speaker: paragraph.speaker,
+    body: paragraph.body,
+    start_seconds: paragraph.start_seconds,
+    sort_order: paragraph.sort_order,
+  }))
+  const paragraphIdBySortOrder = new Map(paragraphPayload.map((paragraph) => [paragraph.sort_order, paragraph.id]))
 
-  const { error: deleteParagraphsError } = await supabase.from('transcript_paragraphs').delete().eq('transcript_id', transcriptId)
-  if (deleteParagraphsError) throw new Error(deleteParagraphsError.message)
+  const sectionPayload = sections.map((section) => ({
+    id: section.id,
+    slug: section.slug,
+    title: section.title,
+    start_seconds: section.start_seconds,
+    sort_order: section.sort_order,
+  }))
 
-  const { error: deleteSectionsError } = await supabase.from('transcript_sections').delete().eq('transcript_id', transcriptId)
-  if (deleteSectionsError) throw new Error(deleteSectionsError.message)
+  const assetPayload = assets.map((asset) => ({
+    id: null,
+    after_paragraph_sort_order: asset.after_paragraph_sort_order,
+    after_paragraph_id: asset.after_paragraph_sort_order >= 0
+      ? paragraphIdBySortOrder.get(asset.after_paragraph_sort_order) ?? null
+      : null,
+    storage_bucket: asset.storage_bucket,
+    storage_path: asset.storage_path,
+    mime_type: asset.mime_type,
+    alt_text: asset.alt_text,
+    caption: asset.caption,
+    sort_order: asset.sort_order,
+  }))
 
-  const { error: deleteAssetsError } = await supabase.from('transcript_assets').delete().eq('transcript_id', transcriptId)
-  if (deleteAssetsError) throw new Error(deleteAssetsError.message)
+  const { error: saveError } = await supabase.rpc('save_transcript_content', {
+    p_transcript_id: transcriptId,
+    p_session_id: sessionId,
+    p_language_code: 'en',
+    p_title: title,
+    p_disclaimer: TRANSCRIPT_DISCLAIMER,
+    p_source_file_name: optionalText(formData.get('transcript_source_file_name')),
+    p_status: status,
+    p_sections: sectionPayload,
+    p_paragraphs: paragraphPayload,
+    p_assets: assetPayload,
+  })
 
-  if (sections.length > 0) {
-    const { error } = await supabase.from('transcript_sections').insert(sections)
-    if (error) throw new Error(error.message)
-  }
+  if (saveError) throw new Error(saveError.message)
 
-  if (paragraphs.length > 0) {
-    const { error } = await supabase.from('transcript_paragraphs').insert(paragraphs)
-    if (error) throw new Error(error.message)
-  }
-
-  if (assets.length > 0) {
-    const { error } = await supabase.from('transcript_assets').insert(assets)
-    if (error) throw new Error(error.message)
-  }
-
-  const retainedPaths = new Set(assets.map((asset) => asset.storage_path))
-  const orphanedPaths = (existingAssets ?? [])
-    .filter((asset: any) => asset.storage_bucket === TRANSCRIPT_ASSETS_BUCKET && !retainedPaths.has(asset.storage_path))
-    .map((asset: any) => asset.storage_path)
-
-  if (orphanedPaths.length > 0) {
-    await supabase.storage.from(TRANSCRIPT_ASSETS_BUCKET).remove(orphanedPaths)
-  }
-
+  revalidatePath('/admin')
   revalidatePath('/', 'layout')
-  redirect(`/admin/sessions/${sessionId}?saved=transcript`)
+  redirect(`/admin/sessions/${sessionId}?saved=transcript&preserved=${reconciliation.preservedCount}&new=${reconciliation.newCount}`)
 }
