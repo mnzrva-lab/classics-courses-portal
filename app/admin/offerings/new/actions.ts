@@ -107,5 +107,5 @@ export async function createOffering(formData: FormData) {
     .single()
 
   if (error) throw new Error(error.message)
-  redirect(`/admin/offerings/${offering.id}?created=1`)
+  redirect(`/admin/offerings/${offering.id}?saved=offering`)
 }
