@@ -79,6 +79,7 @@ export default async function AdminPage() {
           <h2>{group.title}</h2>
           <div className="actions" style={{ marginBottom: 12 }}>
             {group.offeringId ? <Link className="button red" href={`/admin/offerings/${group.offeringId}`}>Manage Course Offering</Link> : null}
+            {group.offeringId ? <Link className="button sage" href={`/admin/offerings/${group.offeringId}/review`}>Review content</Link> : null}
             {group.courseSlug && group.offeringSlug ? <Link className="button" href={`/courses/${group.courseSlug}/${group.offeringSlug}`}>Open student view</Link> : null}
           </div>
 
