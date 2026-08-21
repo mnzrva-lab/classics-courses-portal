@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
+type GlossaryView = 'all' | 'saved' | 'learning' | 'learned'
+
 function matches(term: any, query: string) {
   if (!query) return true
   const values = [
@@ -23,7 +25,7 @@ export default async function TibetanPage({
   const { q, view } = await searchParams
   const queryText = (q ?? '').trim()
   const query = queryText.toLowerCase()
-  const activeView = ['saved', 'learning', 'learned'].includes(view ?? '') ? view : 'all'
+  const activeView: GlossaryView = view === 'saved' || view === 'learning' || view === 'learned' ? view : 'all'
   const supabase = await createClient()
 
   const { data: claimsData } = await supabase.auth.getClaims()
@@ -49,8 +51,8 @@ export default async function TibetanPage({
       : Promise.resolve({ data: [] } as any),
   ])
 
-  const bookmarked = new Set((bookmarkResult.data ?? []).map((item: any) => item.term_id))
-  const progress = new Map((progressResult.data ?? []).map((item: any) => [item.term_id, item]))
+  const bookmarked = new Set<string>((bookmarkResult.data ?? []).map((item: any) => item.term_id))
+  const progress = new Map<string, any>((progressResult.data ?? []).map((item: any) => [item.term_id, item] as const))
   const allTerms = rows ?? []
   const learnedCount = allTerms.filter((term: any) => progress.get(term.id)?.learning_state === 'learned').length
   const learningCount = allTerms.filter((term: any) => progress.get(term.id)?.learning_state === 'learning').length
@@ -64,13 +66,20 @@ export default async function TibetanPage({
     return progress.get(term.id)?.learning_state === activeView
   })
 
-  const viewHref = (nextView: string) => {
+  const viewHref = (nextView: GlossaryView) => {
     const params = new URLSearchParams()
     if (queryText) params.set('q', queryText)
     if (nextView !== 'all') params.set('view', nextView)
     const suffix = params.toString()
     return suffix ? `/tibetan?${suffix}` : '/tibetan'
   }
+
+  const viewOptions: Array<[GlossaryView, string]> = [
+    ['all', 'All terms'],
+    ['saved', `Bookmarked · ${bookmarked.size}`],
+    ['learning', `Learning · ${learningCount}`],
+    ['learned', `Learned · ${learnedCount}`],
+  ]
 
   return (
     <main className="container page">
@@ -93,12 +102,7 @@ export default async function TibetanPage({
           </div>
           <div className="meta">{newCount} new · {learningCount} learning · {learnedCount} learned</div>
           <div className="actions" style={{ marginTop: 16 }}>
-            {[
-              ['all', 'All terms'],
-              ['saved', `Bookmarked · ${bookmarked.size}`],
-              ['learning', `Learning · ${learningCount}`],
-              ['learned', `Learned · ${learnedCount}`],
-            ].map(([key, label]) => (
+            {viewOptions.map(([key, label]) => (
               <Link className={`button${activeView === key ? ' sage' : ''}`} key={key} href={viewHref(key)}>{label}</Link>
             ))}
           </div>
