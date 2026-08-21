@@ -29,30 +29,22 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       <body>
         <div className="site-shell">
           <header className="topbar">
-            <Link className="brand" href="/">Classics Courses</Link>
+            <div className="topbar-inner">
+              <Link className="brand" href="/">
+                <span className="brand-mark" aria-hidden="true">C</span>
+                <span className="brand-copy">Classics Courses</span>
+              </Link>
 
-            <nav className="nav desktop-nav" aria-label="Primary navigation">
-              <Link href="/">Home</Link>
-              <Link href="/courses">Courses</Link>
-              <Link href="/living-lam-rim">Living Lam Rim</Link>
-              <Link href="/other-programs">Other Programs</Link>
-              <Link href="/meditations">Meditations</Link>
-              <Link href="/search">Search</Link>
-              <Link href="/my-learning">My Learning</Link>
-              <Link href="/my-notes">My Notes</Link>
-              {isAdmin ? <Link href="/admin">Admin</Link> : null}
-            </nav>
-
-            <div className="mobile-nav-wrap">
-              <nav className="mobile-primary" aria-label="Mobile primary navigation">
+              <nav className="nav desktop-nav" aria-label="Primary navigation">
                 <Link href="/">Home</Link>
                 <Link href="/courses">Courses</Link>
                 <Link href="/search">Search</Link>
                 <Link href="/my-notes">My Notes</Link>
               </nav>
-              <details className="mobile-more">
+
+              <details className="desktop-more">
                 <summary>More</summary>
-                <nav aria-label="More navigation">
+                <nav className="desktop-more-panel" aria-label="More navigation">
                   <Link href="/living-lam-rim">Living Lam Rim</Link>
                   <Link href="/other-programs">Other Programs</Link>
                   <Link href="/tibetan">Tibetan</Link>
@@ -61,6 +53,26 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                   {isAdmin ? <Link href="/admin">Admin</Link> : null}
                 </nav>
               </details>
+
+              <div className="mobile-nav-wrap">
+                <nav className="mobile-primary" aria-label="Mobile primary navigation">
+                  <Link href="/">Home</Link>
+                  <Link href="/courses">Courses</Link>
+                  <Link href="/search">Search</Link>
+                  <Link href="/my-notes">My Notes</Link>
+                </nav>
+                <details className="mobile-more">
+                  <summary>More</summary>
+                  <nav aria-label="More navigation">
+                    <Link href="/living-lam-rim">Living Lam Rim</Link>
+                    <Link href="/other-programs">Other Programs</Link>
+                    <Link href="/tibetan">Tibetan</Link>
+                    <Link href="/meditations">Meditations</Link>
+                    <Link href="/my-learning">My Learning</Link>
+                    {isAdmin ? <Link href="/admin">Admin</Link> : null}
+                  </nav>
+                </details>
+              </div>
             </div>
           </header>
           {children}
