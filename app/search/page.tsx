@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import CopyReference from '@/components/copy-reference'
 import { submitTeachingSearch } from './actions'
 
 export const dynamic = 'force-dynamic'
@@ -35,7 +36,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
           status,
           sessions!inner(
             slug, code, title, status,
-            courses!inner(slug, title, status),
+            courses!inner(slug, title, canonical_number, status),
             course_offerings(slug, label, status)
           )
         )
@@ -54,7 +55,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
     <main className="container page">
       <div className="eyebrow">Search</div>
       <h1 style={{ fontSize: 'clamp(38px, 6vw, 64px)' }}>Search the teachings</h1>
-      <p className="lead">Search across published Reference Transcript passages, then open the exact place in the class.</p>
+      <p className="lead">Search across published Reference Transcript passages, then open or cite the exact place in the class.</p>
 
       <section className="section card">
         <form className="form-stack" action={submitTeachingSearch}>
@@ -80,13 +81,24 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
             const href = course?.slug && offering?.slug && session?.slug
               ? `/courses/${course.slug}/${offering.slug}/${session.slug}#paragraph-${result.id}`
               : null
+            const reference = [
+              course?.canonical_number ? `Course ${course.canonical_number}` : course?.title,
+              offering?.label,
+              session?.title,
+              timestamp,
+            ].filter(Boolean).join(' · ')
             return (
               <div key={result.id} style={{ padding: '18px 0', borderTop: '1px solid var(--line)' }}>
                 <div className="meta">{timestamp ? `${timestamp} · ` : ''}{course?.title ?? 'Course'}{offering?.label ? ` · ${offering.label}` : ''}{session?.code ? ` · ${session.code}` : ''}</div>
                 <div style={{ lineHeight: 1.7, marginTop: 6 }}>
                   {result.speaker ? <strong>{result.speaker}: </strong> : null}{clip(result.body)}
                 </div>
-                {href ? <div className="actions"><Link className="button" href={href}>Open passage</Link></div> : null}
+                {href ? (
+                  <div className="actions">
+                    <Link className="button" href={href}>Open passage</Link>
+                    <CopyReference reference={reference} path={href} />
+                  </div>
+                ) : null}
               </div>
             )
           }) : <p className="meta">No published transcript text matched this search.</p>}
