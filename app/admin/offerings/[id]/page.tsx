@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createSession, updateOffering } from './actions'
+import BulkTranscriptImport from './bulk-transcript-import'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,6 +17,10 @@ type Teacher = {
   id: string
   full_name: string
   active: boolean
+}
+
+type TranscriptRelation = {
+  status: string
 }
 
 export default async function AdminOfferingPage({
@@ -47,7 +52,7 @@ export default async function AdminOfferingPage({
       .eq('id', id)
       .single(),
     supabase.from('teachers').select('id, full_name, active').eq('active', true).order('full_name'),
-    supabase.from('sessions').select('id, code, title, session_type, status, session_date, source_timezone, sort_order').eq('offering_id', id).order('sort_order'),
+    supabase.from('sessions').select('id, code, title, session_type, status, session_date, source_timezone, sort_order, transcripts(status)').eq('offering_id', id).order('sort_order'),
   ])
 
   if (!offering) notFound()
@@ -55,6 +60,15 @@ export default async function AdminOfferingPage({
   const teachers = (teacherRows ?? []) as Teacher[]
   const sessions = sessionRows ?? []
   const defaultTimezone = sessions.find((session) => session.source_timezone)?.source_timezone ?? 'Asia/Taipei'
+  const bulkSessions = sessions.map((session) => {
+    const transcripts = (session.transcripts ?? []) as TranscriptRelation[]
+    return {
+      id: session.id,
+      code: session.code,
+      title: session.title,
+      transcriptStatus: transcripts[0]?.status ?? null,
+    }
+  })
 
   return (
     <main className="container page">
@@ -96,20 +110,30 @@ export default async function AdminOfferingPage({
       <section className="section card">
         <div className="eyebrow">Sessions</div>
         <h2 style={{ fontSize: 32 }}>Existing teaching sessions</h2>
-        {sessions.length ? sessions.map((session) => (
-          <div key={session.id} style={{ padding: '14px 0', borderTop: '1px solid var(--line)', display: 'flex', gap: 16, justifyContent: 'space-between', flexWrap: 'wrap' }}>
-            <div>
-              <strong>{session.code ? `${session.code} · ` : ''}{session.title}</strong>
-              <div className="meta">{session.session_date ?? 'No date'} · {session.session_type} · {session.status}</div>
+        {sessions.length ? sessions.map((session) => {
+          const transcripts = (session.transcripts ?? []) as TranscriptRelation[]
+          return (
+            <div key={session.id} style={{ padding: '14px 0', borderTop: '1px solid var(--line)', display: 'flex', gap: 16, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+              <div>
+                <strong>{session.code ? `${session.code} · ` : ''}{session.title}</strong>
+                <div className="meta">{session.session_date ?? 'No date'} · {session.session_type} · {session.status} · Transcript: {transcripts[0]?.status ?? 'missing'}</div>
+              </div>
+              <Link className="button" href={`/admin/sessions/${session.id}`}>Edit</Link>
             </div>
-            <Link className="button" href={`/admin/sessions/${session.id}`}>Edit</Link>
-          </div>
-        )) : <p className="meta">No sessions have been added yet.</p>}
+          )
+        }) : <p className="meta">No sessions have been added yet.</p>}
+      </section>
+
+      <section className="section card">
+        <div className="eyebrow">Bulk import</div>
+        <h2 style={{ fontSize: 32 }}>Import Reference Transcripts</h2>
+        <p className="meta">Select several DOCX, Markdown, or text transcripts for this Course Offering. The importer matches Class and Meditation numbers from each filename, preserves embedded DOCX images, and saves every new transcript as Draft for review.</p>
+        <BulkTranscriptImport offeringId={offering.id} sessions={bulkSessions} />
       </section>
 
       <section className="section card">
         <div className="eyebrow">Add session</div>
-        <h2 style={{ fontSize: 32 }}>Create a class, meditation, review, or Q&A</h2>
+        <h2 style={{ fontSize: 32 }}>Create a class, meditation, review, or Q&amp;A</h2>
         <p className="meta">New sessions can stay Draft until the details are ready. After creation, you can add Study Notes and the Reference Transcript.</p>
 
         <form className="form-stack" action={createSession.bind(null, offering.id, course.id)}>
@@ -119,7 +143,7 @@ export default async function AdminOfferingPage({
                 <option value="class">Class</option>
                 <option value="meditation">Meditation</option>
                 <option value="review">Review</option>
-                <option value="qna">Q&A</option>
+                <option value="qna">Q&amp;A</option>
                 <option value="vows">Vows</option>
                 <option value="other">Other</option>
               </select>
