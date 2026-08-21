@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createSession, updateOffering } from './actions'
 import BulkTranscriptImport from './bulk-transcript-import'
+import BulkStudyNotesImport from './bulk-study-notes-import'
 
 export const dynamic = 'force-dynamic'
 
@@ -20,6 +21,10 @@ type Teacher = {
 }
 
 type TranscriptRelation = {
+  status: string
+}
+
+type StudyNotesRelation = {
   status: string
 }
 
@@ -52,7 +57,7 @@ export default async function AdminOfferingPage({
       .eq('id', id)
       .single(),
     supabase.from('teachers').select('id, full_name, active').eq('active', true).order('full_name'),
-    supabase.from('sessions').select('id, code, title, session_type, status, session_date, source_timezone, sort_order, transcripts(status)').eq('offering_id', id).order('sort_order'),
+    supabase.from('sessions').select('id, code, title, session_type, status, session_date, source_timezone, sort_order, transcripts(status), study_notes(status)').eq('offering_id', id).order('sort_order'),
   ])
 
   if (!offering) notFound()
@@ -60,13 +65,22 @@ export default async function AdminOfferingPage({
   const teachers = (teacherRows ?? []) as Teacher[]
   const sessions = sessionRows ?? []
   const defaultTimezone = sessions.find((session) => session.source_timezone)?.source_timezone ?? 'Asia/Taipei'
-  const bulkSessions = sessions.map((session) => {
+  const bulkTranscriptSessions = sessions.map((session) => {
     const transcripts = (session.transcripts ?? []) as TranscriptRelation[]
     return {
       id: session.id,
       code: session.code,
       title: session.title,
       transcriptStatus: transcripts[0]?.status ?? null,
+    }
+  })
+  const bulkNotesSessions = sessions.map((session) => {
+    const notes = (session.study_notes ?? []) as StudyNotesRelation[]
+    return {
+      id: session.id,
+      code: session.code,
+      title: session.title,
+      notesStatus: notes[0]?.status ?? null,
     }
   })
 
@@ -102,6 +116,7 @@ export default async function AdminOfferingPage({
           </label>
           <div className="actions">
             <button className="button red" type="submit">Save Course Offering</button>
+            <Link className="button sage" href={`/admin/offerings/${offering.id}/review`}>Review content</Link>
             <Link className="button" href={`/courses/${course.slug}/${offering.slug}`}>Student view</Link>
           </div>
         </form>
@@ -112,11 +127,12 @@ export default async function AdminOfferingPage({
         <h2 style={{ fontSize: 32 }}>Existing teaching sessions</h2>
         {sessions.length ? sessions.map((session) => {
           const transcripts = (session.transcripts ?? []) as TranscriptRelation[]
+          const notes = (session.study_notes ?? []) as StudyNotesRelation[]
           return (
             <div key={session.id} style={{ padding: '14px 0', borderTop: '1px solid var(--line)', display: 'flex', gap: 16, justifyContent: 'space-between', flexWrap: 'wrap' }}>
               <div>
                 <strong>{session.code ? `${session.code} · ` : ''}{session.title}</strong>
-                <div className="meta">{session.session_date ?? 'No date'} · {session.session_type} · {session.status} · Transcript: {transcripts[0]?.status ?? 'missing'}</div>
+                <div className="meta">{session.session_date ?? 'No date'} · {session.session_type} · {session.status} · Study Notes: {notes[0]?.status ?? 'missing'} · Transcript: {transcripts[0]?.status ?? 'missing'}</div>
               </div>
               <Link className="button" href={`/admin/sessions/${session.id}`}>Edit</Link>
             </div>
@@ -128,7 +144,14 @@ export default async function AdminOfferingPage({
         <div className="eyebrow">Bulk import</div>
         <h2 style={{ fontSize: 32 }}>Import Reference Transcripts</h2>
         <p className="meta">Select several DOCX, Markdown, or text transcripts for this Course Offering. The importer matches Class and Meditation numbers from each filename, preserves embedded DOCX images, and saves every new transcript as Draft for review.</p>
-        <BulkTranscriptImport offeringId={offering.id} sessions={bulkSessions} />
+        <BulkTranscriptImport offeringId={offering.id} sessions={bulkTranscriptSessions} />
+      </section>
+
+      <section className="section card">
+        <div className="eyebrow">Bulk import</div>
+        <h2 style={{ fontSize: 32 }}>Import Study Notes</h2>
+        <p className="meta">Select several Study Notes files at once. DOCX headings, emphasis, lists, links, and simple tables are converted to Markdown, Class and Meditation numbers are matched from filenames, and every new set of notes stays Draft for review. Existing Study Notes are never overwritten by bulk import.</p>
+        <BulkStudyNotesImport offeringId={offering.id} sessions={bulkNotesSessions} />
       </section>
 
       <section className="section card">
@@ -143,7 +166,7 @@ export default async function AdminOfferingPage({
                 <option value="class">Class</option>
                 <option value="meditation">Meditation</option>
                 <option value="review">Review</option>
-                <option value="qna">Q&amp;A</option>
+                <option value="qna">Q&A</option>
                 <option value="vows">Vows</option>
                 <option value="other">Other</option>
               </select>
