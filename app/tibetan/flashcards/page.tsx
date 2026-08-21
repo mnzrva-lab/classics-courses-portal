@@ -103,7 +103,7 @@ export default async function TibetanFlashcardsPage({
           <div className="meta">{newCount} new · {learningCount} learning · {learnedCount} learned</div>
         </div>
         <div style={{ height: 10, borderRadius: 999, overflow: 'hidden', background: 'var(--cream)', marginTop: 16 }}>
-          <div style={{ width: `${learnedPercent}%`, height: '100%', background: 'var(--sage-700)' }} />
+          <div style={{ width: `${learnedPercent}%`, height: '100%', background: 'var(--sage-dark)' }} />
         </div>
       </section>
 
