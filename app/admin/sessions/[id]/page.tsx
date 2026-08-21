@@ -106,10 +106,10 @@ export default async function AdminSessionPage({
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ saved?: string; created?: string }>
+  searchParams: Promise<{ saved?: string; created?: string; preserved?: string; new?: string }>
 }) {
   const { id } = await params
-  const { saved, created } = await searchParams
+  const { saved, created, preserved, new: newParagraphs } = await searchParams
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub as string | undefined
@@ -151,12 +151,15 @@ export default async function AdminSessionPage({
   const materials = materialRows ?? []
 
   let transcriptText = ''
+  let revisionCount = 0
   if (transcript?.id) {
-    const [{ data: sections }, { data: paragraphs }, { data: assets }] = await Promise.all([
+    const [{ data: sections }, { data: paragraphs }, { data: assets }, { count }] = await Promise.all([
       supabase.from('transcript_sections').select('id, title, start_seconds, sort_order').eq('transcript_id', transcript.id).order('sort_order'),
-      supabase.from('transcript_paragraphs').select('section_id, speaker, body, start_seconds, sort_order').eq('transcript_id', transcript.id).order('sort_order'),
+      supabase.from('transcript_paragraphs').select('section_id, speaker, body, start_seconds, sort_order').eq('transcript_id', transcript.id).eq('is_active', true).order('sort_order'),
       supabase.from('transcript_assets').select('after_paragraph_sort_order, storage_path, mime_type, sort_order').eq('transcript_id', transcript.id).order('sort_order'),
+      supabase.from('transcript_revisions').select('id', { count: 'exact', head: true }).eq('transcript_id', transcript.id),
     ])
+    revisionCount = count ?? 0
     transcriptText = rebuildTranscript(
       (sections ?? []) as TranscriptSection[],
       (paragraphs ?? []) as TranscriptParagraph[],
@@ -173,7 +176,7 @@ export default async function AdminSessionPage({
         : saved === 'material'
           ? 'Class materials saved.'
           : saved === 'transcript'
-            ? 'Reference Transcript saved.'
+            ? `Reference Transcript saved.${preserved ? ` ${preserved} paragraph IDs preserved.` : ''}${newParagraphs ? ` ${newParagraphs} new paragraph${newParagraphs === '1' ? '' : 's'}.` : ''}`
             : null
 
   return (
@@ -344,6 +347,13 @@ export default async function AdminSessionPage({
         <div className="eyebrow">4 · Reference Transcript</div>
         <h2>Transcript importer</h2>
         <p className="meta">Paste a cleaned transcript or import DOCX, Markdown, or text. DOCX imports preserve embedded images in their source position. Use <strong>### Chapter title</strong> for chapter headings. Labels such as <strong>Audience:</strong>, <strong>Host:</strong>, <strong>Speaker 1:</strong>, and speaker names are recognized. Optional timestamps like <strong>[12:34]</strong> or <strong>[01:12:34]</strong> are also recognized.</p>
+        {transcript ? (
+          <div className="card sage" style={{ margin: '16px 0' }}>
+            <strong>Stable revision protection is on.</strong>
+            <div className="meta">Each save snapshots the previous version. Paragraph IDs are preserved when text still matches, so existing transcript bookmarks stay attached through normal corrections. Removed paragraphs are archived instead of deleted.</div>
+            <div className="meta" style={{ marginTop: 6 }}>{revisionCount} previous saved revision{revisionCount === 1 ? '' : 's'} stored.</div>
+          </div>
+        ) : null}
         <form className="form-stack" action={saveTranscript.bind(null, session.id)}>
           <label>Title<input className="input" name="transcript_title" defaultValue={transcript?.title ?? 'Reference Transcript'} /></label>
           <label>Source file name<input className="input" name="transcript_source_file_name" defaultValue={transcript?.source_file_name ?? ''} placeholder="Optional, for internal reference" /></label>
@@ -364,8 +374,7 @@ export default async function AdminSessionPage({
               <option value="archived">Archived</option>
             </select>
           </label>
-          {transcript ? <p className="meta">Saving replaces the current paragraph records for this transcript. During this initial production phase, avoid replacing a published transcript after students have begun bookmarking passages.</p> : null}
-          <div className="actions"><button className="button red" type="submit">Import transcript</button></div>
+          <div className="actions"><button className="button red" type="submit">Save transcript</button></div>
         </form>
       </section>
 
