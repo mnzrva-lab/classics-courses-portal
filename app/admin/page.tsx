@@ -64,6 +64,7 @@ export default async function AdminPage() {
           <div className="eyebrow">Workflow</div>
           <h3>Offering → Session → Notes → Materials → Transcript</h3>
           <p className="meta">Keep unfinished material as Draft. Publish each part when it is ready for students.</p>
+          <div className="actions"><Link className="button red" href="/admin/offerings/new">Create Course Offering</Link></div>
         </div>
         <div className="card">
           <div className="eyebrow">Practice library</div>
