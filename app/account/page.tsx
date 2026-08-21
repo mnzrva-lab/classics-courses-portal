@@ -12,18 +12,19 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const userId = data?.claims?.sub as string | undefined
   if (!userId) redirect('/login')
 
-  const [{ data: settings }, { count: noteCount }, { count: courseBookmarkCount }, { count: sessionBookmarkCount }, { count: paragraphBookmarkCount }, { data: progressRows }, { count: searchCount }] = await Promise.all([
+  const [{ data: settings }, { count: noteCount }, { count: courseBookmarkCount }, { count: sessionBookmarkCount }, { count: paragraphBookmarkCount }, { count: meditationBookmarkCount }, { data: progressRows }, { count: searchCount }] = await Promise.all([
     supabase.from('user_settings').select('save_notes, save_bookmarks, save_progress, save_search_history, track_classics_master, timezone').eq('user_id', userId).maybeSingle(),
     supabase.from('student_notes').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('user_course_bookmarks').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('user_session_bookmarks').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('user_paragraph_bookmarks').select('*', { count: 'exact', head: true }).eq('user_id', userId),
+    supabase.from('user_meditation_bookmarks').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('user_session_progress').select('session_id, completed_at, sessions(course_id, courses(title, canonical_number))').eq('user_id', userId),
     supabase.from('user_search_history').select('*', { count: 'exact', head: true }).eq('user_id', userId),
   ])
 
   const progress = progressRows ?? []
-  const bookmarkCount = (courseBookmarkCount ?? 0) + (sessionBookmarkCount ?? 0) + (paragraphBookmarkCount ?? 0)
+  const bookmarkCount = (courseBookmarkCount ?? 0) + (sessionBookmarkCount ?? 0) + (paragraphBookmarkCount ?? 0) + (meditationBookmarkCount ?? 0)
   const progressByCourse = new Map<string, { id: string; title: string; canonicalNumber: number | null; records: number; completed: number }>()
 
   for (const item of progress as any[]) {
@@ -84,7 +85,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
           </label>
           <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
             <input type="checkbox" name="save_bookmarks" defaultChecked={settings?.save_bookmarks ?? true} />
-            <span><strong>Save bookmarks</strong><br /><span className="meta">Allow course, class, and transcript passage bookmarks.</span></span>
+            <span><strong>Save bookmarks</strong><br /><span className="meta">Allow course, class, meditation, and transcript passage bookmarks.</span></span>
           </label>
           <label style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
             <input type="checkbox" name="save_progress" defaultChecked={settings?.save_progress ?? true} />
@@ -167,7 +168,7 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
 
         <div style={{ padding: '18px 0', borderTop: '1px solid var(--line)' }}>
           <h3>Clear all bookmarks</h3>
-          <p className="meta">Type <strong>CLEAR BOOKMARKS</strong> to confirm.</p>
+          <p className="meta">This includes saved courses, classes, meditations, and transcript passages. Type <strong>CLEAR BOOKMARKS</strong> to confirm.</p>
           <form className="form-stack" action={clearAllBookmarks}>
             <input className="input" name="confirmation" autoComplete="off" />
             <div className="actions"><button className="button" type="submit">Clear bookmarks</button></div>
