@@ -27,6 +27,13 @@ type TranscriptParagraph = {
   sort_order: number
 }
 
+type TranscriptAsset = {
+  after_paragraph_sort_order: number
+  storage_path: string
+  mime_type: string | null
+  sort_order: number
+}
+
 function formatTimestamp(seconds: number | null) {
   if (seconds == null) return ''
   const hours = Math.floor(seconds / 3600)
@@ -37,10 +44,24 @@ function formatTimestamp(seconds: number | null) {
     : `[${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}] `
 }
 
-function rebuildTranscript(sections: TranscriptSection[], paragraphs: TranscriptParagraph[]) {
+function transcriptAssetMarker(asset: TranscriptAsset) {
+  return `[[TRANSCRIPT_IMAGE|${asset.storage_path}|${asset.mime_type ?? ''}]]`
+}
+
+function rebuildTranscript(sections: TranscriptSection[], paragraphs: TranscriptParagraph[], assets: TranscriptAsset[]) {
   const sectionMap = new Map(sections.map((section) => [section.id, section]))
   const emitted = new Set<string>()
   const blocks: string[] = []
+  const assetsByPosition = new Map<number, TranscriptAsset[]>()
+
+  for (const asset of assets) {
+    const position = asset.after_paragraph_sort_order
+    if (!assetsByPosition.has(position)) assetsByPosition.set(position, [])
+    assetsByPosition.get(position)!.push(asset)
+  }
+  for (const groupedAssets of assetsByPosition.values()) groupedAssets.sort((a, b) => a.sort_order - b.sort_order)
+
+  for (const asset of assetsByPosition.get(-1) ?? []) blocks.push(transcriptAssetMarker(asset))
 
   for (const paragraph of paragraphs) {
     if (paragraph.section_id && !emitted.has(paragraph.section_id)) {
@@ -53,6 +74,7 @@ function rebuildTranscript(sections: TranscriptSection[], paragraphs: Transcript
 
     const speaker = paragraph.speaker ? `${paragraph.speaker}: ` : ''
     blocks.push(`${formatTimestamp(paragraph.start_seconds)}${speaker}${paragraph.body}`)
+    for (const asset of assetsByPosition.get(paragraph.sort_order) ?? []) blocks.push(transcriptAssetMarker(asset))
   }
 
   for (const section of sections) {
@@ -130,11 +152,16 @@ export default async function AdminSessionPage({
 
   let transcriptText = ''
   if (transcript?.id) {
-    const [{ data: sections }, { data: paragraphs }] = await Promise.all([
+    const [{ data: sections }, { data: paragraphs }, { data: assets }] = await Promise.all([
       supabase.from('transcript_sections').select('id, title, start_seconds, sort_order').eq('transcript_id', transcript.id).order('sort_order'),
       supabase.from('transcript_paragraphs').select('section_id, speaker, body, start_seconds, sort_order').eq('transcript_id', transcript.id).order('sort_order'),
+      supabase.from('transcript_assets').select('after_paragraph_sort_order, storage_path, mime_type, sort_order').eq('transcript_id', transcript.id).order('sort_order'),
     ])
-    transcriptText = rebuildTranscript((sections ?? []) as TranscriptSection[], (paragraphs ?? []) as TranscriptParagraph[])
+    transcriptText = rebuildTranscript(
+      (sections ?? []) as TranscriptSection[],
+      (paragraphs ?? []) as TranscriptParagraph[],
+      (assets ?? []) as TranscriptAsset[]
+    )
   }
 
   const savedMessage = created === '1'
@@ -316,7 +343,7 @@ export default async function AdminSessionPage({
       <section className="section card">
         <div className="eyebrow">4 · Reference Transcript</div>
         <h2>Transcript importer</h2>
-        <p className="meta">Paste a cleaned transcript or import DOCX, Markdown, or text. Use <strong>### Chapter title</strong> for chapter headings. Speaker labels such as <strong>Speaker 1:</strong>, <strong>Timothy Lowenhaupt:</strong>, and <strong>Brian Mendoza:</strong> are recognized. Optional timestamps like <strong>[12:34]</strong> or <strong>[01:12:34]</strong> are also recognized.</p>
+        <p className="meta">Paste a cleaned transcript or import DOCX, Markdown, or text. DOCX imports preserve embedded images in their source position. Use <strong>### Chapter title</strong> for chapter headings. Labels such as <strong>Audience:</strong>, <strong>Host:</strong>, <strong>Speaker 1:</strong>, and speaker names are recognized. Optional timestamps like <strong>[12:34]</strong> or <strong>[01:12:34]</strong> are also recognized.</p>
         <form className="form-stack" action={saveTranscript.bind(null, session.id)}>
           <label>Title<input className="input" name="transcript_title" defaultValue={transcript?.title ?? 'Reference Transcript'} /></label>
           <label>Source file name<input className="input" name="transcript_source_file_name" defaultValue={transcript?.source_file_name ?? ''} placeholder="Optional, for internal reference" /></label>
@@ -326,7 +353,9 @@ export default async function AdminSessionPage({
             rows={24}
             defaultValue={transcriptText}
             placeholder={'### Opening\n\nSpeaker 1: Transcript paragraph...'}
-            help="DOCX imports as editable plain text. After importing, add or verify ### chapter headings, speaker labels, timestamps, and image anchors before publishing."
+            sessionId={session.id}
+            preserveTranscriptImages
+            help="DOCX imports as editable text and keeps embedded images as protected image anchors. Keep those image-anchor lines in place while editing so the student transcript preserves the source order."
           />
           <label>Status
             <select className="input" name="transcript_status" defaultValue={transcript?.status ?? 'draft'}>
