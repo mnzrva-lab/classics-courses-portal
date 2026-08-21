@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import CopyReference from '@/components/copy-reference'
 import { deleteNote, updateNote } from './actions'
 
 export const dynamic = 'force-dynamic'
@@ -24,6 +25,16 @@ function formatTimestamp(seconds: number | null | undefined) {
   return hours > 0
     ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
     : `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+}
+
+function passageReference(session: any, timestamp: string | null) {
+  const course = session?.courses
+  return [
+    course?.canonical_number ? `Course ${course.canonical_number}` : course?.title,
+    session?.course_offerings?.label,
+    session?.title,
+    timestamp,
+  ].filter(Boolean).join(' · ')
 }
 
 function codeOrder(code: string | null | undefined) {
@@ -232,17 +243,24 @@ export default async function MyNotesPage({
                     const timestamp = formatTimestamp(paragraph?.start_seconds)
                     const currentParagraph = paragraph?.is_active !== false
                     const passageHref = href && item.paragraph_id && currentParagraph ? `${href}#paragraph-${item.paragraph_id}` : href
+                    const reference = passageReference(session, timestamp)
                     return (
                       <div key={item.id} style={{ padding: '16px 0', borderTop: '1px solid var(--line)', marginTop: 14 }}>
                         {item.paragraph_id && paragraph ? (
                           <div className="note" style={{ marginBottom: 12 }}>
                             <div className="eyebrow">Passage note{timestamp ? ` · ${timestamp}` : ''}</div>
+                            <div className="meta" style={{ marginTop: 6 }}>{reference}</div>
                             <div style={{ lineHeight: 1.65, marginTop: 6 }}>
                               {paragraph.speaker ? <strong>{paragraph.speaker}: </strong> : null}
                               {clip(paragraph.body, 300)}
                             </div>
                             {!currentParagraph ? <div className="meta" style={{ marginTop: 8 }}>This note points to an earlier transcript revision. Your note and the original passage are still kept here.</div> : null}
-                            {passageHref ? <div className="actions"><Link className="button" href={passageHref}>{currentParagraph ? 'Open passage' : 'Open current class'}</Link></div> : null}
+                            {passageHref ? (
+                              <div className="actions">
+                                <Link className="button" href={passageHref}>{currentParagraph ? 'Open passage' : 'Open current class'}</Link>
+                                {currentParagraph ? <CopyReference reference={reference} path={passageHref} /> : null}
+                              </div>
+                            ) : null}
                           </div>
                         ) : <div className="eyebrow" style={{ marginBottom: 8 }}>Class note</div>}
 
@@ -314,15 +332,21 @@ export default async function MyNotesPage({
           const currentParagraph = paragraph?.is_active !== false
           const href = basePath && paragraph?.id && currentParagraph ? `${basePath}#paragraph-${paragraph.id}` : basePath
           const timestamp = formatTimestamp(paragraph?.start_seconds)
+          const reference = passageReference(session, timestamp)
           return (
             <div key={item.paragraph_id} style={{ padding: '16px 0', borderTop: '1px solid var(--line)' }}>
-              <div className="meta">{timestamp ? `${timestamp} · ` : ''}{session?.courses?.title ?? ''}{session?.course_offerings?.label ? ` · ${session.course_offerings.label}` : ''}{session?.code ? ` · ${session.code}` : ''}</div>
+              <div className="meta">{reference}</div>
               <div style={{ lineHeight: 1.65, marginTop: 6 }}>
                 {paragraph?.speaker ? <strong>{paragraph.speaker}: </strong> : null}
                 {clip(paragraph?.body ?? 'Saved transcript excerpt')}
               </div>
               {!currentParagraph ? <div className="meta" style={{ marginTop: 8 }}>This bookmark is from an earlier transcript revision. The exact passage is no longer in the current transcript, but your saved text has been kept.</div> : null}
-              {href ? <div className="actions"><Link className="button" href={href}>{currentParagraph ? 'Open passage' : 'Open current class'}</Link></div> : null}
+              {href ? (
+                <div className="actions">
+                  <Link className="button" href={href}>{currentParagraph ? 'Open passage' : 'Open current class'}</Link>
+                  {currentParagraph ? <CopyReference reference={reference} path={href} /> : null}
+                </div>
+              ) : null}
             </div>
           )
         }) : <p className="meta">{passageId ? 'This passage is not bookmarked.' : searchText ? 'No saved transcript passages matched this search.' : 'Bookmark transcript text and it will appear here.'}</p>}
