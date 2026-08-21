@@ -71,6 +71,7 @@ export async function clearAllBookmarks(formData: FormData) {
     supabase.from('user_course_bookmarks').delete().eq('user_id', userId),
     supabase.from('user_session_bookmarks').delete().eq('user_id', userId),
     supabase.from('user_paragraph_bookmarks').delete().eq('user_id', userId),
+    supabase.from('user_meditation_bookmarks').delete().eq('user_id', userId),
   ])
 
   if (results.some((result) => result.error)) throw new Error('Could not clear all bookmarks.')
@@ -78,6 +79,7 @@ export async function clearAllBookmarks(formData: FormData) {
   revalidatePath('/account')
   revalidatePath('/my-learning')
   revalidatePath('/my-notes')
+  revalidatePath('/meditations')
   redirect('/account?saved=bookmarks-cleared')
 }
 
