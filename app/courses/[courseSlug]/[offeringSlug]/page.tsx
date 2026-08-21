@@ -11,6 +11,19 @@ function formatDate(value: string | null) {
   return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(date)
 }
 
+function materialLabel(type: string) {
+  const labels: Record<string, string> = {
+    reading: 'Reading',
+    slides: 'Slides',
+    audio: 'Audio',
+    video: 'Video',
+    document: 'Document',
+    link: 'Link',
+    other: 'Resource',
+  }
+  return labels[type] ?? 'Resource'
+}
+
 export default async function OfferingPage({ params }: { params: Promise<{ courseSlug: string; offeringSlug: string }> }) {
   const { courseSlug, offeringSlug } = await params
   const supabase = await createClient()
@@ -34,7 +47,7 @@ export default async function OfferingPage({ params }: { params: Promise<{ cours
 
   if (!offering) notFound()
 
-  const [{ data: sessions }, { data: claimsData }] = await Promise.all([
+  const [{ data: sessions }, { data: materialRows }, { data: claimsData }] = await Promise.all([
     supabase
       .from('sessions')
       .select(`
@@ -44,8 +57,23 @@ export default async function OfferingPage({ params }: { params: Promise<{ cours
       .eq('offering_id', offering.id)
       .eq('status', 'published')
       .order('sort_order', { ascending: true }),
+    supabase
+      .from('materials')
+      .select('id, material_type, title, url, mime_type, storage_bucket, storage_path, sort_order')
+      .eq('offering_id', offering.id)
+      .is('session_id', null)
+      .eq('status', 'published')
+      .order('sort_order'),
     supabase.auth.getClaims(),
   ])
+
+  const offeringMaterials = await Promise.all((materialRows ?? []).map(async (material: any) => {
+    if (material.storage_bucket && material.storage_path) {
+      const { data } = await supabase.storage.from(material.storage_bucket).createSignedUrl(material.storage_path, 60 * 60)
+      return { ...material, resolved_url: data?.signedUrl ?? null }
+    }
+    return { ...material, resolved_url: material.url ?? null }
+  }))
 
   const userId = claimsData?.claims?.sub as string | undefined
   const returnPath = `/courses/${courseSlug}/${offeringSlug}`
@@ -125,6 +153,25 @@ export default async function OfferingPage({ params }: { params: Promise<{ cours
           )}
         </div>
       </section>
+
+      {offeringMaterials.length > 0 ? (
+        <section className="section card">
+          <div className="eyebrow">Course materials</div>
+          <h2 style={{ fontSize: 32 }}>Shared resources for this Course Offering</h2>
+          <p className="meta">These resources apply to the whole Course Offering and are available from every class.</p>
+          <div className="list" style={{ marginTop: 18 }}>
+            {offeringMaterials.map((material: any) => (
+              <div key={material.id} style={{ padding: '14px 0', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
+                <div>
+                  <strong>{material.title}</strong>
+                  <div className="meta">{materialLabel(material.material_type)}{material.mime_type ? ` · ${material.mime_type}` : ''}</div>
+                </div>
+                {material.resolved_url ? <a className="button" href={material.resolved_url} target="_blank" rel="noreferrer">Open</a> : <span className="meta">File temporarily unavailable</span>}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="section card">
         <div className="eyebrow">Sessions</div>
