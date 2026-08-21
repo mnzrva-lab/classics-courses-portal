@@ -49,7 +49,7 @@ export default async function MyNotesPage({
       .order('created_at', { ascending: false }),
     supabase
       .from('user_paragraph_bookmarks')
-      .select('paragraph_id, created_at, transcript_paragraphs(id, body, speaker, start_seconds, transcripts(session_id, sessions(id, slug, code, title, courses(slug, title, canonical_number), course_offerings(slug, label))))')
+      .select('paragraph_id, created_at, transcript_paragraphs(id, body, speaker, start_seconds, is_active, transcripts(session_id, sessions(id, slug, code, title, courses(slug, title, canonical_number), course_offerings(slug, label))))')
       .eq('user_id', userId)
       .order('created_at', { ascending: false }),
     supabase
@@ -118,7 +118,7 @@ export default async function MyNotesPage({
     <main className="container page">
       <div className="eyebrow">Your private study space</div>
       <h1 style={{ fontSize: 'clamp(38px, 6vw, 64px)' }}>My Notes</h1>
-      <p className="lead">Notes grouped by course and class, with your saved courses, classes, and transcript passages in the same study space.</p>
+      <p className="lead">Notes grouped by course and class, with your saved courses, classes, and transcript bookmarks in the same study space.</p>
 
       {savedMessage ? <div className="card completed section">{savedMessage}</div> : null}
 
@@ -209,26 +209,28 @@ export default async function MyNotesPage({
 
       <section className="section card">
         <div className="eyebrow">Transcript bookmarks</div>
-        <h2 style={{ fontSize: 32 }}>Saved passages</h2>
+        <h2 style={{ fontSize: 32 }}>Saved transcript bookmarks</h2>
         {paragraphBookmarks.length ? paragraphBookmarks.map((item: any) => {
           const paragraph = item.transcript_paragraphs
           const transcript = paragraph?.transcripts
           const session = transcript?.sessions
           const basePath = sessionPath(session)
-          const href = basePath && paragraph?.id ? `${basePath}#paragraph-${paragraph.id}` : basePath
+          const currentParagraph = paragraph?.is_active !== false
+          const href = basePath && paragraph?.id && currentParagraph ? `${basePath}#paragraph-${paragraph.id}` : basePath
           return (
             <div key={item.paragraph_id} style={{ padding: '16px 0', borderTop: '1px solid var(--line)' }}>
               <div style={{ lineHeight: 1.65 }}>
                 {paragraph?.speaker ? <strong>{paragraph.speaker}: </strong> : null}
-                {clip(paragraph?.body ?? 'Saved transcript passage')}
+                {clip(paragraph?.body ?? 'Saved transcript excerpt')}
               </div>
               <div className="meta" style={{ marginTop: 8 }}>
                 {session?.courses?.title ?? ''}{session?.course_offerings?.label ? ` · ${session.course_offerings.label}` : ''}{session?.code ? ` · ${session.code}` : ''}
               </div>
-              {href ? <div className="actions"><Link className="button" href={href}>Open passage</Link></div> : null}
+              {!currentParagraph ? <div className="meta" style={{ marginTop: 8 }}>This bookmark is from an earlier transcript revision. The exact paragraph is no longer in the current transcript, but your saved text has been kept.</div> : null}
+              {href ? <div className="actions"><Link className="button" href={href}>{currentParagraph ? 'Open bookmark' : 'Open current class'}</Link></div> : null}
             </div>
           )
-        }) : <p className="meta">Bookmark a transcript passage and it will appear here.</p>}
+        }) : <p className="meta">Bookmark transcript text and it will appear here.</p>}
       </section>
 
       <section className="section"><Link className="button" href="/my-learning">← My Learning</Link></section>
