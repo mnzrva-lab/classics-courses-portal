@@ -2,18 +2,24 @@ import Link from 'next/link'
 import NextSessionCard from '@/components/next-session-card'
 import { createClient } from '@/lib/supabase/server'
 
+export const dynamic = 'force-dynamic'
+
 export default async function HomePage() {
   const supabase = await createClient()
+  const recentHorizon = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
   const { data } = await supabase
     .from('sessions')
     .select(`
       id, code, title, starts_at, ends_at, zoom_url,
-      courses!inner(title),
-      course_offerings(label),
+      courses!inner(title, status),
+      course_offerings!inner(label, status),
       session_teachers(teachers(full_name))
     `)
     .eq('status', 'published')
+    .eq('courses.status', 'published')
+    .eq('course_offerings.status', 'published')
     .not('starts_at', 'is', null)
+    .gte('starts_at', recentHorizon)
     .order('starts_at', { ascending: true })
     .limit(40)
 
@@ -49,7 +55,7 @@ export default async function HomePage() {
       </section>
 
       <section className="container section">
-        <div className="grid">
+        <div className="grid two">
           <Link className="card" href="/courses">
             <div className="pill">18-course path</div>
             <h3 style={{ marginTop: 18 }}>Classics Courses</h3>
@@ -59,6 +65,11 @@ export default async function HomePage() {
             <div className="pill">Ongoing program</div>
             <h3 style={{ marginTop: 18 }}>Living Lam Rim</h3>
             <p className="meta">Browse by term, then open the individual class you want to study.</p>
+          </Link>
+          <Link className="card" href="/other-programs">
+            <div className="pill">Long-form study</div>
+            <h3 style={{ marginTop: 18 }}>Other Programs</h3>
+            <p className="meta">Explore text studies and teaching programs outside the 18 Classics Courses.</p>
           </Link>
           <Link className="card" href="/meditations">
             <div className="pill">Practice library</div>
