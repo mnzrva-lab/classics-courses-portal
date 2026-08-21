@@ -158,34 +158,52 @@ export async function importTranscriptDraft(
   const { sections, paragraphs, assets } = parseTranscript(rawText, transcriptId, sessionId)
   if (paragraphs.length === 0) throw new Error('No transcript paragraphs were found in this file.')
 
-  const { error: transcriptError } = await supabase.from('transcripts').insert({
-    id: transcriptId,
-    session_id: sessionId,
-    language_code: 'en',
-    title: 'Reference Transcript',
-    disclaimer: TRANSCRIPT_DISCLAIMER,
-    source_file_name: sourceFileName,
-    status: 'draft',
-  })
-  if (transcriptError) throw new Error(transcriptError.message)
+  const paragraphPayload = paragraphs.map((paragraph) => ({
+    id: randomUUID(),
+    section_id: paragraph.section_id,
+    speaker: paragraph.speaker,
+    body: paragraph.body,
+    start_seconds: paragraph.start_seconds,
+    sort_order: paragraph.sort_order,
+  }))
+  const paragraphIdBySortOrder = new Map(paragraphPayload.map((paragraph) => [paragraph.sort_order, paragraph.id]))
 
-  try {
-    if (sections.length > 0) {
-      const { error } = await supabase.from('transcript_sections').insert(sections)
-      if (error) throw new Error(error.message)
-    }
-    if (paragraphs.length > 0) {
-      const { error } = await supabase.from('transcript_paragraphs').insert(paragraphs)
-      if (error) throw new Error(error.message)
-    }
-    if (assets.length > 0) {
-      const { error } = await supabase.from('transcript_assets').insert(assets)
-      if (error) throw new Error(error.message)
-    }
-  } catch (error) {
-    await supabase.from('transcripts').delete().eq('id', transcriptId)
-    throw error
-  }
+  const sectionPayload = sections.map((section) => ({
+    id: section.id,
+    slug: section.slug,
+    title: section.title,
+    start_seconds: section.start_seconds,
+    sort_order: section.sort_order,
+  }))
+
+  const assetPayload = assets.map((asset) => ({
+    id: null,
+    after_paragraph_sort_order: asset.after_paragraph_sort_order,
+    after_paragraph_id: asset.after_paragraph_sort_order >= 0
+      ? paragraphIdBySortOrder.get(asset.after_paragraph_sort_order) ?? null
+      : null,
+    storage_bucket: asset.storage_bucket,
+    storage_path: asset.storage_path,
+    mime_type: asset.mime_type,
+    alt_text: asset.alt_text,
+    caption: asset.caption,
+    sort_order: asset.sort_order,
+  }))
+
+  const { error: saveError } = await supabase.rpc('save_transcript_content', {
+    p_transcript_id: transcriptId,
+    p_session_id: sessionId,
+    p_language_code: 'en',
+    p_title: 'Reference Transcript',
+    p_disclaimer: TRANSCRIPT_DISCLAIMER,
+    p_source_file_name: sourceFileName,
+    p_status: 'draft',
+    p_sections: sectionPayload,
+    p_paragraphs: paragraphPayload,
+    p_assets: assetPayload,
+  })
+
+  if (saveError) throw new Error(saveError.message)
 
   revalidatePath('/admin')
   revalidatePath(`/admin/offerings/${offeringId}`)
