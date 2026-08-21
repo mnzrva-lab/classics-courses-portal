@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
+import SessionTime from '@/components/session-time'
 import { markSessionComplete, saveSessionNote, startSessionProgress, toggleParagraphBookmark, toggleSessionBookmark } from './actions'
 
 type CourseRelation = {
@@ -10,12 +11,14 @@ type CourseRelation = {
   slug: string
   title: string
   canonical_number: number | null
+  status: string
 }
 
 type OfferingRelation = {
   id: string
   slug: string
   label: string
+  status: string
 }
 
 type TranscriptSection = {
@@ -81,25 +84,6 @@ export default async function SessionPage({
   const { contentPreview } = await searchParams
   const supabase = await createClient()
 
-  const { data: session } = await supabase
-    .from('sessions')
-    .select(`
-      id, slug, code, title, session_type, recording_url, audio_url, starts_at, source_timezone,
-      courses!inner(id, slug, title, canonical_number),
-      course_offerings!inner(id, slug, label),
-      session_teachers(teachers(full_name))
-    `)
-    .eq('slug', sessionSlug)
-    .eq('courses.slug', courseSlug)
-    .eq('course_offerings.slug', offeringSlug)
-    .eq('status', 'published')
-    .single()
-
-  if (!session) notFound()
-
-  const course = session.courses as unknown as CourseRelation
-  const offering = session.course_offerings as unknown as OfferingRelation
-
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub as string | undefined
   let adminContentPreview = false
@@ -108,6 +92,31 @@ export default async function SessionPage({
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle()
     adminContentPreview = profile?.role === 'admin'
   }
+
+  let sessionQuery = supabase
+    .from('sessions')
+    .select(`
+      id, slug, code, title, session_type, status, recording_url, audio_url, starts_at, source_timezone,
+      courses!inner(id, slug, title, canonical_number, status),
+      course_offerings!inner(id, slug, label, status),
+      session_teachers(teachers(full_name))
+    `)
+    .eq('slug', sessionSlug)
+    .eq('courses.slug', courseSlug)
+    .eq('course_offerings.slug', offeringSlug)
+
+  if (!adminContentPreview) {
+    sessionQuery = sessionQuery
+      .eq('status', 'published')
+      .eq('courses.status', 'published')
+      .eq('course_offerings.status', 'published')
+  }
+
+  const { data: session } = await sessionQuery.single()
+  if (!session) notFound()
+
+  const course = session.courses as unknown as CourseRelation
+  const offering = session.course_offerings as unknown as OfferingRelation
 
   const progressPromise = userId
     ? supabase.from('user_session_progress').select('started_at, completed_at, last_opened_at').eq('user_id', userId).eq('session_id', session.id).maybeSingle()
@@ -185,6 +194,11 @@ export default async function SessionPage({
   }
 
   const sectionMap = new Map(transcriptSections.map((section) => [section.id, section]))
+  const firstParagraphBySection = new Map<string, TranscriptParagraph>()
+  for (const paragraph of transcriptParagraphs) {
+    if (paragraph.section_id && !firstParagraphBySection.has(paragraph.section_id)) firstParagraphBySection.set(paragraph.section_id, paragraph)
+  }
+
   const assetsByParagraphId = new Map<string, ResolvedTranscriptAsset[]>()
   const legacyAssetsByPosition = new Map<number, ResolvedTranscriptAsset[]>()
 
@@ -203,17 +217,16 @@ export default async function SessionPage({
   function renderAssetList(assets: ResolvedTranscriptAsset[]) {
     if (!assets.length) return null
     return assets.map((asset) => (
-      <figure key={asset.id} style={{ margin: '20px 0 8px' }}>
+      <figure key={asset.id}>
         {asset.resolved_url ? (
           <img
             src={asset.resolved_url}
             alt={asset.alt_text ?? 'Transcript reference image'}
-            style={{ display: 'block', maxWidth: '100%', height: 'auto', borderRadius: 16, border: '1px solid var(--line)' }}
           />
         ) : (
           <div className="card"><span className="meta">Transcript image temporarily unavailable.</span></div>
         )}
-        {asset.caption ? <figcaption className="meta" style={{ marginTop: 8 }}>{asset.caption}</figcaption> : null}
+        {asset.caption ? <figcaption className="meta">{asset.caption}</figcaption> : null}
       </figure>
     ))
   }
@@ -230,7 +243,8 @@ export default async function SessionPage({
 
   let previousSectionId: string | null | undefined = undefined
   const teachers = (session.session_teachers ?? []).map((item: any) => item.teachers?.full_name).filter(Boolean)
-  const returnPath = `/courses/${courseSlug}/${offeringSlug}/${sessionSlug}`
+  const publicReturnPath = `/courses/${courseSlug}/${offeringSlug}/${sessionSlug}`
+  const returnPath = adminContentPreview ? `${publicReturnPath}?contentPreview=1` : publicReturnPath
   const isCompleted = Boolean(progress?.completed_at)
   const isInProgress = Boolean(progress && !progress.completed_at)
 
@@ -239,15 +253,34 @@ export default async function SessionPage({
       {adminContentPreview ? (
         <div className="card sage" style={{ marginBottom: 20 }}>
           <strong>Admin content preview</strong>
-          <div className="meta">Draft and unpublished Study Notes, materials, and transcript content are visible only to an administrator in this preview mode.</div>
+          <div className="meta">Draft and unpublished session content is visible only to an administrator in this preview mode.</div>
+          <div className="actions">
+            <Link className="button" href={`/admin/sessions/${session.id}`}>Edit session</Link>
+            <Link className="button" href={`/admin/offerings/${offering.id}/review`}>Content review</Link>
+          </div>
         </div>
       ) : null}
 
+      <div className="actions" style={{ marginTop: 0, marginBottom: 18 }}>
+        <Link className="button" href={`/courses/${courseSlug}/${offeringSlug}`}>← {offering.label}</Link>
+      </div>
       <div className="eyebrow">{course.title} · {offering.label}</div>
       <h1 style={{ fontSize: 'clamp(38px, 6vw, 64px)' }}>{session.code ? `${session.code} · ` : ''}{session.title}</h1>
-      <p className="lead">{teachers.join(', ')}</p>
+      {teachers.length ? <p className="lead">{teachers.join(', ')}</p> : null}
+      {session.starts_at ? <div className="meta"><SessionTime startsAt={session.starts_at} sourceTimezone={session.source_timezone} /></div> : null}
 
-      <section className="section card">
+      <nav className="card" aria-label="Class contents" style={{ marginTop: 28 }}>
+        <div className="eyebrow">In this class</div>
+        <div className="actions" style={{ marginTop: 10 }}>
+          <a className="button" href="#recording">Recording</a>
+          <a className="button" href="#study-notes">Study Notes</a>
+          {resolvedMaterials.length > 0 ? <a className="button" href="#materials">Materials</a> : null}
+          <a className="button" href="#transcript">Reference Transcript</a>
+          {userId ? <Link className="button" href="/my-notes">My Notes</Link> : null}
+        </div>
+      </nav>
+
+      <section id="recording" className="section card" style={{ scrollMarginTop: 96 }}>
         <div className="eyebrow">Recording</div>
         <h2 style={{ fontSize: 32 }}>Watch or listen</h2>
         <RecordingPlayer recordingUrl={session.recording_url} title={session.title} />
@@ -315,10 +348,11 @@ export default async function SessionPage({
               </div>
             ))}
           </div>
+          <div className="actions"><Link className="button" href="/my-notes">Open My Notes</Link></div>
         </section>
       )}
 
-      <section className="section card">
+      <section id="study-notes" className="section card" style={{ scrollMarginTop: 96 }}>
         <div className="eyebrow">Study Notes{adminContentPreview && studyNotes?.status !== 'published' ? ` · ${studyNotes?.status ?? 'unpublished'}` : ''}</div>
         {studyNotes ? (
           <>
@@ -331,7 +365,7 @@ export default async function SessionPage({
       </section>
 
       {resolvedMaterials.length > 0 && (
-        <section className="section card">
+        <section id="materials" className="section card" style={{ scrollMarginTop: 96 }}>
           <div className="eyebrow">Class materials</div>
           <h2 style={{ fontSize: 32 }}>Readings, slides, and resources</h2>
           <div className="list">
@@ -348,12 +382,30 @@ export default async function SessionPage({
         </section>
       )}
 
-      <section className="section card">
+      <section id="transcript" className="section card" style={{ scrollMarginTop: 96 }}>
         {transcript ? (
           <>
             <p className="meta" style={{ marginBottom: 12 }}>{transcript.disclaimer}</p>
             <div className="eyebrow">Reference Transcript{adminContentPreview && transcript.status !== 'published' ? ` · ${transcript.status}` : ''}</div>
             <h2 style={{ fontSize: 32 }}>{transcript.title}</h2>
+
+            {transcriptSections.length > 1 ? (
+              <nav aria-label="Transcript chapters" className="note" style={{ margin: '20px 0 28px' }}>
+                <strong>Chapters</strong>
+                <div className="actions" style={{ marginTop: 10 }}>
+                  {transcriptSections.map((section) => {
+                    const firstParagraph = firstParagraphBySection.get(section.id)
+                    const timestamp = formatTimestamp(section.start_seconds)
+                    return (
+                      <a className="button" key={section.id} href={firstParagraph ? `#paragraph-${firstParagraph.id}` : '#transcript'}>
+                        {timestamp ? `${timestamp} · ` : ''}{section.title}
+                      </a>
+                    )
+                  })}
+                </div>
+              </nav>
+            ) : null}
+
             {transcriptParagraphs.length > 0 ? (
               <div style={{ maxWidth: 820 }}>
                 {renderLeadingTranscriptAssets()}
