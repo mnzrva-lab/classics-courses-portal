@@ -12,7 +12,16 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
   const userId = data?.claims?.sub as string | undefined
   if (!userId) redirect('/login')
 
-  const [{ data: settings }, { count: noteCount }, { count: courseBookmarkCount }, { count: sessionBookmarkCount }, { count: paragraphBookmarkCount }, { count: meditationBookmarkCount }, { data: progressRows }, { count: searchCount }] = await Promise.all([
+  const [
+    { data: settings },
+    { count: noteCount },
+    { count: courseBookmarkCount },
+    { count: sessionBookmarkCount },
+    { count: paragraphBookmarkCount },
+    { count: meditationBookmarkCount },
+    { data: progressRows },
+    { count: searchCount },
+  ] = await Promise.all([
     supabase.from('user_settings').select('save_notes, save_bookmarks, save_progress, save_search_history, track_classics_master, timezone').eq('user_id', userId).maybeSingle(),
     supabase.from('student_notes').select('*', { count: 'exact', head: true }).eq('user_id', userId),
     supabase.from('user_course_bookmarks').select('*', { count: 'exact', head: true }).eq('user_id', userId),
@@ -110,12 +119,27 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
         <div className="card">
           <div className="eyebrow">Exports</div>
           <h2 style={{ fontSize: 30 }}>Keep your own copy</h2>
-          <p className="meta">Export your private notes and bookmarks as Markdown files. Additional formats can be added later without changing your stored data.</p>
-          <div className="actions">
-            <a className="button" href="/account/export/notes">Export notes</a>
-            <a className="button" href="/account/export/bookmarks">Export bookmarks</a>
+          <p className="meta">Download your private study data in a format that works for you. Word exports are formatted for comfortable reading and editing.</p>
+
+          <div style={{ padding: '16px 0', borderTop: '1px solid var(--line)' }}>
+            <strong>Private notes</strong>
+            <div className="actions" style={{ marginTop: 10 }}>
+              <a className="button sage" href="/account/export/notes?format=docx">Word .docx</a>
+              <a className="button" href="/account/export/notes?format=md">Markdown .md</a>
+              <a className="button" href="/account/export/notes?format=txt">Plain text .txt</a>
+            </div>
+          </div>
+
+          <div style={{ padding: '16px 0', borderTop: '1px solid var(--line)' }}>
+            <strong>Bookmarks</strong>
+            <div className="actions" style={{ marginTop: 10 }}>
+              <a className="button sage" href="/account/export/bookmarks?format=docx">Word .docx</a>
+              <a className="button" href="/account/export/bookmarks?format=md">Markdown .md</a>
+              <a className="button" href="/account/export/bookmarks?format=txt">Plain text .txt</a>
+            </div>
           </div>
         </div>
+
         <div className="card">
           <div className="eyebrow">Stored now</div>
           <h2 style={{ fontSize: 30 }}>Your study data</h2>
