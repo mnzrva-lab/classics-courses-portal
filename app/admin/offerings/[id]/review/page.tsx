@@ -1,0 +1,183 @@
+import Link from 'next/link'
+import { notFound } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
+
+export const dynamic = 'force-dynamic'
+
+type CourseRelation = {
+  slug: string
+  title: string
+  canonical_number: number | null
+}
+
+type TeacherLink = {
+  teachers: { full_name: string } | null
+}
+
+type StatusRow = { status: string }
+type TranscriptRow = { id: string; status: string; source_file_name: string | null }
+type MaterialRow = { status: string; material_type: string }
+
+function statusPill(status: string) {
+  const label = status === 'published' ? 'Published' : status === 'draft' ? 'Draft' : status === 'archived' ? 'Archived' : status
+  return <span className="pill">{label}</span>
+}
+
+export default async function OfferingReviewPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const supabase = await createClient()
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const userId = claimsData?.claims?.sub as string | undefined
+
+  if (!userId) {
+    return <main className="container page"><div className="card"><h1>Sign in required</h1><Link className="button" href="/login">Sign in</Link></div></main>
+  }
+
+  const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).single()
+  if (profile?.role !== 'admin') {
+    return <main className="container page"><div className="card"><h1>Admin access required</h1></div></main>
+  }
+
+  const [{ data: offering }, { data: sessions }] = await Promise.all([
+    supabase
+      .from('course_offerings')
+      .select('id, slug, label, status, courses(slug, title, canonical_number)')
+      .eq('id', id)
+      .single(),
+    supabase
+      .from('sessions')
+      .select(`
+        id, slug, code, title, session_type, session_date, status, recording_url, audio_url,
+        session_teachers(teachers(full_name)),
+        study_notes(status),
+        transcripts(id, status, source_file_name),
+        materials(status, material_type)
+      `)
+      .eq('offering_id', id)
+      .order('sort_order'),
+  ])
+
+  if (!offering) notFound()
+  const course = offering.courses as unknown as CourseRelation
+  const sessionRows = sessions ?? []
+  const transcriptIds = sessionRows.flatMap((session: any) => ((session.transcripts ?? []) as TranscriptRow[]).map((row) => row.id))
+
+  const paragraphCounts = new Map<string, number>()
+  const imageCounts = new Map<string, number>()
+  if (transcriptIds.length) {
+    const [{ data: paragraphs }, { data: assets }] = await Promise.all([
+      supabase.from('transcript_paragraphs').select('transcript_id').in('transcript_id', transcriptIds).eq('is_active', true),
+      supabase.from('transcript_assets').select('transcript_id').in('transcript_id', transcriptIds),
+    ])
+
+    for (const row of paragraphs ?? []) paragraphCounts.set(row.transcript_id, (paragraphCounts.get(row.transcript_id) ?? 0) + 1)
+    for (const row of assets ?? []) imageCounts.set(row.transcript_id, (imageCounts.get(row.transcript_id) ?? 0) + 1)
+  }
+
+  const transcriptPublished = sessionRows.filter((session: any) => ((session.transcripts ?? []) as TranscriptRow[])[0]?.status === 'published').length
+  const transcriptDraft = sessionRows.filter((session: any) => ((session.transcripts ?? []) as TranscriptRow[])[0]?.status === 'draft').length
+  const notesPublished = sessionRows.filter((session: any) => ((session.study_notes ?? []) as StatusRow[])[0]?.status === 'published').length
+  const notesDraft = sessionRows.filter((session: any) => ((session.study_notes ?? []) as StatusRow[])[0]?.status === 'draft').length
+  const recordings = sessionRows.filter((session: any) => Boolean(session.recording_url || session.audio_url)).length
+
+  return (
+    <main className="container page">
+      <div className="eyebrow">Admin · Content review</div>
+      <h1>{course.canonical_number ? `Course ${course.canonical_number} · ` : ''}{course.title}</h1>
+      <p className="lead">Review what is present, what is still Draft, and what students can currently see before publishing more content.</p>
+
+      <section className="grid section">
+        <div className="card sage">
+          <div className="meta">Sessions</div>
+          <div className="stat">{sessionRows.length}</div>
+          <div className="meta">Course Offering: {offering.label}</div>
+        </div>
+        <div className="card">
+          <div className="meta">Reference Transcripts</div>
+          <div className="stat">{transcriptPublished} published</div>
+          <div className="meta">{transcriptDraft} Draft · {sessionRows.length - transcriptPublished - transcriptDraft} missing</div>
+        </div>
+        <div className="card">
+          <div className="meta">Study Notes</div>
+          <div className="stat">{notesPublished} published</div>
+          <div className="meta">{notesDraft} Draft · {sessionRows.length - notesPublished - notesDraft} missing</div>
+        </div>
+        <div className="card">
+          <div className="meta">Recordings / audio</div>
+          <div className="stat">{recordings} / {sessionRows.length}</div>
+          <div className="meta">At least one recording or audio source added.</div>
+        </div>
+      </section>
+
+      <section className="section card">
+        <div className="eyebrow">Course Offering</div>
+        <h2 style={{ fontSize: 32 }}>{offering.label}</h2>
+        <div className="actions">
+          {statusPill(offering.status)}
+          <Link className="button" href={`/admin/offerings/${offering.id}`}>Manage Course Offering</Link>
+          <Link className="button" href={`/courses/${course.slug}/${offering.slug}`}>Open student course page</Link>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="eyebrow">Session review</div>
+        <h2 style={{ fontSize: 32 }}>Content readiness</h2>
+
+        {sessionRows.map((session: any) => {
+          const transcript = ((session.transcripts ?? []) as TranscriptRow[])[0]
+          const notes = ((session.study_notes ?? []) as StatusRow[])[0]
+          const materials = (session.materials ?? []) as MaterialRow[]
+          const publishedMaterials = materials.filter((item) => item.status === 'published').length
+          const draftMaterials = materials.filter((item) => item.status === 'draft').length
+          const teachers = ((session.session_teachers ?? []) as TeacherLink[]).map((item) => item.teachers?.full_name).filter(Boolean)
+          const previewPath = `/courses/${course.slug}/${offering.slug}/${session.slug}?contentPreview=1`
+          const studentPath = `/courses/${course.slug}/${offering.slug}/${session.slug}`
+
+          return (
+            <div className="card" key={session.id} style={{ marginBottom: 18 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 18, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                <div>
+                  <div className="eyebrow">{session.code || session.session_type}</div>
+                  <h3 style={{ fontSize: 26 }}>{session.title}</h3>
+                  <div className="meta">{session.session_date ?? 'No date'} · {teachers.join(', ') || 'Teacher missing'} · Session {session.status}</div>
+                </div>
+                <div className="actions" style={{ marginTop: 0 }}>
+                  <Link className="button" href={`/admin/sessions/${session.id}`}>Edit</Link>
+                  <Link className="button sage" href={previewPath}>Preview Draft content</Link>
+                  {session.status === 'published' ? <Link className="button" href={studentPath}>Student view</Link> : null}
+                </div>
+              </div>
+
+              <div className="grid two" style={{ marginTop: 18 }}>
+                <div>
+                  <strong>Recording</strong>
+                  <div className="meta">{session.recording_url ? 'Recording added' : session.audio_url ? 'Audio added' : 'Missing'}</div>
+                </div>
+                <div>
+                  <strong>Study Notes</strong>
+                  <div className="meta">{notes?.status ?? 'Missing'}</div>
+                </div>
+                <div>
+                  <strong>Reference Transcript</strong>
+                  <div className="meta">
+                    {transcript
+                      ? `${transcript.status} · ${paragraphCounts.get(transcript.id) ?? 0} paragraphs · ${imageCounts.get(transcript.id) ?? 0} images`
+                      : 'Missing'}
+                  </div>
+                  {transcript?.source_file_name ? <div className="meta">Source: {transcript.source_file_name}</div> : null}
+                  {transcript ? <div className="actions"><Link className="button" href={`/admin/sessions/${session.id}/revisions`}>Revision history</Link></div> : null}
+                </div>
+                <div>
+                  <strong>Class materials</strong>
+                  <div className="meta">{publishedMaterials} published · {draftMaterials} Draft · {materials.length} total</div>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+      </section>
+
+      <section className="section"><Link className="button" href="/admin">← Back to admin</Link></section>
+    </main>
+  )
+}
