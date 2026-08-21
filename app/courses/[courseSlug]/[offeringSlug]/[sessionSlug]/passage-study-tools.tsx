@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useState } from 'react'
+import CopyReference from '@/components/copy-reference'
 import { saveParagraphNote, toggleParagraphBookmark } from './actions'
 
 type Props = {
@@ -12,6 +13,8 @@ type Props = {
   canSaveBookmarks: boolean
   canSaveNotes: boolean
   noteCount: number
+  reference: string
+  passagePath: string
 }
 
 export default function PassageStudyTools({
@@ -22,11 +25,15 @@ export default function PassageStudyTools({
   canSaveBookmarks,
   canSaveNotes,
   noteCount,
+  reference,
+  passagePath,
 }: Props) {
   const [noteOpen, setNoteOpen] = useState(false)
 
   return (
     <div className="passage-study-tools">
+      <CopyReference reference={reference} path={passagePath} />
+
       {(canSaveBookmarks || bookmarked) ? (
         <form action={toggleParagraphBookmark.bind(null, paragraphId, returnPath)}>
           <button className="passage-action" type="submit">
@@ -55,6 +62,7 @@ export default function PassageStudyTools({
                 <span className="meta">Private note about this exact passage</span>
                 <textarea className="input" name="note" rows={3} required autoFocus placeholder="What do you want to remember here?" />
               </label>
+              <div className="meta passage-reference-preview">{reference}</div>
               <div className="actions" style={{ marginTop: 8 }}>
                 <button className="button sage" type="submit">Save note</button>
                 <button className="button" type="button" onClick={() => setNoteOpen(false)}>Cancel</button>
