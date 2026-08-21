@@ -10,6 +10,7 @@ const STUDY_NOTES_DISCLAIMER = 'These study notes were created from the class wi
 const TRANSCRIPT_DISCLAIMER = 'This transcript was created by a student with AI and should be used for reference only. Please check them against the video and audio for accuracy of content.'
 const MATERIAL_TYPES = ['reading', 'slides', 'audio', 'video', 'document', 'link', 'other'] as const
 const TEACHING_MATERIALS_BUCKET = 'teaching-materials'
+const TRANSCRIPT_ASSETS_BUCKET = 'transcript-assets'
 
 async function requireAdmin() {
   const supabase = await createClient()
@@ -81,6 +82,23 @@ function slugify(value: string, fallback: string) {
   return slug || fallback
 }
 
+function splitSpeaker(body: string) {
+  const match = body.match(/^([^:\n]{1,60}):\s+/)
+  if (!match) return { speaker: null as string | null, body }
+
+  const candidate = match[1].trim()
+  const knownLabel = /^(?:Audience(?: Member)?|Speaker\s+\d+)$/i.test(candidate)
+  const hostLabel = /^Host(?:,\s*[A-Z][A-Za-z'’.-]*(?:\s+[A-Z][A-Za-z'’.-]*){0,3})?$/u.test(candidate)
+  const properName = /^(?:[A-Z][A-Za-z'’.-]*)(?:\s+[A-Z][A-Za-z'’.-]*){0,3}$/u.test(candidate)
+
+  if (!knownLabel && !hostLabel && !properName) return { speaker: null as string | null, body }
+
+  return {
+    speaker: candidate,
+    body: body.slice(match[0].length).trim(),
+  }
+}
+
 function parseTranscript(rawText: string, transcriptId: string) {
   const blocks = rawText
     .replace(/\r\n/g, '\n')
@@ -90,11 +108,29 @@ function parseTranscript(rawText: string, transcriptId: string) {
 
   const sections: Array<{ id: string; transcript_id: string; slug: string; title: string; start_seconds: number | null; sort_order: number }> = []
   const paragraphs: Array<{ transcript_id: string; section_id: string | null; speaker: string | null; body: string; start_seconds: number | null; sort_order: number }> = []
+  const assets: Array<{ transcript_id: string; after_paragraph_sort_order: number; asset_type: 'image'; storage_bucket: string; storage_path: string; mime_type: string | null; alt_text: string | null; caption: string | null; sort_order: number }> = []
   let currentSectionId: string | null = null
   let sectionOrder = 0
   let paragraphOrder = 0
+  let assetOrder = 0
 
   for (const block of blocks) {
+    const imageMatch = block.match(/^\[\[TRANSCRIPT_IMAGE\|([^|\]]+)\|([^\]]*)\]\]$/)
+    if (imageMatch) {
+      assets.push({
+        transcript_id: transcriptId,
+        after_paragraph_sort_order: paragraphOrder - 1,
+        asset_type: 'image',
+        storage_bucket: TRANSCRIPT_ASSETS_BUCKET,
+        storage_path: imageMatch[1].trim(),
+        mime_type: imageMatch[2].trim() || null,
+        alt_text: null,
+        caption: null,
+        sort_order: assetOrder++,
+      })
+      continue
+    }
+
     const headingMatch = block.match(/^###\s+([\s\S]+)$/)
     if (headingMatch) {
       const parsed = timestampSeconds(headingMatch[1].trim())
@@ -113,26 +149,20 @@ function parseTranscript(rawText: string, transcriptId: string) {
     }
 
     const parsed = timestampSeconds(block)
-    let body = parsed.text
-    let speaker: string | null = null
-    const speakerMatch = body.match(/^((?:Speaker\s+\d+)|(?:Timothy Lowenhaupt)|(?:Brian Mendoza)):\s*/i)
-    if (speakerMatch) {
-      speaker = speakerMatch[1]
-      body = body.slice(speakerMatch[0].length).trim()
-    }
+    const split = splitSpeaker(parsed.text)
+    if (!split.body) continue
 
-    if (!body) continue
     paragraphs.push({
       transcript_id: transcriptId,
       section_id: currentSectionId,
-      speaker,
-      body,
+      speaker: split.speaker,
+      body: split.body,
       start_seconds: parsed.seconds,
       sort_order: paragraphOrder++,
     })
   }
 
-  return { sections, paragraphs }
+  return { sections, paragraphs, assets }
 }
 
 export async function updateSession(sessionId: string, formData: FormData) {
@@ -332,7 +362,19 @@ export async function saveTranscript(sessionId: string, formData: FormData) {
   if (existingError) throw new Error(existingError.message)
 
   const transcriptId = existing?.id ?? randomUUID()
-  const { sections, paragraphs } = parseTranscript(rawText, transcriptId)
+  const { sections, paragraphs, assets } = parseTranscript(rawText, transcriptId)
+  const expectedAssetPrefix = `transcripts/${sessionId}/`
+
+  for (const asset of assets) {
+    if (!asset.storage_path.startsWith(expectedAssetPrefix) || asset.storage_path.includes('..')) {
+      throw new Error('The transcript contains an invalid image reference. Re-import the DOCX before saving.')
+    }
+  }
+
+  const { data: existingAssets, error: existingAssetsError } = existing?.id
+    ? await supabase.from('transcript_assets').select('storage_bucket, storage_path').eq('transcript_id', transcriptId)
+    : { data: [], error: null }
+  if (existingAssetsError) throw new Error(existingAssetsError.message)
 
   const { error: transcriptError } = await supabase.from('transcripts').upsert({
     id: transcriptId,
@@ -353,6 +395,9 @@ export async function saveTranscript(sessionId: string, formData: FormData) {
   const { error: deleteSectionsError } = await supabase.from('transcript_sections').delete().eq('transcript_id', transcriptId)
   if (deleteSectionsError) throw new Error(deleteSectionsError.message)
 
+  const { error: deleteAssetsError } = await supabase.from('transcript_assets').delete().eq('transcript_id', transcriptId)
+  if (deleteAssetsError) throw new Error(deleteAssetsError.message)
+
   if (sections.length > 0) {
     const { error } = await supabase.from('transcript_sections').insert(sections)
     if (error) throw new Error(error.message)
@@ -361,6 +406,20 @@ export async function saveTranscript(sessionId: string, formData: FormData) {
   if (paragraphs.length > 0) {
     const { error } = await supabase.from('transcript_paragraphs').insert(paragraphs)
     if (error) throw new Error(error.message)
+  }
+
+  if (assets.length > 0) {
+    const { error } = await supabase.from('transcript_assets').insert(assets)
+    if (error) throw new Error(error.message)
+  }
+
+  const retainedPaths = new Set(assets.map((asset) => asset.storage_path))
+  const orphanedPaths = (existingAssets ?? [])
+    .filter((asset: any) => asset.storage_bucket === TRANSCRIPT_ASSETS_BUCKET && !retainedPaths.has(asset.storage_path))
+    .map((asset: any) => asset.storage_path)
+
+  if (orphanedPaths.length > 0) {
+    await supabase.storage.from(TRANSCRIPT_ASSETS_BUCKET).remove(orphanedPaths)
   }
 
   revalidatePath('/', 'layout')
