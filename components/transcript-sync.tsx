@@ -65,6 +65,7 @@ export default function TranscriptSync() {
   const pointsRef = useRef<Point[]>([])
   const activeIdRef = useRef<string | null>(null)
   const followRef = useRef(false)
+  const recordingAvailableRef = useRef(false)
   const [available, setAvailable] = useState(false)
   const [follow, setFollow] = useState(false)
 
@@ -73,11 +74,18 @@ export default function TranscriptSync() {
   }, [follow])
 
   useEffect(() => {
-    pointsRef.current = scanTranscript()
-
     function refreshPoints() {
       pointsRef.current = scanTranscript()
+      if (!pointsRef.current.length) {
+        activeIdRef.current = null
+        recordingAvailableRef.current = false
+        setAvailable(false)
+      } else if (recordingAvailableRef.current) {
+        setAvailable(true)
+      }
     }
+
+    refreshPoints()
 
     function seekFromElement(target: EventTarget | null) {
       const element = target instanceof HTMLElement ? target.closest<HTMLElement>('[data-transcript-seek]') : null
@@ -100,8 +108,11 @@ export default function TranscriptSync() {
     function onRecordingTime(event: Event) {
       const seconds = (event as CustomEvent<{ seconds?: number }>).detail?.seconds
       if (typeof seconds !== 'number' || !Number.isFinite(seconds)) return
-      if (!available) setAvailable(true)
+
+      recordingAvailableRef.current = true
       if (!pointsRef.current.length) refreshPoints()
+      if (!pointsRef.current.length) return
+      setAvailable(true)
 
       const current = activePoint(pointsRef.current, seconds)
       if (!current || current.id === activeIdRef.current) return
@@ -121,12 +132,21 @@ export default function TranscriptSync() {
       }
     }
 
+    let refreshTimer: number | null = null
+    const observer = new MutationObserver(() => {
+      if (refreshTimer != null) window.clearTimeout(refreshTimer)
+      refreshTimer = window.setTimeout(refreshPoints, 80)
+    })
+    observer.observe(document.body, { childList: true, subtree: true })
+
     document.addEventListener('click', onClick)
     document.addEventListener('keydown', onKeyDown)
     window.addEventListener('recording-time', onRecordingTime)
     window.addEventListener('hashchange', refreshPoints)
 
     return () => {
+      observer.disconnect()
+      if (refreshTimer != null) window.clearTimeout(refreshTimer)
       document.removeEventListener('click', onClick)
       document.removeEventListener('keydown', onKeyDown)
       window.removeEventListener('recording-time', onRecordingTime)
@@ -137,8 +157,9 @@ export default function TranscriptSync() {
       }
       pointsRef.current = []
       activeIdRef.current = null
+      recordingAvailableRef.current = false
     }
-  }, [available])
+  }, [])
 
   if (!available || pointsRef.current.length === 0) return null
 
