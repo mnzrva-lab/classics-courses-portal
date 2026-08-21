@@ -95,6 +95,9 @@ export default async function OfferingPage({ params }: { params: Promise<{ cours
         <div className="eyebrow">Sessions</div>
         <h2>Course schedule</h2>
         <p className="meta">Times are shown in your local timezone by default. Use “Show source time” when you want to compare with the teaching location.</p>
+        <div className="actions" style={{ marginBottom: 18 }}>
+          <a className="button sage" href={`/courses/${courseSlug}/${offeringSlug}/calendar`}>Add course schedule to calendar</a>
+        </div>
         <div className="list">
           {(sessions ?? []).map((session: any) => {
             const teachers = (session.session_teachers ?? []).map((x: any) => x.teachers?.full_name).filter(Boolean)
