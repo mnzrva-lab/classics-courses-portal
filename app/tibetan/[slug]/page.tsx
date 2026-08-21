@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { recordTibetanFlashcard, toggleTibetanBookmark } from '../actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,6 +25,8 @@ function sessionLabel(session: any) {
 export default async function TibetanTermPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const supabase = await createClient()
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const userId = claimsData?.claims?.sub as string | undefined
 
   const { data: term } = await supabase
     .from('tibetan_terms')
@@ -34,23 +37,52 @@ export default async function TibetanTermPage({ params }: { params: Promise<{ sl
 
   if (!term) notFound()
 
-  const { data: sources } = await supabase
-    .from('tibetan_term_sources')
-    .select('id, source_label, external_url, note, sort_order, sessions(id, slug, code, title, courses(slug, title, canonical_number), course_offerings(slug, label))')
-    .eq('term_id', term.id)
-    .order('sort_order')
-    .order('created_at')
+  const [{ data: sources }, bookmarkResult, progressResult, settingsResult] = await Promise.all([
+    supabase
+      .from('tibetan_term_sources')
+      .select('id, source_label, external_url, note, sort_order, sessions(id, slug, code, title, courses(slug, title, canonical_number), course_offerings(slug, label))')
+      .eq('term_id', term.id)
+      .order('sort_order')
+      .order('created_at'),
+    userId
+      ? supabase.from('user_tibetan_bookmarks').select('term_id').eq('user_id', userId).eq('term_id', term.id).maybeSingle()
+      : Promise.resolve({ data: null } as any),
+    userId
+      ? supabase.from('user_tibetan_flashcard_progress').select('learning_state, review_count, correct_count, last_reviewed_at').eq('user_id', userId).eq('term_id', term.id).maybeSingle()
+      : Promise.resolve({ data: null } as any),
+    userId
+      ? supabase.from('user_settings').select('save_bookmarks, save_progress').eq('user_id', userId).maybeSingle()
+      : Promise.resolve({ data: null } as any),
+  ])
+
+  const bookmarked = Boolean(bookmarkResult.data)
+  const progress = progressResult.data as any
+  const settings = settingsResult.data as any
+  const canSaveBookmarks = settings?.save_bookmarks ?? true
+  const canSaveProgress = settings?.save_progress ?? true
+  const learningState = progress?.learning_state === 'learned' ? 'Learned' : progress?.learning_state === 'learning' ? 'Learning' : 'New'
+  const returnPath = `/tibetan/${slug}`
 
   return (
     <main className="container page">
       <div className="actions" style={{ marginTop: 0, marginBottom: 18 }}>
         <Link className="button" href="/tibetan">← Tibetan glossary</Link>
+        <Link className="button" href="/tibetan/flashcards">Study flashcards</Link>
       </div>
 
       <div className="eyebrow">Tibetan term</div>
       {term.tibetan_script ? <div style={{ fontSize: 'clamp(46px, 8vw, 82px)', lineHeight: 1.2, margin: '14px 0' }}>{term.tibetan_script}</div> : null}
       <h1>{term.transliteration}</h1>
       <p className="lead">{term.english_meaning}</p>
+
+      <div className="actions">
+        {userId && (canSaveBookmarks || bookmarked) ? (
+          <form action={toggleTibetanBookmark.bind(null, term.id, returnPath)}>
+            <button className="button" type="submit">{bookmarked ? '★ Bookmarked' : '☆ Bookmark term'}</button>
+          </form>
+        ) : userId ? <Link className="button" href="/account">Bookmarks are off</Link> : <Link className="button" href="/login">Sign in to bookmark</Link>}
+        {userId ? <span className="pill">{learningState}</span> : null}
+      </div>
 
       {(term.aliases ?? []).length ? (
         <div className="actions" style={{ marginTop: 18 }}>
@@ -62,6 +94,26 @@ export default async function TibetanTermPage({ params }: { params: Promise<{ sl
         <section className="section card">
           <div className="eyebrow">Explanation</div>
           <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.75 }}>{term.explanation}</div>
+        </section>
+      ) : null}
+
+      {userId ? (
+        <section className="section card">
+          <div className="eyebrow">Flashcard progress</div>
+          <h2 style={{ fontSize: 30 }}>{learningState}</h2>
+          <p className="meta">
+            {progress?.review_count ? `Reviewed ${progress.review_count} time${progress.review_count === 1 ? '' : 's'}.` : 'You have not reviewed this flashcard yet.'}
+          </p>
+          {canSaveProgress ? (
+            <div className="actions">
+              <form action={recordTibetanFlashcard.bind(null, term.id, 'learning', returnPath)}>
+                <button className="button" type="submit">Keep learning</button>
+              </form>
+              <form action={recordTibetanFlashcard.bind(null, term.id, 'learned', returnPath)}>
+                <button className="button sage" type="submit">Mark learned</button>
+              </form>
+            </div>
+          ) : <Link className="button" href="/account">Progress tracking is off</Link>}
         </section>
       ) : null}
 
