@@ -206,6 +206,10 @@ export default function TextImportField({
 
       setValue(text.trim())
       setImportedFileName(file.name)
+      if (shouldPreserveTranscriptImages) {
+        const sourceInput = document.querySelector<HTMLInputElement>('input[name="transcript_source_file_name"]')
+        if (sourceInput && !sourceInput.value.trim()) sourceInput.value = file.name
+      }
       setMessage(nextMessage)
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not read this file.')
