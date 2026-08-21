@@ -1,6 +1,13 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import {
+  publishDraftContent,
+  setMaterialsVisibility,
+  setSessionVisibility,
+  setStudyNotesVisibility,
+  setTranscriptVisibility,
+} from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,8 +30,30 @@ function statusPill(status: string) {
   return <span className="pill">{label}</span>
 }
 
-export default async function OfferingReviewPage({ params }: { params: Promise<{ id: string }> }) {
+function savedMessage(value: string | undefined) {
+  const messages: Record<string, string> = {
+    'session-published': 'Session published. Students can now open the class page.',
+    'session-draft': 'Session returned to Draft.',
+    'notes-published': 'Study Notes published.',
+    'notes-draft': 'Study Notes returned to Draft.',
+    'transcript-published': 'Reference Transcript published.',
+    'transcript-draft': 'Reference Transcript returned to Draft.',
+    'materials-published': 'Draft class materials published.',
+    'materials-draft': 'Published class materials returned to Draft.',
+    'content-published': 'All Draft Study Notes, transcript content, and class materials for this session were published.',
+  }
+  return value ? messages[value] ?? null : null
+}
+
+export default async function OfferingReviewPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ saved?: string }>
+}) {
   const { id } = await params
+  const { saved } = await searchParams
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub as string | undefined
@@ -79,18 +108,22 @@ export default async function OfferingReviewPage({ params }: { params: Promise<{
   const notesPublished = sessionRows.filter((session: any) => ((session.study_notes ?? []) as StatusRow[])[0]?.status === 'published').length
   const notesDraft = sessionRows.filter((session: any) => ((session.study_notes ?? []) as StatusRow[])[0]?.status === 'draft').length
   const recordings = sessionRows.filter((session: any) => Boolean(session.recording_url || session.audio_url)).length
+  const publishedSessions = sessionRows.filter((session: any) => session.status === 'published').length
+  const notice = savedMessage(saved)
 
   return (
     <main className="container page">
       <div className="eyebrow">Admin · Content review</div>
       <h1>{course.canonical_number ? `Course ${course.canonical_number} · ` : ''}{course.title}</h1>
-      <p className="lead">Review what is present, what is still Draft, and what students can currently see before publishing more content.</p>
+      <p className="lead">Review Draft content here, preview it as a student, and publish only the pieces that are ready.</p>
+
+      {notice ? <div className="card completed" style={{ marginTop: 20 }}>{notice}</div> : null}
 
       <section className="grid section">
         <div className="card sage">
           <div className="meta">Sessions</div>
-          <div className="stat">{sessionRows.length}</div>
-          <div className="meta">Course Offering: {offering.label}</div>
+          <div className="stat">{publishedSessions} / {sessionRows.length}</div>
+          <div className="meta">published for students</div>
         </div>
         <div className="card">
           <div className="meta">Reference Transcripts</div>
@@ -105,8 +138,14 @@ export default async function OfferingReviewPage({ params }: { params: Promise<{
         <div className="card">
           <div className="meta">Recordings / audio</div>
           <div className="stat">{recordings} / {sessionRows.length}</div>
-          <div className="meta">At least one recording or audio source added.</div>
+          <div className="meta">at least one recording or audio source added</div>
         </div>
+      </section>
+
+      <section className="section card">
+        <div className="eyebrow">Publishing model</div>
+        <h2 style={{ fontSize: 32 }}>Session visibility and content visibility are separate</h2>
+        <p className="meta">Publishing a transcript, Study Notes, or class material does not force the whole session live. A Draft session remains hidden from students until you publish the session itself.</p>
       </section>
 
       <section className="section card">
@@ -121,7 +160,7 @@ export default async function OfferingReviewPage({ params }: { params: Promise<{
 
       <section className="section">
         <div className="eyebrow">Session review</div>
-        <h2 style={{ fontSize: 32 }}>Content readiness</h2>
+        <h2 style={{ fontSize: 32 }}>Review → preview → publish</h2>
 
         {sessionRows.map((session: any) => {
           const transcript = ((session.transcripts ?? []) as TranscriptRow[])[0]
@@ -132,6 +171,7 @@ export default async function OfferingReviewPage({ params }: { params: Promise<{
           const teachers = ((session.session_teachers ?? []) as TeacherLink[]).map((item) => item.teachers?.full_name).filter(Boolean)
           const previewPath = `/courses/${course.slug}/${offering.slug}/${session.slug}?contentPreview=1`
           const studentPath = `/courses/${course.slug}/${offering.slug}/${session.slug}`
+          const hasDraftContent = notes?.status === 'draft' || transcript?.status === 'draft' || draftMaterials > 0
 
           return (
             <div className="card" key={session.id} style={{ marginBottom: 18 }}>
@@ -139,37 +179,104 @@ export default async function OfferingReviewPage({ params }: { params: Promise<{
                 <div>
                   <div className="eyebrow">{session.code || session.session_type}</div>
                   <h3 style={{ fontSize: 26 }}>{session.title}</h3>
-                  <div className="meta">{session.session_date ?? 'No date'} · {teachers.join(', ') || 'Teacher missing'} · Session {session.status}</div>
+                  <div className="meta">{session.session_date ?? 'No date'} · {teachers.join(', ') || 'Teacher missing'}</div>
                 </div>
                 <div className="actions" style={{ marginTop: 0 }}>
+                  {statusPill(session.status)}
                   <Link className="button" href={`/admin/sessions/${session.id}`}>Edit</Link>
-                  <Link className="button sage" href={previewPath}>Preview Draft content</Link>
+                  {session.status === 'published' ? <Link className="button sage" href={previewPath}>Preview Draft content</Link> : null}
                   {session.status === 'published' ? <Link className="button" href={studentPath}>Student view</Link> : null}
                 </div>
               </div>
 
-              <div className="grid two" style={{ marginTop: 18 }}>
-                <div>
+              <div className="grid two" style={{ marginTop: 22 }}>
+                <div className="note">
+                  <strong>Session visibility</strong>
+                  <div className="meta" style={{ marginTop: 4 }}>{session.status === 'published' ? 'Students can open this class page.' : 'This class page is hidden from students.'}</div>
+                  <div className="actions">
+                    {session.status === 'draft' ? (
+                      <form action={setSessionVisibility.bind(null, offering.id, session.id, 'published')}>
+                        <button className="button red" type="submit">Publish session</button>
+                      </form>
+                    ) : session.status === 'published' ? (
+                      <form action={setSessionVisibility.bind(null, offering.id, session.id, 'draft')}>
+                        <button className="button" type="submit">Return session to Draft</button>
+                      </form>
+                    ) : <span className="meta">Archived sessions can be changed in the session editor.</span>}
+                  </div>
+                </div>
+
+                <div className="note">
                   <strong>Recording</strong>
-                  <div className="meta">{session.recording_url ? 'Recording added' : session.audio_url ? 'Audio added' : 'Missing'}</div>
+                  <div className="meta" style={{ marginTop: 4 }}>{session.recording_url ? 'Recording added' : session.audio_url ? 'Audio added' : 'Missing'}</div>
+                  <div className="actions"><Link className="button" href={`/admin/sessions/${session.id}`}>Edit recording</Link></div>
                 </div>
-                <div>
+
+                <div className="note">
                   <strong>Study Notes</strong>
-                  <div className="meta">{notes?.status ?? 'Missing'}</div>
+                  <div className="meta" style={{ marginTop: 4 }}>{notes?.status ?? 'Missing'}</div>
+                  <div className="actions">
+                    {notes?.status === 'draft' ? (
+                      <form action={setStudyNotesVisibility.bind(null, offering.id, session.id, 'published')}>
+                        <button className="button red" type="submit">Publish Study Notes</button>
+                      </form>
+                    ) : notes?.status === 'published' ? (
+                      <form action={setStudyNotesVisibility.bind(null, offering.id, session.id, 'draft')}>
+                        <button className="button" type="submit">Return Notes to Draft</button>
+                      </form>
+                    ) : null}
+                  </div>
                 </div>
-                <div>
+
+                <div className="note">
                   <strong>Reference Transcript</strong>
-                  <div className="meta">
+                  <div className="meta" style={{ marginTop: 4 }}>
                     {transcript
                       ? `${transcript.status} · ${paragraphCounts.get(transcript.id) ?? 0} paragraphs · ${imageCounts.get(transcript.id) ?? 0} images`
                       : 'Missing'}
                   </div>
                   {transcript?.source_file_name ? <div className="meta">Source: {transcript.source_file_name}</div> : null}
-                  {transcript ? <div className="actions"><Link className="button" href={`/admin/sessions/${session.id}/revisions`}>Revision history</Link></div> : null}
+                  <div className="actions">
+                    {transcript?.status === 'draft' ? (
+                      <form action={setTranscriptVisibility.bind(null, offering.id, session.id, 'published')}>
+                        <button className="button red" type="submit">Publish Transcript</button>
+                      </form>
+                    ) : transcript?.status === 'published' ? (
+                      <form action={setTranscriptVisibility.bind(null, offering.id, session.id, 'draft')}>
+                        <button className="button" type="submit">Return Transcript to Draft</button>
+                      </form>
+                    ) : null}
+                    {transcript ? <Link className="button" href={`/admin/sessions/${session.id}/revisions`}>Revision history</Link> : null}
+                  </div>
                 </div>
-                <div>
+
+                <div className="note">
                   <strong>Class materials</strong>
-                  <div className="meta">{publishedMaterials} published · {draftMaterials} Draft · {materials.length} total</div>
+                  <div className="meta" style={{ marginTop: 4 }}>{publishedMaterials} published · {draftMaterials} Draft · {materials.length} total</div>
+                  <div className="actions">
+                    {draftMaterials > 0 ? (
+                      <form action={setMaterialsVisibility.bind(null, offering.id, session.id, 'published')}>
+                        <button className="button red" type="submit">Publish Draft materials</button>
+                      </form>
+                    ) : null}
+                    {publishedMaterials > 0 ? (
+                      <form action={setMaterialsVisibility.bind(null, offering.id, session.id, 'draft')}>
+                        <button className="button" type="submit">Return materials to Draft</button>
+                      </form>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="note">
+                  <strong>Quick publish</strong>
+                  <div className="meta" style={{ marginTop: 4 }}>Publishes only existing Draft Study Notes, Reference Transcript, and class materials. It does not change session visibility.</div>
+                  <div className="actions">
+                    {hasDraftContent ? (
+                      <form action={publishDraftContent.bind(null, offering.id, session.id)}>
+                        <button className="button sage" type="submit">Publish all Draft content</button>
+                      </form>
+                    ) : <span className="meta">No Draft content waiting to publish.</span>}
+                  </div>
                 </div>
               </div>
             </div>
