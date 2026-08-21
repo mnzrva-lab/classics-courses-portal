@@ -6,7 +6,6 @@ import { createClient } from '@/lib/supabase/client'
 
 const TRANSCRIPT_ASSETS_BUCKET = 'transcript-assets'
 const MAX_IMAGE_BYTES = 20 * 1024 * 1024
-const TRANSCRIPT_ASSET_SET_MARKER = '[[TRANSCRIPT_ASSET_SET]]'
 
 type Props = {
   name: string
@@ -40,7 +39,7 @@ function transcriptTextFromHtml(html: string) {
   const root = document.querySelector('#docx-root')
   if (!root) return ''
 
-  const blocks: string[] = [TRANSCRIPT_ASSET_SET_MARKER]
+  const blocks: string[] = []
 
   for (const element of Array.from(root.children)) {
     const tag = element.tagName.toUpperCase()
