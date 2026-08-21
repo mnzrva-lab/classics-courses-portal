@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { registerOfferingUploadedMaterial } from './actions'
+import { registerOfferingUploadedMaterial } from './material-actions'
 
 const BUCKET = 'teaching-materials'
 const MAX_STANDARD_UPLOAD_BYTES = 6 * 1024 * 1024
