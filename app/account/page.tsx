@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { clearAllBookmarks, clearSearchHistory, deleteAllNotes, resetAllProgress, resetCourseProgress, updatePrivacySettings } from './actions'
+import { clearAllBookmarks, clearSearchHistory, deleteAccount, deleteAllNotes, resetAllProgress, resetCourseProgress, updatePrivacySettings } from './actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -182,6 +182,17 @@ export default async function AccountPage({ searchParams }: { searchParams: Prom
             <div className="actions"><button className="button" type="submit">Reset progress</button></div>
           </form>
         </div>
+      </section>
+
+      <section className="section card" style={{ borderColor: 'var(--red)' }}>
+        <div className="eyebrow">Account deletion</div>
+        <h2 style={{ fontSize: 32 }}>Delete this study account</h2>
+        <p className="meta">This permanently deletes your sign-in account and the private notes, bookmarks, settings, search history, and progress connected to it. Course content is not affected. This action cannot be undone.</p>
+        <form className="form-stack" action={deleteAccount} style={{ marginTop: 18 }}>
+          <p className="meta">Type <strong>DELETE ACCOUNT</strong> to confirm.</p>
+          <input className="input" name="confirmation" autoComplete="off" />
+          <div className="actions"><button className="button red" type="submit">Delete my account</button></div>
+        </form>
       </section>
 
       <section className="section">
