@@ -2,9 +2,11 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { createSession, updateOffering } from './actions'
+import { addOfferingMaterial, deleteOfferingMaterial, updateOfferingMaterial } from './material-actions'
 import { assignSessionGroup, createContentGroup, updateContentGroup } from './structure-actions'
 import BulkTranscriptImport from './bulk-transcript-import'
 import BulkStudyNotesImport from './bulk-study-notes-import'
+import OfferingUploadMaterialForm from './upload-material-form'
 
 export const dynamic = 'force-dynamic'
 
@@ -42,12 +44,32 @@ type ContentGroup = {
   sort_order: number
 }
 
+const materialTypes = [
+  ['reading', 'Reading'],
+  ['slides', 'Slides'],
+  ['audio', 'Audio'],
+  ['video', 'Video'],
+  ['document', 'Document'],
+  ['link', 'Link'],
+  ['other', 'Other'],
+]
+
 function groupTypeLabel(kind: string) {
   if (kind === 'term') return 'Term'
   if (kind === 'season') return 'Season'
   if (kind === 'part') return 'Part'
   if (kind === 'module') return 'Module'
   return 'Section'
+}
+
+function materialLabel(kind: string) {
+  return materialTypes.find(([value]) => value === kind)?.[1] ?? 'Resource'
+}
+
+function uploadedFileName(path: string | null) {
+  if (!path) return null
+  const value = path.split('/').pop() ?? path
+  return value.replace(/^[0-9a-f-]{36}-/i, '')
 }
 
 export default async function AdminOfferingPage({
@@ -72,7 +94,13 @@ export default async function AdminOfferingPage({
     return <main className="container page"><div className="card"><h1>Admin access required</h1></div></main>
   }
 
-  const [{ data: offering }, { data: teacherRows }, { data: sessionRows }, { data: groupRows }] = await Promise.all([
+  const [
+    { data: offering },
+    { data: teacherRows },
+    { data: sessionRows },
+    { data: groupRows },
+    { data: materialRows },
+  ] = await Promise.all([
     supabase
       .from('course_offerings')
       .select('id, slug, label, location, year, language_codes, artwork_url, description, telegram_url, starts_on, ends_on, status, courses(id, slug, title, canonical_number, kind)')
@@ -81,6 +109,12 @@ export default async function AdminOfferingPage({
     supabase.from('teachers').select('id, full_name, active').eq('active', true).order('full_name'),
     supabase.from('sessions').select('id, code, title, session_type, status, session_date, source_timezone, sort_order, group_id, transcripts(status), study_notes(status)').eq('offering_id', id).order('sort_order'),
     supabase.from('content_groups').select('id, kind, slug, label, title, starts_on, ends_on, status, sort_order').eq('offering_id', id).order('sort_order'),
+    supabase
+      .from('materials')
+      .select('id, material_type, title, url, mime_type, storage_bucket, storage_path, status, sort_order')
+      .eq('offering_id', id)
+      .is('session_id', null)
+      .order('sort_order'),
   ])
 
   if (!offering) notFound()
@@ -88,6 +122,13 @@ export default async function AdminOfferingPage({
   const teachers = (teacherRows ?? []) as Teacher[]
   const sessions = sessionRows ?? []
   const contentGroups = (groupRows ?? []) as ContentGroup[]
+  const offeringMaterials = await Promise.all((materialRows ?? []).map(async (material: any) => {
+    if (material.storage_bucket && material.storage_path) {
+      const { data } = await supabase.storage.from(material.storage_bucket).createSignedUrl(material.storage_path, 60 * 60)
+      return { ...material, resolved_url: data?.signedUrl ?? null }
+    }
+    return { ...material, resolved_url: material.url ?? null }
+  }))
   const groupMap = new Map(contentGroups.map((group) => [group.id, group]))
   const supportsStructure = course.kind !== 'classics' || contentGroups.length > 0
   const defaultGroupKind = course.kind === 'living_lam_rim' ? 'term' : course.kind === 'book' ? 'part' : 'module'
@@ -117,7 +158,9 @@ export default async function AdminOfferingPage({
       ? 'Course Offering saved.'
       : saved === 'structure'
         ? 'Program structure saved.'
-        : null
+        : saved === 'offering-material'
+          ? 'Course Offering material saved.'
+          : null
 
   return (
     <main className="container page">
@@ -155,6 +198,82 @@ export default async function AdminOfferingPage({
             {offering.status === 'published' ? <Link className="button" href={`/courses/${course.slug}/${offering.slug}`}>Student view</Link> : null}
           </div>
         </form>
+      </section>
+
+      <section className="section card">
+        <div className="eyebrow">Course Offering materials</div>
+        <h2 style={{ fontSize: 32 }}>Shared readings, slides, and resources</h2>
+        <p className="meta">Use this for material that belongs to the whole Course Offering rather than one class. Upload it once and students can reach it from the Course Offering and from individual classes.</p>
+
+        {offeringMaterials.length ? (
+          <div style={{ marginTop: 24 }}>
+            {offeringMaterials.map((material: any) => (
+              <div key={material.id} style={{ padding: '20px 0', borderTop: '1px solid var(--line)' }}>
+                <form className="form-stack" action={updateOfferingMaterial.bind(null, offering.id, material.id)}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', gap: 14, flexWrap: 'wrap', alignItems: 'baseline' }}>
+                    <div>
+                      <strong>{material.title}</strong>
+                      <div className="meta">{materialLabel(material.material_type)} · {material.status}{material.storage_path ? ` · uploaded file: ${uploadedFileName(material.storage_path)}` : ' · linked resource'}</div>
+                    </div>
+                    {material.resolved_url ? <a className="button" href={material.resolved_url} target="_blank" rel="noreferrer">Open</a> : null}
+                  </div>
+                  <div className="grid two">
+                    <label>Title<input className="input" name="material_title" defaultValue={material.title} required /></label>
+                    <label>Type
+                      <select className="input" name="material_type" defaultValue={material.material_type}>
+                        {materialTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                      </select>
+                    </label>
+                    <label>Status
+                      <select className="input" name="material_status" defaultValue={material.status}>
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                        <option value="archived">Archived</option>
+                      </select>
+                    </label>
+                    <label>MIME type<input className="input" name="material_mime_type" defaultValue={material.mime_type ?? ''} placeholder="Optional" /></label>
+                  </div>
+                  <label>External URL
+                    <input className="input" name="material_url" type="url" defaultValue={material.url ?? ''} placeholder={material.storage_path ? 'Optional for uploaded files' : 'Required for linked resources'} />
+                  </label>
+                  <div className="actions"><button className="button" type="submit">Save material</button></div>
+                </form>
+                <form action={deleteOfferingMaterial.bind(null, offering.id, material.id)} style={{ marginTop: 8 }}>
+                  <button className="button" type="submit">Delete material</button>
+                </form>
+              </div>
+            ))}
+          </div>
+        ) : <p className="meta" style={{ marginTop: 18 }}>No Course Offering materials yet.</p>}
+
+        <div className="grid two" style={{ marginTop: 28 }}>
+          <div className="note">
+            <strong>Upload a file</strong>
+            <div style={{ marginTop: 14 }}><OfferingUploadMaterialForm offeringId={offering.id} /></div>
+          </div>
+          <div className="note">
+            <strong>Add linked resource</strong>
+            <form className="form-stack" action={addOfferingMaterial.bind(null, offering.id)} style={{ marginTop: 14 }}>
+              <label>Title<input className="input" name="material_title" required placeholder="Course Reading" /></label>
+              <div className="grid two">
+                <label>Type
+                  <select className="input" name="material_type" defaultValue="reading">
+                    {materialTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                </label>
+                <label>Status
+                  <select className="input" name="material_status" defaultValue="draft">
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                  </select>
+                </label>
+              </div>
+              <label>URL<input className="input" name="material_url" type="url" required /></label>
+              <label>MIME type<input className="input" name="material_mime_type" placeholder="Optional" /></label>
+              <button className="button sage" type="submit">Add resource</button>
+            </form>
+          </div>
+        </div>
       </section>
 
       {supportsStructure ? (
