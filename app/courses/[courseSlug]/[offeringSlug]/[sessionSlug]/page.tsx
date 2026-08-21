@@ -31,6 +31,19 @@ type TranscriptParagraph = {
   sort_order: number
 }
 
+type TranscriptAsset = {
+  id: string
+  after_paragraph_sort_order: number
+  storage_bucket: string
+  storage_path: string
+  mime_type: string | null
+  alt_text: string | null
+  caption: string | null
+  sort_order: number
+}
+
+type ResolvedTranscriptAsset = TranscriptAsset & { resolved_url: string | null }
+
 function formatTimestamp(seconds: number | null) {
   if (seconds == null) return null
   const hours = Math.floor(seconds / 3600)
@@ -111,13 +124,21 @@ export default async function SessionPage({ params }: { params: Promise<{ course
 
   let transcriptSections: TranscriptSection[] = []
   let transcriptParagraphs: TranscriptParagraph[] = []
+  let transcriptAssets: ResolvedTranscriptAsset[] = []
   if (transcript?.id) {
-    const [{ data: sections }, { data: paragraphs }] = await Promise.all([
+    const [{ data: sections }, { data: paragraphs }, { data: assets }] = await Promise.all([
       supabase.from('transcript_sections').select('id, title, start_seconds').eq('transcript_id', transcript.id).order('sort_order'),
       supabase.from('transcript_paragraphs').select('id, section_id, speaker, body, start_seconds, sort_order').eq('transcript_id', transcript.id).order('sort_order'),
+      supabase.from('transcript_assets').select('id, after_paragraph_sort_order, storage_bucket, storage_path, mime_type, alt_text, caption, sort_order').eq('transcript_id', transcript.id).order('sort_order'),
     ])
     transcriptSections = (sections ?? []) as TranscriptSection[]
     transcriptParagraphs = (paragraphs ?? []) as TranscriptParagraph[]
+    transcriptAssets = await Promise.all(((assets ?? []) as TranscriptAsset[]).map(async (asset) => {
+      const { data } = await supabase.storage
+        .from(asset.storage_bucket)
+        .createSignedUrl(asset.storage_path, 60 * 60)
+      return { ...asset, resolved_url: data?.signedUrl ?? null }
+    }))
   }
 
   let sessionBookmarked = false
@@ -135,6 +156,32 @@ export default async function SessionPage({ params }: { params: Promise<{ course
   }
 
   const sectionMap = new Map(transcriptSections.map((section) => [section.id, section]))
+  const assetsByPosition = new Map<number, ResolvedTranscriptAsset[]>()
+  for (const asset of transcriptAssets) {
+    if (!assetsByPosition.has(asset.after_paragraph_sort_order)) assetsByPosition.set(asset.after_paragraph_sort_order, [])
+    assetsByPosition.get(asset.after_paragraph_sort_order)!.push(asset)
+  }
+  for (const assets of assetsByPosition.values()) assets.sort((a, b) => a.sort_order - b.sort_order)
+
+  function renderTranscriptAssets(position: number) {
+    const assets = assetsByPosition.get(position) ?? []
+    if (!assets.length) return null
+    return assets.map((asset) => (
+      <figure key={asset.id} style={{ margin: '20px 0 8px' }}>
+        {asset.resolved_url ? (
+          <img
+            src={asset.resolved_url}
+            alt={asset.alt_text ?? 'Transcript reference image'}
+            style={{ display: 'block', maxWidth: '100%', height: 'auto', borderRadius: 16, border: '1px solid var(--line)' }}
+          />
+        ) : (
+          <div className="card"><span className="meta">Transcript image temporarily unavailable.</span></div>
+        )}
+        {asset.caption ? <figcaption className="meta" style={{ marginTop: 8 }}>{asset.caption}</figcaption> : null}
+      </figure>
+    ))
+  }
+
   let previousSectionId: string | null | undefined = undefined
   const teachers = (session.session_teachers ?? []).map((item: any) => item.teachers?.full_name).filter(Boolean)
   const returnPath = `/courses/${courseSlug}/${offeringSlug}/${sessionSlug}`
@@ -256,6 +303,7 @@ export default async function SessionPage({ params }: { params: Promise<{ course
             <h2 style={{ fontSize: 32 }}>{transcript.title}</h2>
             {transcriptParagraphs.length > 0 ? (
               <div style={{ maxWidth: 820 }}>
+                {renderTranscriptAssets(-1)}
                 {transcriptParagraphs.map((paragraph) => {
                   const section = paragraph.section_id ? sectionMap.get(paragraph.section_id) : null
                   const showHeading = paragraph.section_id !== previousSectionId && Boolean(section)
@@ -275,10 +323,13 @@ export default async function SessionPage({ params }: { params: Promise<{ course
                           <button className="button" type="submit" style={{ padding: '7px 10px', fontSize: 13 }}>{bookmarked ? '★ Saved passage' : '☆ Save passage'}</button>
                         </form>
                       ) : null}
+                      {renderTranscriptAssets(paragraph.sort_order)}
                     </div>
                   )
                 })}
               </div>
+            ) : transcriptAssets.length > 0 ? (
+              <div style={{ maxWidth: 820 }}>{renderTranscriptAssets(-1)}</div>
             ) : <p className="meta">Transcript metadata is published, but no paragraphs have been imported yet.</p>}
           </>
         ) : (
