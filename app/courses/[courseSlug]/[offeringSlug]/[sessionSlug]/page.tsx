@@ -67,8 +67,15 @@ function materialLabel(type: string) {
   return labels[type] ?? 'Resource'
 }
 
-export default async function SessionPage({ params }: { params: Promise<{ courseSlug: string; offeringSlug: string; sessionSlug: string }> }) {
+export default async function SessionPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ courseSlug: string; offeringSlug: string; sessionSlug: string }>
+  searchParams: Promise<{ contentPreview?: string }>
+}) {
   const { courseSlug, offeringSlug, sessionSlug } = await params
+  const { contentPreview } = await searchParams
   const supabase = await createClient()
 
   const { data: session } = await supabase
@@ -92,20 +99,39 @@ export default async function SessionPage({ params }: { params: Promise<{ course
 
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub as string | undefined
+  let adminContentPreview = false
+
+  if (userId && contentPreview === '1') {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle()
+    adminContentPreview = profile?.role === 'admin'
+  }
+
+  const progressPromise = userId
+    ? supabase.from('user_session_progress').select('started_at, completed_at, last_opened_at').eq('user_id', userId).eq('session_id', session.id).maybeSingle()
+    : Promise.resolve({ data: null } as any)
+  const notesPromise = userId
+    ? supabase.from('student_notes').select('id, note, updated_at').eq('user_id', userId).eq('session_id', session.id).order('updated_at', { ascending: false })
+    : Promise.resolve({ data: [] } as any)
+  const studyNotesPromise = adminContentPreview
+    ? supabase.from('study_notes').select('title, summary, content_markdown, disclaimer, status').eq('session_id', session.id).maybeSingle()
+    : supabase.from('study_notes').select('title, summary, content_markdown, disclaimer, status').eq('session_id', session.id).eq('status', 'published').maybeSingle()
+  const transcriptPromise = adminContentPreview
+    ? supabase.from('transcripts').select('id, title, disclaimer, status').eq('session_id', session.id).maybeSingle()
+    : supabase.from('transcripts').select('id, title, disclaimer, status').eq('session_id', session.id).eq('status', 'published').maybeSingle()
+  const materialsPromise = adminContentPreview
+    ? supabase.from('materials').select('id, material_type, title, url, mime_type, storage_bucket, storage_path, status').eq('session_id', session.id).order('sort_order')
+    : supabase.from('materials').select('id, material_type, title, url, mime_type, storage_bucket, storage_path, status').eq('session_id', session.id).eq('status', 'published').order('sort_order')
+  const userSettingsPromise = userId
+    ? supabase.from('user_settings').select('save_notes, save_bookmarks, save_progress').eq('user_id', userId).maybeSingle()
+    : Promise.resolve({ data: null } as any)
 
   const [{ data: progress }, { data: notes }, { data: studyNotes }, { data: transcript }, { data: materials }, { data: userSettings }] = await Promise.all([
-    userId
-      ? supabase.from('user_session_progress').select('started_at, completed_at, last_opened_at').eq('user_id', userId).eq('session_id', session.id).maybeSingle()
-      : Promise.resolve({ data: null } as any),
-    userId
-      ? supabase.from('student_notes').select('id, note, updated_at').eq('user_id', userId).eq('session_id', session.id).order('updated_at', { ascending: false })
-      : Promise.resolve({ data: [] } as any),
-    supabase.from('study_notes').select('title, summary, content_markdown, disclaimer').eq('session_id', session.id).eq('status', 'published').maybeSingle(),
-    supabase.from('transcripts').select('id, title, disclaimer').eq('session_id', session.id).eq('status', 'published').maybeSingle(),
-    supabase.from('materials').select('id, material_type, title, url, mime_type, storage_bucket, storage_path').eq('session_id', session.id).eq('status', 'published').order('sort_order'),
-    userId
-      ? supabase.from('user_settings').select('save_notes, save_bookmarks, save_progress').eq('user_id', userId).maybeSingle()
-      : Promise.resolve({ data: null } as any),
+    progressPromise,
+    notesPromise,
+    studyNotesPromise,
+    transcriptPromise,
+    materialsPromise,
+    userSettingsPromise,
   ])
 
   const canSaveNotes = userSettings?.save_notes ?? true
@@ -190,6 +216,13 @@ export default async function SessionPage({ params }: { params: Promise<{ course
 
   return (
     <main className="container page">
+      {adminContentPreview ? (
+        <div className="card sage" style={{ marginBottom: 20 }}>
+          <strong>Admin content preview</strong>
+          <div className="meta">Draft and unpublished Study Notes, materials, and transcript content are visible only to an administrator in this preview mode.</div>
+        </div>
+      ) : null}
+
       <div className="eyebrow">{course.title} · {offering.label}</div>
       <h1 style={{ fontSize: 'clamp(38px, 6vw, 64px)' }}>{session.code ? `${session.code} · ` : ''}{session.title}</h1>
       <p className="lead">{teachers.join(', ')}</p>
@@ -266,7 +299,7 @@ export default async function SessionPage({ params }: { params: Promise<{ course
       )}
 
       <section className="section card">
-        <div className="eyebrow">Study Notes</div>
+        <div className="eyebrow">Study Notes{adminContentPreview && studyNotes?.status !== 'published' ? ` · ${studyNotes?.status ?? 'unpublished'}` : ''}</div>
         {studyNotes ? (
           <>
             <h2 style={{ fontSize: 32 }}>{studyNotes.title}</h2>
@@ -286,7 +319,7 @@ export default async function SessionPage({ params }: { params: Promise<{ course
               <div key={material.id} style={{ padding: '14px 0', borderTop: '1px solid var(--line)', display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
                 <div>
                   <strong>{material.title}</strong>
-                  <div className="meta">{materialLabel(material.material_type)}{material.mime_type ? ` · ${material.mime_type}` : ''}</div>
+                  <div className="meta">{materialLabel(material.material_type)}{material.mime_type ? ` · ${material.mime_type}` : ''}{adminContentPreview && material.status !== 'published' ? ` · ${material.status}` : ''}</div>
                 </div>
                 {material.resolved_url ? <a className="button" href={material.resolved_url} target="_blank" rel="noreferrer">Open</a> : <span className="meta">File temporarily unavailable</span>}
               </div>
@@ -299,7 +332,7 @@ export default async function SessionPage({ params }: { params: Promise<{ course
         {transcript ? (
           <>
             <p className="meta" style={{ marginBottom: 12 }}>{transcript.disclaimer}</p>
-            <div className="eyebrow">Reference Transcript</div>
+            <div className="eyebrow">Reference Transcript{adminContentPreview && transcript.status !== 'published' ? ` · ${transcript.status}` : ''}</div>
             <h2 style={{ fontSize: 32 }}>{transcript.title}</h2>
             {transcriptParagraphs.length > 0 ? (
               <div style={{ maxWidth: 820 }}>
