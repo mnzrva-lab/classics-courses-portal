@@ -72,6 +72,7 @@ export async function clearAllBookmarks(formData: FormData) {
     supabase.from('user_session_bookmarks').delete().eq('user_id', userId),
     supabase.from('user_paragraph_bookmarks').delete().eq('user_id', userId),
     supabase.from('user_meditation_bookmarks').delete().eq('user_id', userId),
+    supabase.from('user_tibetan_bookmarks').delete().eq('user_id', userId),
   ])
 
   if (results.some((result) => result.error)) throw new Error('Could not clear all bookmarks.')
@@ -80,6 +81,8 @@ export async function clearAllBookmarks(formData: FormData) {
   revalidatePath('/my-learning')
   revalidatePath('/my-notes')
   revalidatePath('/meditations')
+  revalidatePath('/tibetan')
+  revalidatePath('/tibetan/flashcards')
   redirect('/account?saved=bookmarks-cleared')
 }
 
@@ -113,11 +116,16 @@ export async function resetCourseProgress(courseId: string, formData: FormData) 
 export async function resetAllProgress(formData: FormData) {
   if (!confirmation(formData, 'RESET PROGRESS')) throw new Error('Type RESET PROGRESS exactly to continue.')
   const { supabase, userId } = await requireUser()
-  const { error } = await supabase.from('user_session_progress').delete().eq('user_id', userId)
-  if (error) throw new Error('Could not reset progress.')
+  const results = await Promise.all([
+    supabase.from('user_session_progress').delete().eq('user_id', userId),
+    supabase.from('user_tibetan_flashcard_progress').delete().eq('user_id', userId),
+  ])
+  if (results.some((result) => result.error)) throw new Error('Could not reset progress.')
 
   revalidatePath('/account')
   revalidatePath('/my-learning')
+  revalidatePath('/tibetan')
+  revalidatePath('/tibetan/flashcards')
   redirect('/account?saved=progress-reset')
 }
 
