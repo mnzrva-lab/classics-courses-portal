@@ -61,6 +61,10 @@ function similarity(existing: ExistingTranscriptParagraph, next: ParsedTranscrip
   return score
 }
 
+function activeRank(row: ExistingTranscriptParagraph) {
+  return row.is_active === false ? 1 : 0
+}
+
 export function reconcileParagraphIds(
   existingRows: ExistingTranscriptParagraph[],
   parsedRows: ParsedTranscriptParagraph[],
@@ -76,7 +80,9 @@ export function reconcileParagraphIds(
       .sort((a, b) => {
         const aSpeaker = normalizedSpeaker(a.speaker) === normalizedSpeaker(next.speaker) ? 0 : 1
         const bSpeaker = normalizedSpeaker(b.speaker) === normalizedSpeaker(next.speaker) ? 0 : 1
-        return aSpeaker - bSpeaker || Math.abs(a.sort_order - next.sort_order) - Math.abs(b.sort_order - next.sort_order)
+        return activeRank(a) - activeRank(b)
+          || aSpeaker - bSpeaker
+          || Math.abs(a.sort_order - next.sort_order) - Math.abs(b.sort_order - next.sort_order)
       })
 
     if (candidates[0]) {
@@ -94,7 +100,9 @@ export function reconcileParagraphIds(
     const candidates = Array.from(unused.values())
       .map((row) => ({ row, score: similarity(row, next) }))
       .filter((item) => item.score >= 0.68)
-      .sort((a, b) => b.score - a.score || Math.abs(a.row.sort_order - next.sort_order) - Math.abs(b.row.sort_order - next.sort_order))
+      .sort((a, b) => activeRank(a.row) - activeRank(b.row)
+        || b.score - a.score
+        || Math.abs(a.row.sort_order - next.sort_order) - Math.abs(b.row.sort_order - next.sort_order))
 
     if (candidates[0]) {
       matchedIds[index] = candidates[0].row.id
