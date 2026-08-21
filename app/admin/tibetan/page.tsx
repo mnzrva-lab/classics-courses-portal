@@ -96,6 +96,7 @@ export default async function AdminTibetanPage({
               <label>Explanation<textarea className="input" name="explanation" rows={5} defaultValue={term.explanation ?? ''} /></label>
               <div className="actions">
                 <button className="button" type="submit">Save term</button>
+                <Link className="button sage" href={`/admin/tibetan/${term.id}`}>Manage sources</Link>
                 {term.status === 'published' ? <Link className="button" href={`/tibetan/${term.slug}`}>Open term</Link> : null}
               </div>
             </form>
