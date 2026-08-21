@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useState } from 'react'
 import { saveParagraphNote, toggleParagraphBookmark } from './actions'
 
@@ -42,7 +43,7 @@ export default function PassageStudyTools({
             onClick={() => setNoteOpen((value) => !value)}
             aria-expanded={noteOpen}
           >
-            {noteCount > 0 ? `Note · ${noteCount}` : '+ Note'}
+            + Note
           </button>
 
           {noteOpen ? (
@@ -61,6 +62,12 @@ export default function PassageStudyTools({
             </form>
           ) : null}
         </div>
+      ) : null}
+
+      {noteCount > 0 ? (
+        <Link className="passage-action" href={`/my-notes?passage=${encodeURIComponent(paragraphId)}`}>
+          {noteCount} saved note{noteCount === 1 ? '' : 's'}
+        </Link>
       ) : null}
     </div>
   )
