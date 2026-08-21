@@ -4,7 +4,8 @@ import { createOffering } from './actions'
 
 export const dynamic = 'force-dynamic'
 
-export default async function NewOfferingPage() {
+export default async function NewOfferingPage({ searchParams }: { searchParams: Promise<{ course?: string }> }) {
+  const { course: requestedCourseId } = await searchParams
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub as string | undefined
@@ -24,6 +25,9 @@ export default async function NewOfferingPage() {
     .neq('status', 'archived')
     .order('sort_order')
 
+  const validRequestedCourse = (courses ?? []).some((course) => course.id === requestedCourseId)
+  const selectedCourseId = validRequestedCourse ? requestedCourseId : ''
+
   return (
     <main className="container page">
       <div className="eyebrow">Admin · New Course Offering</div>
@@ -39,7 +43,7 @@ export default async function NewOfferingPage() {
       <section className="section card">
         <form className="form-stack" action={createOffering}>
           <label>Course
-            <select className="input" name="course_id" required defaultValue="">
+            <select className="input" name="course_id" required defaultValue={selectedCourseId}>
               <option value="" disabled>Choose course or program</option>
               {(courses ?? []).map((course) => (
                 <option key={course.id} value={course.id}>
