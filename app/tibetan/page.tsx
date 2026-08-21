@@ -89,7 +89,7 @@ export default async function TibetanPage({
           <div className="eyebrow">Your glossary progress</div>
           <h2 style={{ fontSize: 30 }}>{learnedCount} of {allTerms.length} terms learned</h2>
           <div style={{ height: 10, borderRadius: 999, overflow: 'hidden', background: 'var(--cream)', margin: '16px 0 10px' }}>
-            <div style={{ width: `${learnedPercent}%`, height: '100%', background: 'var(--sage-700)' }} />
+            <div style={{ width: `${learnedPercent}%`, height: '100%', background: 'var(--sage-dark)' }} />
           </div>
           <div className="meta">{newCount} new · {learningCount} learning · {learnedCount} learned</div>
           <div className="actions" style={{ marginTop: 16 }}>
