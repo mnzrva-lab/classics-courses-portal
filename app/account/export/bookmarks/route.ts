@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
   if (!userId) return new Response('Sign in required.', { status: 401 })
 
-  const [courseResult, sessionResult, meditationResult, paragraphResult] = await Promise.all([
+  const [courseResult, sessionResult, meditationResult, tibetanResult, paragraphResult] = await Promise.all([
     supabase
       .from('user_course_bookmarks')
       .select('created_at, courses(title, canonical_number)')
@@ -40,13 +40,18 @@ export async function GET(request: Request) {
       .eq('user_id', userId)
       .order('created_at', { ascending: false }),
     supabase
+      .from('user_tibetan_bookmarks')
+      .select('created_at, tibetan_terms(tibetan_script, transliteration, english_meaning, slug)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false }),
+    supabase
       .from('user_paragraph_bookmarks')
       .select('created_at, transcript_paragraphs(body, speaker, start_seconds, is_active, transcripts(sessions(code, title, courses(title, canonical_number), course_offerings(label))))')
       .eq('user_id', userId)
       .order('created_at', { ascending: false }),
   ])
 
-  if (courseResult.error || sessionResult.error || meditationResult.error || paragraphResult.error) {
+  if (courseResult.error || sessionResult.error || meditationResult.error || tibetanResult.error || paragraphResult.error) {
     return new Response('Could not export bookmarks.', { status: 500 })
   }
 
@@ -98,6 +103,24 @@ export async function GET(request: Request) {
   for (const item of meditations) {
     const meditation = item.meditations as any
     const text = `${meditation?.name ?? 'Meditation'} (${item.created_at})`
+    markdown.push(`- ${text}`)
+    plain.push(`- ${text}`)
+    docxChildren.push(docxBullet(text))
+  }
+
+  markdown.push('', '## Tibetan Terms', '')
+  plain.push('', 'TIBETAN TERMS', '')
+  docxChildren.push(docxHeading('Tibetan Terms', 1))
+  const tibetanTerms = tibetanResult.data ?? []
+  if (tibetanTerms.length === 0) {
+    markdown.push('_No bookmarked Tibetan terms._', '')
+    plain.push('No bookmarked Tibetan terms.', '')
+    docxChildren.push(docxParagraph('No bookmarked Tibetan terms.', { italics: true }))
+  }
+  for (const item of tibetanTerms) {
+    const term = item.tibetan_terms as any
+    const termLabel = [term?.tibetan_script, term?.transliteration, term?.english_meaning].filter(Boolean).join(' · ') || 'Tibetan term'
+    const text = `${termLabel} (${item.created_at})`
     markdown.push(`- ${text}`)
     plain.push(`- ${text}`)
     docxChildren.push(docxBullet(text))
