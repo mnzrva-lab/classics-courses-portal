@@ -177,6 +177,43 @@ h3 { font-size: 22px; margin-bottom: 8px; }
   backdrop-filter: blur(12px);
 }
 .transcript-sync-floating .button { min-height: 38px; padding: 8px 12px; font-size: 13px; white-space: nowrap; }
+.passage-study-tools {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.passage-study-tools form { margin: 0; }
+.passage-action {
+  min-height: 32px;
+  padding: 5px 9px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+}
+.passage-action:hover,
+.passage-action:focus-visible,
+.passage-action.active {
+  color: var(--ink);
+  border-color: var(--line);
+  background: rgba(255,255,255,.58);
+  outline: none;
+}
+.passage-note-form {
+  width: min(520px, calc(100vw - 64px));
+  margin-top: 8px !important;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(251,247,239,.97);
+  box-shadow: 0 8px 24px rgba(32,32,29,.08);
+}
+.passage-note-form textarea { margin-top: 6px; resize: vertical; }
 figure {
   width: fit-content;
   max-width: min(720px, 100%);
@@ -256,5 +293,6 @@ figure figcaption {
   [id^="paragraph-"] { margin-left: -8px; margin-right: -8px; padding-left: 8px !important; padding-right: 8px !important; }
   [id^="paragraph-"] > form { opacity: 1; }
   .transcript-sync-floating { right: 12px; bottom: 12px; left: 12px; width: auto; }
+  .passage-note-form { width: min(100%, calc(100vw - 48px)); }
   figure { padding: 10px; }
 }
