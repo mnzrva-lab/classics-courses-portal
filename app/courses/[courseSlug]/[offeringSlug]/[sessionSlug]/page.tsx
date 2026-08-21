@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import MarkdownContent from '@/components/markdown-content'
+import RecordingPlayer from '@/components/recording-player'
 import { markSessionComplete, saveSessionNote, startSessionProgress, toggleParagraphBookmark, toggleSessionBookmark } from './actions'
 
 type CourseRelation = {
@@ -249,8 +250,8 @@ export default async function SessionPage({
       <section className="section card">
         <div className="eyebrow">Recording</div>
         <h2 style={{ fontSize: 32 }}>Watch or listen</h2>
+        <RecordingPlayer recordingUrl={session.recording_url} title={session.title} />
         <div className="actions">
-          {session.recording_url ? <a className="button red" href={session.recording_url} target="_blank" rel="noreferrer">Open recording</a> : <span className="meta">Recording coming soon.</span>}
           {session.audio_url ? <audio controls src={session.audio_url} /> : null}
           {userId && (canSaveBookmarks || sessionBookmarked) ? (
             <form action={toggleSessionBookmark.bind(null, session.id, returnPath)}>
