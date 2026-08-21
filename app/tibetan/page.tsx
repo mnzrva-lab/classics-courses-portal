@@ -25,20 +25,31 @@ export default async function TibetanPage({
   const query = queryText.toLowerCase()
   const supabase = await createClient()
 
-  const { data: rows } = await supabase
-    .from('tibetan_terms')
-    .select('id, slug, tibetan_script, transliteration, english_meaning, explanation, aliases, sort_order')
-    .eq('status', 'published')
-    .order('sort_order')
-    .order('transliteration')
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const userId = claimsData?.claims?.sub as string | undefined
+  const profilePromise = userId
+    ? supabase.from('profiles').select('role').eq('id', userId).maybeSingle()
+    : Promise.resolve({ data: null } as any)
+
+  const [{ data: rows }, { data: profile }] = await Promise.all([
+    supabase
+      .from('tibetan_terms')
+      .select('id, slug, tibetan_script, transliteration, english_meaning, explanation, aliases, sort_order')
+      .eq('status', 'published')
+      .order('sort_order')
+      .order('transliteration'),
+    profilePromise,
+  ])
 
   const terms = (rows ?? []).filter((term: any) => matches(term, query))
+  const isAdmin = profile?.role === 'admin'
 
   return (
     <main className="container page">
       <div className="eyebrow">Tibetan</div>
       <h1>Tibetan glossary</h1>
       <p className="lead">A separate study tool for Tibetan terminology used across the teachings. Search by Tibetan script, transliteration, English meaning, or an alternate form.</p>
+      {isAdmin ? <div className="actions"><Link className="button sage" href="/admin/tibetan">Manage glossary</Link></div> : null}
 
       <section className="section card sage">
         <div className="eyebrow">Search</div>
