@@ -9,7 +9,7 @@ export async function GET(request: Request) {
 
   if (!userId) return new Response('Sign in required.', { status: 401 })
 
-  const [courseResult, sessionResult, paragraphResult] = await Promise.all([
+  const [courseResult, sessionResult, meditationResult, paragraphResult] = await Promise.all([
     supabase
       .from('user_course_bookmarks')
       .select('created_at, courses(title, canonical_number)')
@@ -21,13 +21,18 @@ export async function GET(request: Request) {
       .eq('user_id', userId)
       .order('created_at', { ascending: false }),
     supabase
+      .from('user_meditation_bookmarks')
+      .select('created_at, meditations(name, slug)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false }),
+    supabase
       .from('user_paragraph_bookmarks')
       .select('created_at, transcript_paragraphs(body, speaker, start_seconds, transcripts(sessions(code, title, courses(title), course_offerings(label))))')
       .eq('user_id', userId)
       .order('created_at', { ascending: false }),
   ])
 
-  if (courseResult.error || sessionResult.error || paragraphResult.error) {
+  if (courseResult.error || sessionResult.error || meditationResult.error || paragraphResult.error) {
     return new Response('Could not export bookmarks.', { status: 500 })
   }
 
@@ -56,6 +61,20 @@ export async function GET(request: Request) {
   for (const item of sessions) {
     const session = item.sessions as any
     const text = `${session?.courses?.title ?? 'Course'}${session?.course_offerings?.label ? ` · ${session.course_offerings.label}` : ''} · ${session?.code ? `${session.code} · ` : ''}${session?.title ?? 'Session'} (${item.created_at})`
+    markdown.push(`- ${text}`)
+    plain.push(`- ${text}`)
+  }
+
+  markdown.push('', '## Meditations', '')
+  plain.push('', 'MEDITATIONS', '')
+  const meditations = meditationResult.data ?? []
+  if (meditations.length === 0) {
+    markdown.push('_No bookmarked meditations._', '')
+    plain.push('No bookmarked meditations.', '')
+  }
+  for (const item of meditations) {
+    const meditation = item.meditations as any
+    const text = `${meditation?.name ?? 'Meditation'} (${item.created_at})`
     markdown.push(`- ${text}`)
     plain.push(`- ${text}`)
   }
