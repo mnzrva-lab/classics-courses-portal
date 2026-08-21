@@ -39,53 +39,69 @@ export default async function HomePage() {
 
   return (
     <main>
-      <section className="hero">
+      <section className="hero home-hero">
         <div className="container">
           <div className="eyebrow">Study · Practice · Return</div>
           <h1>Classics Courses with Timothy Lowenhaupt</h1>
           <p className="lead">
-            A public study library for Classics Courses, Living Lam Rim, meditations, recordings,
-            transcripts, and Study Notes. Sign in only when you want to save your own progress and notes.
+            Recordings, Study Notes, Reference Transcripts, meditations, and course materials in one calm study space.
+            The library stays public. Sign in only when you want to save your own notes, bookmarks, and progress.
           </p>
         </div>
       </section>
 
       <section className="container section">
+        <div className="section-head">
+          <div>
+            <div className="eyebrow">Current teaching</div>
+            <h2>Next</h2>
+          </div>
+          <p>Your local timezone is used automatically.</p>
+        </div>
         <NextSessionCard sessions={sessions} />
       </section>
 
       <section className="container section">
+        <div className="section-head">
+          <div>
+            <div className="eyebrow">Explore</div>
+            <h2>Choose where to study</h2>
+          </div>
+        </div>
         <div className="grid two">
-          <Link className="card" href="/courses">
-            <div className="pill">18-course path</div>
-            <h3 style={{ marginTop: 18 }}>Classics Courses</h3>
-            <p className="meta">Browse the canonical 18 courses and their Course Offerings.</p>
+          <Link className="card home-library-card cream" href="/courses">
+            <div className="eyebrow">18 courses</div>
+            <h3>Classics Courses</h3>
+            <p className="meta">Browse the canonical 18-course curriculum and choose the Course Offering you want to study.</p>
+            <div className="go">Browse all 18 →</div>
           </Link>
-          <Link className="card sage" href="/living-lam-rim">
-            <div className="pill">Ongoing program</div>
-            <h3 style={{ marginTop: 18 }}>Living Lam Rim</h3>
-            <p className="meta">Browse by term, then open the individual class you want to study.</p>
+          <Link className="card home-library-card sage" href="/living-lam-rim">
+            <div className="eyebrow">Living course</div>
+            <h3>Living Lam Rim</h3>
+            <p className="meta">Move term by term through meditation and insight teachings, with each class kept as its own study page.</p>
+            <div className="go">Open terms →</div>
           </Link>
-          <Link className="card" href="/other-programs">
-            <div className="pill">Long-form study</div>
-            <h3 style={{ marginTop: 18 }}>Other Programs</h3>
-            <p className="meta">Explore text studies and teaching programs outside the 18 Classics Courses.</p>
+          <Link className="card home-library-card" href="/other-programs">
+            <div className="eyebrow">More teachings</div>
+            <h3>Other Programs</h3>
+            <p className="meta">Explore text studies and teaching programs that sit outside the 18 Classics Courses.</p>
+            <div className="go">Explore programs →</div>
           </Link>
-          <Link className="card" href="/meditations">
-            <div className="pill">Practice library</div>
-            <h3 style={{ marginTop: 18 }}>Meditations</h3>
-            <p className="meta">Find meditations by name, duration, teacher, topic, and source course.</p>
+          <Link className="card home-library-card" href="/meditations">
+            <div className="eyebrow">Practice library</div>
+            <h3>Meditations</h3>
+            <p className="meta">Find a practice by name, duration, teacher, topic, or source teaching.</p>
+            <div className="go">Find a meditation →</div>
           </Link>
         </div>
       </section>
 
       <section className="container section">
-        <div className="card">
+        <div className="card study-layer-card">
           <div className="eyebrow">Personal study layer</div>
-          <h2>Keep your progress without putting the library behind a login.</h2>
-          <p className="lead" style={{ fontSize: 18 }}>
-            Anyone can browse. A Google account is only needed for private notes, bookmarks, course progress,
-            and your My Learning dashboard.
+          <h2>Keep the public library open. Save only what is yours.</h2>
+          <p className="lead">
+            A Google account is only needed for private notes, bookmarks, flashcard progress, course progress, and My Learning.
           </p>
           <div className="actions">
             <Link className="button red" href="/login">Continue with Google</Link>
