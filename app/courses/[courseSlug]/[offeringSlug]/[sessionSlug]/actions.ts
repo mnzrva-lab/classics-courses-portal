@@ -89,10 +89,44 @@ export async function saveSessionNote(sessionId: string, returnPath: string, for
   const { error } = await supabase.from('student_notes').insert({
     user_id: userId,
     session_id: sessionId,
+    paragraph_id: null,
     note,
   })
 
   if (error) throw new Error('Could not save note.')
+  await touchProgress(supabase, userId, sessionId, settings.saveProgress)
+  revalidatePath(returnPath)
+  revalidatePath('/my-learning')
+  revalidatePath('/my-notes')
+}
+
+export async function saveParagraphNote(paragraphId: string, sessionId: string, returnPath: string, formData: FormData) {
+  const note = String(formData.get('note') || '').trim()
+  if (!note) return
+
+  const { supabase, userId } = await requireUser()
+  const settings = await readSettings(supabase, userId)
+  if (!settings.saveNotes) throw new Error('Note saving is turned off in Privacy & Data.')
+
+  const { data: paragraph, error: paragraphError } = await supabase
+    .from('transcript_paragraphs')
+    .select('id, is_active, transcripts!inner(session_id)')
+    .eq('id', paragraphId)
+    .eq('is_active', true)
+    .eq('transcripts.session_id', sessionId)
+    .maybeSingle()
+
+  if (paragraphError) throw new Error('Could not verify this transcript passage.')
+  if (!paragraph) throw new Error('This transcript passage is no longer available in the current class.')
+
+  const { error } = await supabase.from('student_notes').insert({
+    user_id: userId,
+    session_id: sessionId,
+    paragraph_id: paragraphId,
+    note,
+  })
+
+  if (error) throw new Error('Could not save passage note.')
   await touchProgress(supabase, userId, sessionId, settings.saveProgress)
   revalidatePath(returnPath)
   revalidatePath('/my-learning')
