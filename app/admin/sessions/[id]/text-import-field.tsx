@@ -97,6 +97,7 @@ export default function TextImportField({
   const [value, setValue] = useState(defaultValue ?? '')
   const [message, setMessage] = useState<string | null>(null)
   const [reading, setReading] = useState(false)
+  const [importedFileName, setImportedFileName] = useState('')
   const temporaryUploads = useRef<string[]>([])
   const shouldPreserveTranscriptImages = preserveTranscriptImages || name === 'transcript_content'
 
@@ -204,6 +205,7 @@ export default function TextImportField({
       }
 
       setValue(text.trim())
+      setImportedFileName(file.name)
       setMessage(nextMessage)
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Could not read this file.')
@@ -215,6 +217,7 @@ export default function TextImportField({
 
   return (
     <div className="form-stack">
+      {shouldPreserveTranscriptImages ? <input type="hidden" name="transcript_import_file_name" value={importedFileName} /> : null}
       <label>{label}
         <textarea
           className="input"
