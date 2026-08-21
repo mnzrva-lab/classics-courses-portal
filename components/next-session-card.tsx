@@ -63,6 +63,7 @@ export default function NextSessionCard({ sessions }: { sessions: Session[] }) {
       <div className="next-card">
         <div className="eyebrow">Next</div>
         <h3>New live sessions will appear here.</h3>
+        <div className="meta">Published course sessions will be shown here automatically.</div>
       </div>
     )
   }
@@ -75,21 +76,23 @@ export default function NextSessionCard({ sessions }: { sessions: Session[] }) {
   return (
     <div className="next-card">
       <div className="next-line">
-        <div>
+        <div className="next-session-copy">
           <div className={isLive ? 'live' : 'eyebrow'}>{isLive ? 'LIVE NOW' : 'NEXT CLASS'}</div>
-          <h3 style={{ marginTop: 8 }}>{current.course_title} · {current.code || current.title}</h3>
+          <h3>{current.course_title} · {current.code || current.title}</h3>
           <div className="meta">
             {current.offering_label ? `${current.offering_label} · ` : ''}
             {current.teacher_names.join(', ')}
           </div>
-          <div style={{ marginTop: 8 }}>{localDateTime(current.starts_at)} · your local time</div>
+          <div style={{ marginTop: 8, fontWeight: 750 }}>{localDateTime(current.starts_at)} · your local time</div>
           {!isLive && <div className="meta" style={{ marginTop: 4 }}>{countdown(start - now)}</div>}
         </div>
-        {zoomOpen && current.zoom_url && (
-          <a className="button red" href={current.zoom_url} target="_blank" rel="noreferrer">
-            Join the class on Zoom
-          </a>
-        )}
+        {zoomOpen && current.zoom_url ? (
+          <div className="next-session-action">
+            <a className="button red" href={current.zoom_url} target="_blank" rel="noreferrer">
+              Join the class on Zoom
+            </a>
+          </div>
+        ) : null}
       </div>
     </div>
   )
