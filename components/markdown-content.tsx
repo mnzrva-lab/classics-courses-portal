@@ -52,6 +52,27 @@ function isNumbered(line: string) {
   return /^\s*\d+[.)]\s+/.test(line)
 }
 
+function listDepth(line: string) {
+  const spaces = line.match(/^\s*/)?.[0].length ?? 0
+  return Math.floor(spaces / 2)
+}
+
+function isTableLine(line: string) {
+  const trimmed = line.trim()
+  return trimmed.startsWith('|') && trimmed.endsWith('|')
+}
+
+function isTableSeparator(line: string) {
+  const trimmed = line.trim()
+  if (!isTableLine(line)) return false
+  const cells = trimmed.slice(1, -1).split('|').map((cell) => cell.trim())
+  return cells.length > 0 && cells.every((cell) => /^:?-{3,}:?$/.test(cell))
+}
+
+function tableCells(line: string) {
+  return line.trim().slice(1, -1).split('|').map((cell) => cell.trim().replace(/\\\|/g, '|'))
+}
+
 export default function MarkdownContent({ content }: Props) {
   const lines = content.replace(/\r\n/g, '\n').split('\n')
   const blocks: ReactNode[] = []
@@ -78,29 +99,61 @@ export default function MarkdownContent({ content }: Props) {
       continue
     }
 
+    if (isTableLine(line) && index + 1 < lines.length && isTableSeparator(lines[index + 1])) {
+      const header = tableCells(line)
+      index += 2
+      const body: string[][] = []
+      while (index < lines.length && isTableLine(lines[index])) {
+        body.push(tableCells(lines[index]))
+        index += 1
+      }
+
+      blocks.push(
+        <div key={`table-${key++}`} style={{ overflowX: 'auto', margin: '18px 0' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', lineHeight: 1.55 }}>
+            <thead>
+              <tr>{header.map((cell, cellIndex) => <th key={cellIndex} style={{ textAlign: 'left', padding: '10px 12px', borderBottom: '1px solid var(--line)', verticalAlign: 'top' }}>{inlineNodes(cell)}</th>)}</tr>
+            </thead>
+            <tbody>
+              {body.map((row, rowIndex) => (
+                <tr key={rowIndex}>{header.map((_, cellIndex) => <td key={cellIndex} style={{ padding: '10px 12px', borderBottom: '1px solid var(--line)', verticalAlign: 'top' }}>{inlineNodes(row[cellIndex] ?? '')}</td>)}</tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )
+      continue
+    }
+
     if (isBullet(line)) {
-      const items: string[] = []
+      const items: Array<{ text: string; depth: number }> = []
       while (index < lines.length && isBullet(lines[index])) {
-        items.push(lines[index].replace(/^\s*[-*+]\s+/, '').trim())
+        items.push({
+          text: lines[index].replace(/^\s*[-*+]\s+/, '').trim(),
+          depth: listDepth(lines[index]),
+        })
         index += 1
       }
       blocks.push(
         <ul key={`ul-${key++}`} style={{ lineHeight: 1.75, paddingLeft: 24 }}>
-          {items.map((item, itemIndex) => <li key={itemIndex}>{inlineNodes(item)}</li>)}
+          {items.map((item, itemIndex) => <li key={itemIndex} style={{ marginLeft: item.depth * 20 }}>{inlineNodes(item.text)}</li>)}
         </ul>
       )
       continue
     }
 
     if (isNumbered(line)) {
-      const items: string[] = []
+      const items: Array<{ text: string; depth: number }> = []
       while (index < lines.length && isNumbered(lines[index])) {
-        items.push(lines[index].replace(/^\s*\d+[.)]\s+/, '').trim())
+        items.push({
+          text: lines[index].replace(/^\s*\d+[.)]\s+/, '').trim(),
+          depth: listDepth(lines[index]),
+        })
         index += 1
       }
       blocks.push(
         <ol key={`ol-${key++}`} style={{ lineHeight: 1.75, paddingLeft: 24 }}>
-          {items.map((item, itemIndex) => <li key={itemIndex}>{inlineNodes(item)}</li>)}
+          {items.map((item, itemIndex) => <li key={itemIndex} style={{ marginLeft: item.depth * 20 }}>{inlineNodes(item.text)}</li>)}
         </ol>
       )
       continue
@@ -125,7 +178,8 @@ export default function MarkdownContent({ content }: Props) {
     while (index < lines.length) {
       const next = lines[index]
       const nextTrimmed = next.trim()
-      if (!nextTrimmed || /^(#{1,4})\s+/.test(nextTrimmed) || isBullet(next) || isNumbered(next) || nextTrimmed.startsWith('> ')) break
+      const startsTable = isTableLine(next) && index + 1 < lines.length && isTableSeparator(lines[index + 1])
+      if (!nextTrimmed || /^(#{1,4})\s+/.test(nextTrimmed) || isBullet(next) || isNumbered(next) || nextTrimmed.startsWith('> ') || startsTable) break
       paragraphLines.push(nextTrimmed)
       index += 1
     }
