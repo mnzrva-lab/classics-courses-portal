@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
+import TranscriptSync from '@/components/transcript-sync'
 import './globals.css'
 
 export const metadata: Metadata = {
@@ -63,6 +64,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             </div>
           </header>
           {children}
+          <TranscriptSync />
           <footer className="footer">
             <div className="container">Classics Courses with Timothy Lowenhaupt</div>
           </footer>
