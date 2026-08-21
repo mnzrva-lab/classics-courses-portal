@@ -27,29 +27,32 @@ export default async function TibetanPage({
 
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub as string | undefined
-  const profilePromise = userId
-    ? supabase.from('profiles').select('role').eq('id', userId).maybeSingle()
-    : Promise.resolve({ data: null } as any)
+  let isAdmin = false
+  if (userId) {
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle()
+    isAdmin = profile?.role === 'admin'
+  }
 
-  const [{ data: rows }, { data: profile }] = await Promise.all([
-    supabase
-      .from('tibetan_terms')
-      .select('id, slug, tibetan_script, transliteration, english_meaning, explanation, aliases, sort_order')
-      .eq('status', 'published')
-      .order('sort_order')
-      .order('transliteration'),
-    profilePromise,
-  ])
+  const { data: rows } = await supabase
+    .from('tibetan_terms')
+    .select('id, slug, tibetan_script, transliteration, english_meaning, explanation, aliases, sort_order')
+    .eq('status', 'published')
+    .order('sort_order')
+    .order('transliteration')
 
   const terms = (rows ?? []).filter((term: any) => matches(term, query))
-  const isAdmin = profile?.role === 'admin'
 
   return (
     <main className="container page">
       <div className="eyebrow">Tibetan</div>
       <h1>Tibetan glossary</h1>
       <p className="lead">A separate study tool for Tibetan terminology used across the teachings. Search by Tibetan script, transliteration, English meaning, or an alternate form.</p>
-      {isAdmin ? <div className="actions"><Link className="button sage" href="/admin/tibetan">Manage glossary</Link></div> : null}
+      {isAdmin ? (
+        <div className="actions">
+          <Link className="button sage" href="/admin/tibetan">Manage glossary</Link>
+          <Link className="button" href="/admin/tibetan/import">Bulk import</Link>
+        </div>
+      ) : null}
 
       <section className="section card sage">
         <div className="eyebrow">Search</div>
