@@ -118,3 +118,14 @@ export async function resetAllProgress(formData: FormData) {
   revalidatePath('/my-learning')
   redirect('/account?saved=progress-reset')
 }
+
+export async function deleteAccount(formData: FormData) {
+  if (!confirmation(formData, 'DELETE ACCOUNT')) throw new Error('Type DELETE ACCOUNT exactly to continue.')
+  const { supabase } = await requireUser()
+
+  const { error } = await supabase.rpc('delete_my_account')
+  if (error) throw new Error('Could not delete your account. Please try again.')
+
+  await supabase.auth.signOut()
+  redirect('/')
+}
