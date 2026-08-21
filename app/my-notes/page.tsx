@@ -16,6 +16,16 @@ function clip(text: string, length = 240) {
   return text.length > length ? `${text.slice(0, length).trim()}…` : text
 }
 
+function formatTimestamp(seconds: number | null | undefined) {
+  if (seconds == null) return null
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+  return hours > 0
+    ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+    : `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+}
+
 function codeOrder(code: string | null | undefined) {
   if (!code) return 9999
   const match = code.match(/(\d+)/)
@@ -24,13 +34,20 @@ function codeOrder(code: string | null | undefined) {
   return prefix + value
 }
 
+function includesQuery(values: Array<string | null | undefined>, query: string) {
+  if (!query) return true
+  return values.some((value) => String(value ?? '').toLowerCase().includes(query))
+}
+
 export default async function MyNotesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ sort?: string; saved?: string }>
+  searchParams: Promise<{ sort?: string; saved?: string; q?: string }>
 }) {
-  const { sort, saved } = await searchParams
+  const { sort, saved, q } = await searchParams
   const sortMode = sort === 'class' ? 'class' : 'latest'
+  const searchText = (q ?? '').trim()
+  const normalizedSearch = searchText.toLowerCase()
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub as string | undefined
@@ -39,7 +56,7 @@ export default async function MyNotesPage({
   const [notesResult, sessionBookmarksResult, paragraphBookmarksResult, courseBookmarksResult] = await Promise.all([
     supabase
       .from('student_notes')
-      .select('id, note, paragraph_id, updated_at, sessions(id, slug, code, title, courses(slug, title, canonical_number), course_offerings(slug, label))')
+      .select('id, note, paragraph_id, updated_at, transcript_paragraphs(id, body, speaker, start_seconds, is_active), sessions(id, slug, code, title, courses(slug, title, canonical_number), course_offerings(slug, label))')
       .eq('user_id', userId)
       .order('updated_at', { ascending: false }),
     supabase
@@ -64,8 +81,39 @@ export default async function MyNotesPage({
   const paragraphBookmarks = paragraphBookmarksResult.data ?? []
   const courseBookmarks = courseBookmarksResult.data ?? []
 
+  const visibleNotes = normalizedSearch
+    ? (notes as any[]).filter((item) => {
+        const session = item.sessions
+        const paragraph = item.transcript_paragraphs
+        return includesQuery([
+          item.note,
+          paragraph?.body,
+          paragraph?.speaker,
+          session?.code,
+          session?.title,
+          session?.courses?.title,
+          session?.course_offerings?.label,
+        ], normalizedSearch)
+      })
+    : notes
+
+  const visibleParagraphBookmarks = normalizedSearch
+    ? (paragraphBookmarks as any[]).filter((item) => {
+        const paragraph = item.transcript_paragraphs
+        const session = paragraph?.transcripts?.sessions
+        return includesQuery([
+          paragraph?.body,
+          paragraph?.speaker,
+          session?.code,
+          session?.title,
+          session?.courses?.title,
+          session?.course_offerings?.label,
+        ], normalizedSearch)
+      })
+    : paragraphBookmarks
+
   const courseGroups = new Map<string, any>()
-  for (const item of notes as any[]) {
+  for (const item of visibleNotes as any[]) {
     const session = item.sessions
     const course = session?.courses
     const courseKey = course?.slug ?? 'other'
@@ -118,15 +166,29 @@ export default async function MyNotesPage({
     <main className="container page">
       <div className="eyebrow">Your private study space</div>
       <h1 style={{ fontSize: 'clamp(38px, 6vw, 64px)' }}>My Notes</h1>
-      <p className="lead">Notes grouped by course and class, with your saved courses, classes, and transcript bookmarks in the same study space.</p>
+      <p className="lead">Keep class notes and notes tied to exact transcript passages, together with your saved courses, classes, and passages.</p>
 
       {savedMessage ? <div className="card completed section">{savedMessage}</div> : null}
 
       <section className="section card">
+        <div className="eyebrow">Find something you saved</div>
+        <form className="form-stack" method="get" action="/my-notes">
+          <input type="hidden" name="sort" value={sortMode} />
+          <label>Search your notes and saved transcript passages
+            <input className="input" type="search" name="q" defaultValue={searchText} placeholder="A phrase from your note or the teaching…" />
+          </label>
+          <div className="actions">
+            <button className="button red" type="submit">Search My Notes</button>
+            {searchText ? <Link className="button" href={`/my-notes?sort=${sortMode}`}>Clear search</Link> : null}
+          </div>
+        </form>
+      </section>
+
+      <section className="section card">
         <div className="eyebrow">View</div>
         <div className="actions">
-          <Link className="button" href="/my-notes?sort=latest">Latest activity</Link>
-          <Link className="button" href="/my-notes?sort=class">Course &amp; class order</Link>
+          <Link className="button" href={`/my-notes?sort=latest${searchText ? `&q=${encodeURIComponent(searchText)}` : ''}`}>Latest activity</Link>
+          <Link className="button" href={`/my-notes?sort=class${searchText ? `&q=${encodeURIComponent(searchText)}` : ''}`}>Course &amp; class order</Link>
           <Link className="button" href="/account">Privacy &amp; Data</Link>
         </div>
       </section>
@@ -134,6 +196,7 @@ export default async function MyNotesPage({
       <section className="section">
         <div className="eyebrow">Private notes</div>
         <h2 style={{ fontSize: 32 }}>Course → class → note</h2>
+        {searchText ? <p className="meta">Showing notes that match “{searchText}”.</p> : null}
         {groupedNotes.length ? groupedNotes.map((courseGroup: any) => (
           <div className="card" key={courseGroup.key} style={{ marginBottom: 22 }}>
             <div className="eyebrow">{courseGroup.canonicalNumber ? `Course ${courseGroup.canonicalNumber}` : 'Program'}</div>
@@ -152,85 +215,105 @@ export default async function MyNotesPage({
                     {href ? <Link className="button" href={href}>Open class</Link> : null}
                   </div>
 
-                  {sessionGroup.notes.map((item: any) => (
-                    <div key={item.id} style={{ padding: '16px 0', borderTop: '1px solid var(--line)', marginTop: 14 }}>
-                      <form className="form-stack" action={updateNote.bind(null, item.id)}>
-                        <textarea className="input" name="note" rows={5} defaultValue={item.note} required />
-                        <div className="meta">Updated {new Date(item.updated_at).toLocaleString()}</div>
-                        <div className="actions"><button className="button" type="submit">Save changes</button></div>
-                      </form>
-                      <form action={deleteNote.bind(null, item.id)} style={{ marginTop: 8 }}>
-                        <button className="button" type="submit">Delete note</button>
-                      </form>
-                    </div>
-                  ))}
+                  {sessionGroup.notes.map((item: any) => {
+                    const paragraph = item.transcript_paragraphs
+                    const timestamp = formatTimestamp(paragraph?.start_seconds)
+                    const currentParagraph = paragraph?.is_active !== false
+                    const passageHref = href && item.paragraph_id && currentParagraph ? `${href}#paragraph-${item.paragraph_id}` : href
+                    return (
+                      <div key={item.id} style={{ padding: '16px 0', borderTop: '1px solid var(--line)', marginTop: 14 }}>
+                        {item.paragraph_id && paragraph ? (
+                          <div className="note" style={{ marginBottom: 12 }}>
+                            <div className="eyebrow">Passage note{timestamp ? ` · ${timestamp}` : ''}</div>
+                            <div style={{ lineHeight: 1.65, marginTop: 6 }}>
+                              {paragraph.speaker ? <strong>{paragraph.speaker}: </strong> : null}
+                              {clip(paragraph.body, 300)}
+                            </div>
+                            {!currentParagraph ? <div className="meta" style={{ marginTop: 8 }}>This note points to an earlier transcript revision. Your note and the original passage are still kept here.</div> : null}
+                            {passageHref ? <div className="actions"><Link className="button" href={passageHref}>{currentParagraph ? 'Open passage' : 'Open current class'}</Link></div> : null}
+                          </div>
+                        ) : <div className="eyebrow" style={{ marginBottom: 8 }}>Class note</div>}
+
+                        <form className="form-stack" action={updateNote.bind(null, item.id)}>
+                          <textarea className="input" name="note" rows={5} defaultValue={item.note} required />
+                          <div className="meta">Updated {new Date(item.updated_at).toLocaleString()}</div>
+                          <div className="actions"><button className="button" type="submit">Save changes</button></div>
+                        </form>
+                        <form action={deleteNote.bind(null, item.id)} style={{ marginTop: 8 }}>
+                          <button className="button" type="submit">Delete note</button>
+                        </form>
+                      </div>
+                    )
+                  })}
                 </div>
               )
             })}
           </div>
-        )) : <div className="card"><p className="meta">Notes you save from class pages will appear here.</p></div>}
+        )) : <div className="card"><p className="meta">{searchText ? 'No private notes matched this search.' : 'Notes you save from class pages will appear here.'}</p></div>}
       </section>
 
-      <section className="grid two section">
-        <div className="card">
-          <div className="eyebrow">Class bookmarks</div>
-          <h2 style={{ fontSize: 30 }}>Saved classes</h2>
-          {sessionBookmarks.length ? sessionBookmarks.map((item: any) => {
-            const session = item.sessions
-            const href = sessionPath(session)
-            return (
-              <div key={item.session_id} style={{ padding: '14px 0', borderTop: '1px solid var(--line)' }}>
-                <strong>{session?.code ? `${session.code} · ` : ''}{session?.title ?? 'Session'}</strong>
-                <div className="meta">{session?.courses?.title ?? ''}{session?.course_offerings?.label ? ` · ${session.course_offerings.label}` : ''}</div>
-                {href ? <div className="actions"><Link className="button" href={href}>Open</Link></div> : null}
-              </div>
-            )
-          }) : <p className="meta">Bookmark a class and it will appear here.</p>}
-        </div>
+      {!searchText ? (
+        <section className="grid two section">
+          <div className="card">
+            <div className="eyebrow">Class bookmarks</div>
+            <h2 style={{ fontSize: 30 }}>Saved classes</h2>
+            {sessionBookmarks.length ? sessionBookmarks.map((item: any) => {
+              const session = item.sessions
+              const href = sessionPath(session)
+              return (
+                <div key={item.session_id} style={{ padding: '14px 0', borderTop: '1px solid var(--line)' }}>
+                  <strong>{session?.code ? `${session.code} · ` : ''}{session?.title ?? 'Session'}</strong>
+                  <div className="meta">{session?.courses?.title ?? ''}{session?.course_offerings?.label ? ` · ${session.course_offerings.label}` : ''}</div>
+                  {href ? <div className="actions"><Link className="button" href={href}>Open</Link></div> : null}
+                </div>
+              )
+            }) : <p className="meta">Bookmark a class and it will appear here.</p>}
+          </div>
 
-        <div className="card">
-          <div className="eyebrow">Bookmarked Courses</div>
-          <h2 style={{ fontSize: 30 }}>Saved courses</h2>
-          {courseBookmarks.length ? courseBookmarks.map((item: any) => {
-            const course = item.courses
-            const offerings = (course?.course_offerings ?? []).filter((offering: any) => offering.status === 'published').sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-            const offering = offerings[0]
-            const href = course?.slug && offering?.slug ? `/courses/${course.slug}/${offering.slug}` : course?.slug ? `/courses/${course.slug}` : null
-            return (
-              <div key={item.course_id} style={{ padding: '14px 0', borderTop: '1px solid var(--line)' }}>
-                <strong>{course?.canonical_number ? `Course ${course.canonical_number} · ` : ''}{course?.title ?? 'Course'}</strong>
-                {offering?.label ? <div className="meta">{offering.label}</div> : null}
-                {href ? <div className="actions"><Link className="button" href={href}>Open</Link></div> : null}
-              </div>
-            )
-          }) : <p className="meta">Bookmark a course and it will appear here.</p>}
-        </div>
-      </section>
+          <div className="card">
+            <div className="eyebrow">Bookmarked Courses</div>
+            <h2 style={{ fontSize: 30 }}>Saved courses</h2>
+            {courseBookmarks.length ? courseBookmarks.map((item: any) => {
+              const course = item.courses
+              const offerings = (course?.course_offerings ?? []).filter((offering: any) => offering.status === 'published').sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+              const offering = offerings[0]
+              const href = course?.slug && offering?.slug ? `/courses/${course.slug}/${offering.slug}` : course?.slug ? `/courses/${course.slug}` : null
+              return (
+                <div key={item.course_id} style={{ padding: '14px 0', borderTop: '1px solid var(--line)' }}>
+                  <strong>{course?.canonical_number ? `Course ${course.canonical_number} · ` : ''}{course?.title ?? 'Course'}</strong>
+                  {offering?.label ? <div className="meta">{offering.label}</div> : null}
+                  {href ? <div className="actions"><Link className="button" href={href}>Open</Link></div> : null}
+                </div>
+              )
+            }) : <p className="meta">Bookmark a course and it will appear here.</p>}
+          </div>
+        </section>
+      ) : null}
 
       <section className="section card">
-        <div className="eyebrow">Transcript bookmarks</div>
-        <h2 style={{ fontSize: 32 }}>Saved transcript bookmarks</h2>
-        {paragraphBookmarks.length ? paragraphBookmarks.map((item: any) => {
+        <div className="eyebrow">Saved passages</div>
+        <h2 style={{ fontSize: 32 }}>Transcript bookmarks</h2>
+        {searchText ? <p className="meta">Showing saved passages that match “{searchText}”.</p> : null}
+        {visibleParagraphBookmarks.length ? (visibleParagraphBookmarks as any[]).map((item: any) => {
           const paragraph = item.transcript_paragraphs
           const transcript = paragraph?.transcripts
           const session = transcript?.sessions
           const basePath = sessionPath(session)
           const currentParagraph = paragraph?.is_active !== false
           const href = basePath && paragraph?.id && currentParagraph ? `${basePath}#paragraph-${paragraph.id}` : basePath
+          const timestamp = formatTimestamp(paragraph?.start_seconds)
           return (
             <div key={item.paragraph_id} style={{ padding: '16px 0', borderTop: '1px solid var(--line)' }}>
-              <div style={{ lineHeight: 1.65 }}>
+              <div className="meta">{timestamp ? `${timestamp} · ` : ''}{session?.courses?.title ?? ''}{session?.course_offerings?.label ? ` · ${session.course_offerings.label}` : ''}{session?.code ? ` · ${session.code}` : ''}</div>
+              <div style={{ lineHeight: 1.65, marginTop: 6 }}>
                 {paragraph?.speaker ? <strong>{paragraph.speaker}: </strong> : null}
                 {clip(paragraph?.body ?? 'Saved transcript excerpt')}
               </div>
-              <div className="meta" style={{ marginTop: 8 }}>
-                {session?.courses?.title ?? ''}{session?.course_offerings?.label ? ` · ${session.course_offerings.label}` : ''}{session?.code ? ` · ${session.code}` : ''}
-              </div>
-              {!currentParagraph ? <div className="meta" style={{ marginTop: 8 }}>This bookmark is from an earlier transcript revision. The exact paragraph is no longer in the current transcript, but your saved text has been kept.</div> : null}
-              {href ? <div className="actions"><Link className="button" href={href}>{currentParagraph ? 'Open bookmark' : 'Open current class'}</Link></div> : null}
+              {!currentParagraph ? <div className="meta" style={{ marginTop: 8 }}>This bookmark is from an earlier transcript revision. The exact passage is no longer in the current transcript, but your saved text has been kept.</div> : null}
+              {href ? <div className="actions"><Link className="button" href={href}>{currentParagraph ? 'Open passage' : 'Open current class'}</Link></div> : null}
             </div>
           )
-        }) : <p className="meta">Bookmark transcript text and it will appear here.</p>}
+        }) : <p className="meta">{searchText ? 'No saved transcript passages matched this search.' : 'Bookmark transcript text and it will appear here.'}</p>}
       </section>
 
       <section className="section"><Link className="button" href="/my-learning">← My Learning</Link></section>
