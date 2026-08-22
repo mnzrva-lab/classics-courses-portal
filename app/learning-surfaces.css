@@ -1,0 +1,356 @@
+/* Visual continuity for the core learning flow.
+   This layer keeps the production architecture while restoring the calmer
+   editorial treatment from the approved Signal & Sage prototype. */
+
+/* Course Offering */
+.offering-breadcrumbs {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-bottom: 18px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+}
+.offering-breadcrumbs a:hover { color: var(--signal-700); }
+
+.offering-hero {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, .8fr);
+  gap: clamp(24px, 4vw, 54px);
+  align-items: center;
+  min-height: 360px;
+  padding: clamp(28px, 5vw, 48px);
+  border: 1px solid var(--line);
+  border-radius: var(--r-xl);
+  background:
+    radial-gradient(circle at 88% 12%, rgba(157, 189, 184, .30), transparent 34%),
+    linear-gradient(135deg, var(--cream), rgba(255,255,255,.88));
+  box-shadow: var(--shadow-sm);
+}
+.offering-hero.no-artwork { grid-template-columns: minmax(0, 850px); }
+.offering-hero-copy { position: relative; z-index: 1; }
+.offering-title {
+  max-width: 900px;
+  margin: 10px 0 16px;
+  font-size: clamp(42px, 6vw, 70px);
+  letter-spacing: -.05em;
+}
+.offering-description { max-width: 760px; }
+.offering-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 24px;
+}
+.offering-artwork {
+  align-self: stretch;
+  min-height: 280px;
+  border-radius: 22px;
+  overflow: hidden;
+  background: var(--paper-2);
+  box-shadow: var(--shadow-md);
+}
+.offering-artwork img {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  max-height: 390px;
+  display: block;
+  object-fit: cover;
+}
+.offering-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 22px;
+}
+.offering-summary-card {
+  min-height: 190px;
+  display: flex;
+  flex-direction: column;
+}
+.offering-summary-card h3 { margin-top: 12px; font-size: 27px; }
+.offering-summary-card .actions { margin-top: auto; padding-top: 8px; }
+.offering-progress-line {
+  height: 8px;
+  margin: 18px 0 10px;
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: rgba(255,255,255,.68);
+}
+.offering-progress-line > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--sage-700);
+}
+
+.offering-section-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 17px;
+}
+.offering-section-head h2 { margin: 7px 0 0; font-size: clamp(30px, 4vw, 42px); }
+.offering-section-head p { margin: 5px 0 0; color: var(--ink-soft); }
+.offering-materials,
+.offering-schedule-surface {
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+}
+.offering-materials { padding: 8px 24px; }
+.offering-material-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+.offering-material-row:first-child { border-top: 0; }
+.offering-schedule-surface { padding: 8px 24px; }
+.offering-schedule-surface .row { min-height: 78px; }
+.offering-schedule-surface .session-code {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 15px;
+  background: var(--sage-100);
+  color: var(--sage-900);
+}
+.offering-schedule-surface .row.completed .session-code { background: var(--white); }
+.offering-schedule-surface .row > .actions .button { min-height: 40px; }
+.offering-updates {
+  max-width: 720px;
+  padding: 20px 22px;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Real class page */
+nav[aria-label="Class contents"] {
+  padding: 15px 18px;
+  border-radius: 20px;
+  background: rgba(255,255,255,.78);
+  box-shadow: none;
+}
+nav[aria-label="Class contents"] .actions { margin-top: 8px !important; }
+nav[aria-label="Class contents"] .button {
+  min-height: 38px;
+  padding: 0 13px;
+  background: var(--paper);
+  font-size: 12px;
+}
+
+#recording {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+#recording > .eyebrow,
+#recording > h2 { max-width: 980px; }
+#recording > h2 { margin: 8px 0 18px; font-size: clamp(30px, 4vw, 40px) !important; }
+.recording-frame {
+  width: min(980px, 100%);
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border-radius: var(--r-lg);
+  background: var(--ink);
+  box-shadow: var(--shadow-md);
+}
+.recording-frame > div,
+.recording-frame iframe,
+.recording-frame video {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border: 0;
+}
+#recording .actions { width: min(980px, 100%); }
+#recording audio { max-width: 100%; }
+
+#recording + .grid.two { align-items: stretch; }
+#recording + .grid.two > .card {
+  min-height: 220px;
+  box-shadow: none;
+}
+#recording + .grid.two > .card h3 { margin-top: 12px; font-size: 27px; }
+#recording + .grid.two textarea { resize: vertical; }
+
+#study-notes {
+  padding: clamp(24px, 4vw, 34px);
+  border-color: var(--sage-300);
+  background: linear-gradient(180deg, var(--sage-050), rgba(255,255,255,.92));
+  box-shadow: none;
+}
+#study-notes > h2 { margin: 9px 0 10px; font-size: clamp(30px, 4vw, 39px) !important; }
+#study-notes > .lead { max-width: 900px; }
+#study-notes > .meta:last-child {
+  margin-top: 24px !important;
+  padding: 13px 15px;
+  border: 1px solid var(--sage-300);
+  border-radius: var(--r-md);
+  background: rgba(255,255,255,.70);
+  color: var(--sage-900);
+}
+#study-notes h1,
+#study-notes h2,
+#study-notes h3,
+#study-notes h4 { letter-spacing: -.025em; }
+#study-notes p,
+#study-notes li { max-width: 900px; line-height: 1.72; }
+
+#course-materials,
+#materials {
+  box-shadow: none;
+}
+#course-materials h2,
+#materials h2 { margin-top: 8px; }
+
+/* Reference Transcript */
+#transcript {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+#transcript > p.meta:first-child {
+  width: min(900px, 100%);
+  margin: 0 0 18px !important;
+  padding: 14px 16px;
+  border: 1px solid var(--sage-300);
+  border-left: 4px solid var(--sage-700);
+  border-radius: var(--r-md);
+  background: var(--sage-050);
+  color: var(--sage-900);
+  line-height: 1.55;
+}
+#transcript > .eyebrow { margin-top: 28px; }
+#transcript > h2 { margin: 8px 0 22px; font-size: clamp(32px, 4vw, 44px) !important; }
+#transcript nav[aria-label="Transcript chapters"] {
+  width: min(980px, 100%);
+  margin: 0 0 26px !important;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(251,247,239,.96);
+  box-shadow: var(--shadow-sm);
+}
+#transcript nav[aria-label="Transcript chapters"] > strong {
+  display: block;
+  color: var(--ink);
+  font-size: 13px;
+}
+#transcript nav[aria-label="Transcript chapters"] .actions {
+  gap: 6px;
+  margin-top: 9px !important;
+}
+#transcript nav[aria-label="Transcript chapters"] .button {
+  min-height: 35px;
+  padding: 0 11px;
+  background: var(--white);
+  font-size: 11px;
+}
+#transcript > div[style*="max-width"] { max-width: 900px !important; }
+
+#transcript [id^="paragraph-"] {
+  margin-top: 0 !important;
+  margin-bottom: 2px;
+  padding: 13px 16px 15px !important;
+  font-size: 16.5px;
+  line-height: 1.8;
+}
+#transcript [id^="paragraph-"] > h3 {
+  margin: 34px 0 15px;
+  padding-top: 10px;
+  color: var(--ink);
+  font-size: clamp(24px, 3vw, 29px) !important;
+  letter-spacing: -.03em;
+}
+#transcript [id^="paragraph-"] strong { color: var(--sage-900); }
+#transcript [id^="paragraph-"] .meta:first-child {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px !important;
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+  background: var(--sage-100);
+  color: var(--sage-900);
+  font-size: 11px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+#transcript .passage-study-tools {
+  opacity: .48;
+  transition: opacity .16s ease;
+}
+#transcript [id^="paragraph-"]:hover .passage-study-tools,
+#transcript [id^="paragraph-"]:focus-within .passage-study-tools,
+#transcript [id^="paragraph-"]:target .passage-study-tools,
+#transcript [id^="paragraph-"].is-current .passage-study-tools { opacity: 1; }
+#transcript .passage-action {
+  background: var(--paper);
+  border-color: transparent;
+}
+#transcript .passage-action:hover,
+#transcript .passage-action:focus-visible,
+#transcript .passage-action.active {
+  border-color: var(--line);
+  background: var(--white);
+}
+#transcript figure { background: var(--white); }
+
+@media (max-width: 920px) {
+  .offering-hero,
+  .offering-hero.no-artwork { grid-template-columns: 1fr; }
+  .offering-artwork { min-height: 240px; }
+  .offering-summary-grid { grid-template-columns: 1fr; }
+  .offering-schedule-surface .row { grid-template-columns: 56px 1fr; }
+  .offering-schedule-surface .row > :last-child { grid-column: 2; }
+  #transcript .passage-study-tools { opacity: 1; }
+}
+
+@media (max-width: 540px) {
+  .offering-hero { min-height: 0; padding: 23px; border-radius: 24px; }
+  .offering-title { font-size: 40px; }
+  .offering-artwork { min-height: 210px; border-radius: 18px; }
+  .offering-artwork img { min-height: 210px; }
+  .offering-summary-card { min-height: 0; }
+  .offering-materials,
+  .offering-schedule-surface { padding: 5px 16px; }
+  .offering-schedule-surface .session-code { width: 42px; height: 42px; border-radius: 13px; }
+  nav[aria-label="Class contents"] { padding: 14px; }
+  nav[aria-label="Class contents"] .button { width: auto; }
+  #recording > h2 { margin-bottom: 14px; }
+  .recording-frame { border-radius: 18px; }
+  #recording .actions .button { width: 100%; }
+  #transcript nav[aria-label="Transcript chapters"] { padding: 12px; }
+  #transcript nav[aria-label="Transcript chapters"] .actions {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 3px;
+  }
+  #transcript nav[aria-label="Transcript chapters"] .button {
+    width: auto;
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  #transcript [id^="paragraph-"] {
+    margin-left: -6px;
+    margin-right: -6px;
+    padding: 11px 6px 13px !important;
+    font-size: 16px;
+    line-height: 1.72;
+  }
+}
