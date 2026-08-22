@@ -45,31 +45,26 @@ export default function CopyReference({ reference, path }: Props) {
     await copy(reference)
     setStatus('reference')
   }
-
   async function copyLink() {
     await copy(absoluteUrl())
     setStatus('link')
   }
-
   async function copyCitation() {
     await copy(`${reference}\n${absoluteUrl()}`)
     setStatus('citation')
   }
 
   return (
-    <div className="copy-reference" aria-label="Passage reference tools">
-      <button className="passage-action" type="button" onClick={copyReference}>
-        {status === 'reference' ? 'Reference copied' : 'Copy reference'}
-      </button>
-      <button className="passage-action" type="button" onClick={copyLink}>
-        {status === 'link' ? 'Link copied' : 'Copy link'}
-      </button>
-      <button className="passage-action" type="button" onClick={copyCitation}>
-        {status === 'citation' ? 'Citation copied' : 'Copy citation'}
-      </button>
+    <details className="citation-menu">
+      <summary className="passage-action">Cite</summary>
+      <div className="citation-menu-panel">
+        <button type="button" onClick={copyReference}>{status === 'reference' ? 'Copied' : 'Reference'}</button>
+        <button type="button" onClick={copyLink}>{status === 'link' ? 'Copied' : 'Link'}</button>
+        <button type="button" onClick={copyCitation}>{status === 'citation' ? 'Copied' : 'Citation + link'}</button>
+      </div>
       <span className="sr-only" aria-live="polite">
         {status === 'reference' ? 'Passage reference copied.' : status === 'link' ? 'Passage link copied.' : status === 'citation' ? 'Passage citation copied.' : ''}
       </span>
-    </div>
+    </details>
   )
 }
