@@ -42,6 +42,17 @@ function formatRange(start: string | null, end: string | null) {
   return `${fmt(start)} – ${fmt(end)}`
 }
 
+function isYouTubePlaylist(url: string | null | undefined) {
+  if (!url) return false
+  try {
+    const parsed = new URL(url)
+    const host = parsed.hostname.replace(/^www\./, '')
+    return (host === 'youtube.com' || host === 'm.youtube.com') && parsed.searchParams.has('list')
+  } catch {
+    return false
+  }
+}
+
 export default async function CourseOfferingPage({
   params,
 }: {
@@ -157,6 +168,7 @@ export default async function CourseOfferingPage({
     zoomUrl: session.zoom_url,
     teacherNames: (session.session_teachers ?? []).map((item: any) => item.teachers?.full_name).filter(Boolean),
   }))
+  const playlistSession = sessions.find((session: any) => isYouTubePlaylist(session.recording_url)) as any
   const publicPath = `/courses/${courseSlug}/${offeringSlug}`
 
   return (
@@ -179,21 +191,25 @@ export default async function CourseOfferingPage({
             {(offering.language_codes ?? []).length ? <span className="pill">{(offering.language_codes ?? []).map((code: string) => code.toUpperCase()).join(' · ')}</span> : null}
           </div>
         </div>
-        {offering.artwork_url ? <div className="offering-artwork"><img src={offering.artwork_url} alt="" /></div> : null}
+        {offering.artwork_url ? (
+          <div className="offering-artwork" style={{ backgroundImage: `linear-gradient(rgba(31,27,24,.12), rgba(31,27,24,.18)), url(${offering.artwork_url})` }}>
+            <img src={offering.artwork_url} alt="" />
+          </div>
+        ) : null}
       </section>
 
       <div className="offering-live-grid">
-        <section className="card offering-summary-card cream">
-          <div className="eyebrow">Course Offering</div>
-          <h3>{offering.label}</h3>
-          <p className="meta">{formatRange(offering.starts_on, offering.ends_on) ?? 'Dates to be announced'}{offering.location ? ` · ${offering.location}` : ''}</p>
-          {resolvedOfferingMaterials.length ? (
-            <div className="course-resource-strip">
-              {resolvedOfferingMaterials.slice(0, 3).map((material: any) => material.resolved_url ? (
-                <a key={material.id} href={material.resolved_url} target="_blank" rel="noreferrer">▤ {material.title}</a>
-              ) : null)}
-            </div>
-          ) : null}
+        <section className="card offering-summary-card cream course-resources-card">
+          <div className="eyebrow">Course resources</div>
+          <h3>Reading &amp; recordings</h3>
+          <p className="meta">Shared resources for the whole {offering.label} offering.</p>
+          <div className="course-resource-strip">
+            {resolvedOfferingMaterials.map((material: any) => material.resolved_url ? (
+              <a key={material.id} href={material.resolved_url} target="_blank" rel="noreferrer">{materialLabel(material.material_type)} · {material.title} ↗</a>
+            ) : null)}
+            {playlistSession?.recording_url ? <a href={playlistSession.recording_url} target="_blank" rel="noreferrer">Course recordings · YouTube playlist ↗</a> : null}
+            {!resolvedOfferingMaterials.length && !playlistSession?.recording_url ? <span className="meta">Shared readings and recording collections will appear here when they are published.</span> : null}
+          </div>
         </section>
 
         <LiveCourseSchedule sessions={liveScheduleSessions} calendarHref={`${publicPath}/calendar`} />
