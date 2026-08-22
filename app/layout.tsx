@@ -9,6 +9,7 @@ import './globals.css'
 import './learning-surfaces.css'
 import './portal-shell-home.css'
 import './v12-content-pass.css'
+import './v12-fixes.css'
 
 export const metadata: Metadata = {
   title: 'Classics Courses with Timothy Lowenhaupt',
