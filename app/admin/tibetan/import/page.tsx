@@ -43,7 +43,7 @@ export default async function TibetanImportPage({
         <div className="eyebrow">Columns</div>
         <h2 style={{ fontSize: 32 }}>Required and optional fields</h2>
         <p><strong>Required:</strong> <code>transliteration</code>, <code>english_meaning</code></p>
-        <p><strong>Optional:</strong> <code>tibetan_script</code>, <code>aliases</code>, <code>explanation</code>, <code>sort_order</code>, <code>source_label</code>, <code>source_url</code>, <code>source_note</code></p>
+        <p><strong>Optional:</strong> <code>aliases</code>, <code>explanation</code>, <code>sort_order</code>, <code>source_label</code>, <code>source_url</code>, <code>source_note</code></p>
         <p className="meta">For aliases, separate alternate forms with <strong>|</strong> or <strong>;</strong>. Existing slugs are skipped rather than overwritten.</p>
       </section>
 
@@ -56,7 +56,7 @@ export default async function TibetanImportPage({
               rows={18}
               required
               spellCheck={false}
-              placeholder={'transliteration\tenglish_meaning\ttibetan_script\taliases\texplanation\n...'}
+              placeholder={'transliteration\tenglish_meaning\taliases\texplanation\n...'}
             />
           </label>
           <div className="actions"><button className="button red" type="submit">Import as Draft</button></div>
@@ -66,7 +66,7 @@ export default async function TibetanImportPage({
       <section className="section card">
         <div className="eyebrow">Safe import behavior</div>
         <h2 style={{ fontSize: 30 }}>What this importer will not do</h2>
-        <p className="meta">It does not publish imported terms, overwrite an existing term with the same generated slug, or invent missing Tibetan content. Invalid rows are skipped and reported in the summary.</p>
+        <p className="meta">It does not publish imported terms, overwrite an existing term with the same generated slug, or infer missing meanings and explanations. Invalid rows are skipped and reported in the summary.</p>
       </section>
     </main>
   )
