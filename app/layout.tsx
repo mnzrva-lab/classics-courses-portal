@@ -24,6 +24,7 @@ import './admin-bulk-edit.css'
 import './admin-collections.css'
 import './admin-offering-compact.css'
 import './admin-material-compact.css'
+import './program-archive-pass.css'
 
 export const metadata: Metadata = {
   title: 'Classics Courses with Timothy Lowenhaupt',
@@ -35,13 +36,12 @@ type CurrentCourse = { href: string; label: string; title: string } | null
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   let isAdmin = false
   let currentCourse: CurrentCourse = null
-  let perfectionHref = '/perfection-of-wisdom'
+  const perfectionHref = '/perfection-of-wisdom'
   try {
     const supabase = await createClient()
-    const [{ data: claimsData }, { data: offeringRows }, { data: perfectionCourse }] = await Promise.all([
+    const [{ data: claimsData }, { data: offeringRows }] = await Promise.all([
       supabase.auth.getClaims(),
       supabase.from('course_offerings').select('slug, label, starts_on, ends_on, status, courses!inner(slug, title, canonical_number, status)').eq('status', 'published').eq('courses.status', 'published').not('starts_on', 'is', null).order('starts_on', { ascending: false }).limit(30),
-      supabase.from('courses').select('slug, title, course_offerings(slug, status, sort_order)').eq('slug', 'perfection-of-wisdom').eq('status', 'published').maybeSingle(),
     ])
     const userId = claimsData?.claims?.sub as string | undefined
     if (userId) {
@@ -57,11 +57,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
     if (selected) {
       const course = selected.courses as any
       currentCourse = { href: `/courses/${course.slug}/${selected.slug}`, label: course?.canonical_number ? `Classics Course ${course.canonical_number} · ${selected.label}` : `${course?.title ?? 'Course'} · ${selected.label}`, title: course?.title ?? selected.label }
-    }
-    if (perfectionCourse) {
-      const course = perfectionCourse as any
-      const offering = (course.course_offerings ?? []).filter((item: any) => item.status === 'published').sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0]
-      if (offering) perfectionHref = `/courses/${course.slug}/${offering.slug}`
     }
   } catch { isAdmin = false }
 
