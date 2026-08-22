@@ -14,6 +14,7 @@ import './v12-content-pass.css'
 import './v12-fixes.css'
 import './course-offering-followup.css'
 import './compact-refinement.css'
+import './admin-compact-pass.css'
 
 export const metadata: Metadata = {
   title: 'Classics Courses with Timothy Lowenhaupt',
