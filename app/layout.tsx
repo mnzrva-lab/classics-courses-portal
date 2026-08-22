@@ -3,6 +3,8 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import SiteNavigation from '@/components/site-navigation'
 import TranscriptSync from '@/components/transcript-sync'
+import ClassStudyTabs from '@/components/class-study-tabs'
+import AdminSessionEnhancer from '@/components/admin-session-enhancer'
 import AdminOfferingQuickTools from '@/components/admin-offering-quick-tools'
 import { TELEGRAM_UPDATES_URL } from '@/lib/site-links'
 import './globals.css'
@@ -11,6 +13,7 @@ import './portal-shell-home.css'
 import './v12-content-pass.css'
 import './v12-fixes.css'
 import './course-offering-followup.css'
+import './compact-refinement.css'
 
 export const metadata: Metadata = {
   title: 'Classics Courses with Timothy Lowenhaupt',
@@ -107,6 +110,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
             {isAdmin ? <AdminOfferingQuickTools /> : null}
             {children}
+            <ClassStudyTabs />
+            {isAdmin ? <AdminSessionEnhancer /> : null}
             <TranscriptSync />
 
             <footer className="footer portal-footer">
