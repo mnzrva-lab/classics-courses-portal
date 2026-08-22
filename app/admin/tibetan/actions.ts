@@ -113,14 +113,20 @@ export async function createTibetanTerm(formData: FormData) {
 
 export async function updateTibetanTerm(termId: string, termSlug: string, formData: FormData) {
   const supabase = await requireAdmin()
+  const englishMeaning = requiredText(formData.get('english_meaning'), 'English meaning')
+  const status = validStatus(formData.get('status'))
+  if (status === 'published' && englishMeaning.toLowerCase().startsWith('review meaning:')) {
+    throw new Error('Review the English meaning before publishing this detected term.')
+  }
+
   const { error } = await supabase
     .from('tibetan_terms')
     .update({
       transliteration: requiredText(formData.get('transliteration'), 'Transliteration'),
-      english_meaning: requiredText(formData.get('english_meaning'), 'English meaning'),
+      english_meaning: englishMeaning,
       explanation: optionalText(formData.get('explanation')),
       aliases: aliases(formData.get('aliases')),
-      status: validStatus(formData.get('status')),
+      status,
       sort_order: integerValue(formData.get('sort_order')),
       updated_at: new Date().toISOString(),
     })
@@ -142,6 +148,16 @@ export async function bulkUpdateTibetanTerms(formData: FormData) {
     .filter(Boolean)
   if (!ids.length) throw new Error('Select at least one glossary term.')
 
+  if (status === 'published') {
+    const { data: selectedTerms, error: selectedError } = await supabase
+      .from('tibetan_terms')
+      .select('id, english_meaning')
+      .in('id', ids)
+    if (selectedError) throw new Error(selectedError.message)
+    const unreviewed = (selectedTerms ?? []).filter((term) => String(term.english_meaning ?? '').toLowerCase().startsWith('review meaning:'))
+    if (unreviewed.length) throw new Error(`Review the English meaning for ${unreviewed.length} detected term${unreviewed.length === 1 ? '' : 's'} before publishing.`)
+  }
+
   const { error } = await supabase
     .from('tibetan_terms')
     .update({ status, updated_at: new Date().toISOString() })
@@ -159,7 +175,7 @@ export async function extractTibetanTermsFromSession(formData: FormData) {
 
   const [{ data: session, error: sessionError }, { data: transcript, error: transcriptError }] = await Promise.all([
     supabase.from('sessions').select('id, code, title').eq('id', sessionId).single(),
-    supabase.from('transcripts').select('id, title').eq('session_id', sessionId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+    supabase.from('transcripts').select('id, title').eq('session_id', sessionId).limit(1).maybeSingle(),
   ])
   if (sessionError) throw new Error(sessionError.message)
   if (transcriptError) throw new Error(transcriptError.message)
@@ -173,9 +189,14 @@ export async function extractTibetanTermsFromSession(formData: FormData) {
     .order('sort_order')
   if (paragraphsError) throw new Error(paragraphsError.message)
 
-  const existingResult = await supabase.from('tibetan_terms').select('id, slug')
+  const existingResult = await supabase.from('tibetan_terms').select('id, slug, transliteration, aliases')
   if (existingResult.error) throw new Error(existingResult.error.message)
-  const bySlug = new Map((existingResult.data ?? []).map((term) => [term.slug, term.id]))
+  const byForm = new Map<string, string>()
+  for (const term of existingResult.data ?? []) {
+    byForm.set(term.slug, term.id)
+    byForm.set(slugify(term.transliteration), term.id)
+    for (const alias of term.aliases ?? []) byForm.set(slugify(alias), term.id)
+  }
 
   let created = 0
   let linked = 0
@@ -188,7 +209,7 @@ export async function extractTibetanTermsFromSession(formData: FormData) {
       if (seenInRun.has(runKey)) continue
       seenInRun.add(runKey)
 
-      let termId = bySlug.get(slug)
+      let termId = byForm.get(slug)
       if (!termId) {
         const { data: createdTerm, error: createError } = await supabase
           .from('tibetan_terms')
@@ -205,7 +226,7 @@ export async function extractTibetanTermsFromSession(formData: FormData) {
           .single()
         if (createError || !createdTerm) continue
         termId = createdTerm.id
-        bySlug.set(slug, termId)
+        byForm.set(slug, termId)
         created++
       }
 
