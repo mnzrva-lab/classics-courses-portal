@@ -96,6 +96,74 @@ export async function updateOffering(offeringId: string, formData: FormData) {
   redirect(`/admin/offerings/${offeringId}?saved=offering`)
 }
 
+export async function deleteUnusedOffering(offeringId: string, formData: FormData) {
+  const supabase = await requireAdmin()
+  if (String(formData.get('confirm_delete') ?? '').trim() !== 'DELETE') throw new Error('Type DELETE to confirm permanent deletion.')
+
+  const { data: offering, error: offeringError } = await supabase
+    .from('course_offerings')
+    .select('id, label, status, artwork_url')
+    .eq('id', offeringId)
+    .single()
+  if (offeringError || !offering) throw new Error('Course Offering was not found.')
+  if (offering.status === 'published') throw new Error('Published Course Offerings cannot be permanently deleted. Set it to Draft or Archived first.')
+  if (offering.artwork_url) throw new Error('Remove the Course Offering artwork before permanent deletion so its Storage file is not left behind.')
+
+  const { data: sessionRows, error: sessionsError } = await supabase.from('sessions').select('id').eq('offering_id', offeringId)
+  if (sessionsError) throw new Error(sessionsError.message)
+  const sessionIds = (sessionRows ?? []).map((row) => row.id)
+
+  const { data: storedMaterials, error: materialError } = await supabase
+    .from('materials')
+    .select('id, storage_bucket, storage_path')
+    .eq('offering_id', offeringId)
+    .not('storage_path', 'is', null)
+    .limit(1)
+  if (materialError) throw new Error(materialError.message)
+  if ((storedMaterials ?? []).length) throw new Error('Remove uploaded files from this Course Offering before permanent deletion so Storage files are not left behind.')
+
+  if (sessionIds.length) {
+    const [notesResult, progressResult, bookmarkResult, meditationResult, tibetanResult, transcriptResult] = await Promise.all([
+      supabase.from('student_notes').select('id').in('session_id', sessionIds).limit(1),
+      supabase.from('user_session_progress').select('session_id').in('session_id', sessionIds).limit(1),
+      supabase.from('user_session_bookmarks').select('session_id').in('session_id', sessionIds).limit(1),
+      supabase.from('meditation_instances').select('id').in('session_id', sessionIds).limit(1),
+      supabase.from('tibetan_term_sources').select('id').in('session_id', sessionIds).limit(1),
+      supabase.from('transcripts').select('id').in('session_id', sessionIds),
+    ])
+
+    const queryError = notesResult.error || progressResult.error || bookmarkResult.error || meditationResult.error || tibetanResult.error || transcriptResult.error
+    if (queryError) throw new Error(queryError.message)
+    if ((notesResult.data ?? []).length || (progressResult.data ?? []).length || (bookmarkResult.data ?? []).length) {
+      throw new Error('This Course Offering has student notes, progress, or bookmarks. Archive it instead of deleting it.')
+    }
+    if ((meditationResult.data ?? []).length || (tibetanResult.data ?? []).length) {
+      throw new Error('This Course Offering is already linked from the meditation or Tibetan study library. Remove those source links or archive the offering instead.')
+    }
+
+    const transcriptIds = (transcriptResult.data ?? []).map((row) => row.id)
+    if (transcriptIds.length) {
+      const { data: paragraphs, error: paragraphError } = await supabase.from('transcript_paragraphs').select('id').in('transcript_id', transcriptIds)
+      if (paragraphError) throw new Error(paragraphError.message)
+      const paragraphIds = (paragraphs ?? []).map((row) => row.id)
+      if (paragraphIds.length) {
+        const { data: paragraphBookmarks, error: paragraphBookmarkError } = await supabase.from('user_paragraph_bookmarks').select('paragraph_id').in('paragraph_id', paragraphIds).limit(1)
+        if (paragraphBookmarkError) throw new Error(paragraphBookmarkError.message)
+        if ((paragraphBookmarks ?? []).length) throw new Error('This Course Offering has bookmarked transcript passages. Archive it instead of deleting it.')
+      }
+    }
+  }
+
+  const { error: deleteError } = await supabase.from('course_offerings').delete().eq('id', offeringId)
+  if (deleteError) throw new Error(deleteError.message)
+
+  revalidatePath('/admin')
+  revalidatePath('/admin/courses')
+  revalidatePath('/courses')
+  revalidatePath('/', 'layout')
+  redirect('/admin/courses?deleted=offering')
+}
+
 export async function createArtworkUploadUrl(offeringId: string, fileName: string, contentType: string) {
   const supabase = await requireAdmin()
   if (!ARTWORK_TYPES.has(contentType)) throw new Error('Artwork must be a JPG, PNG, or WebP image.')
