@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
 
-type EditorKey = 'notes' | 'transcript'
+type EditorKey = 'details' | 'notes' | 'materials' | 'transcript'
 
 type EditorState = {
   key: EditorKey
@@ -16,6 +16,18 @@ type EditorState = {
 function statusFromSection(section: HTMLElement, fieldName: string) {
   const select = section.querySelector<HTMLSelectElement>(`select[name="${fieldName}"]`)
   return select?.value || 'missing'
+}
+
+function directEyebrow(section: HTMLElement) {
+  return section.querySelector<HTMLElement>(':scope > .eyebrow')?.textContent ?? section.querySelector<HTMLElement>('.eyebrow')?.textContent ?? ''
+}
+
+function materialStatus(section: HTMLElement) {
+  // The section always contains one upload form and one "add linked resource" form.
+  // Existing resources each add one more material_title input.
+  const titleInputs = section.querySelectorAll<HTMLInputElement>('input[name="material_title"]').length
+  const count = Math.max(0, titleInputs - 2)
+  return count ? `${count} resource${count === 1 ? '' : 's'}` : 'No resources yet'
 }
 
 export default function AdminSessionEnhancer() {
@@ -32,21 +44,29 @@ export default function AdminSessionEnhancer() {
     if (!main) return
 
     const sections = Array.from(main.querySelectorAll<HTMLElement>('section.section.card'))
-    const notes = sections.find((section) => section.querySelector('.eyebrow')?.textContent?.includes('Study Notes'))
-    const transcript = sections.find((section) => section.querySelector('.eyebrow')?.textContent?.includes('Reference Transcript'))
-    if (!notes || !transcript) return
+    const details = sections.find((section) => directEyebrow(section).includes('Session details'))
+    const notes = sections.find((section) => directEyebrow(section).includes('Study Notes'))
+    const materials = sections.find((section) => directEyebrow(section).includes('Class materials'))
+    const transcript = sections.find((section) => directEyebrow(section).includes('Reference Transcript'))
+    if (!details || !notes || !materials || !transcript) return
 
-    notes.classList.add('admin-editor-source')
-    transcript.classList.add('admin-editor-source')
+    const editorStates: EditorState[] = [
+      { key: 'details', title: '1 · Session details', status: statusFromSection(details, 'status'), element: details },
+      { key: 'notes', title: '2 · Study Notes', status: statusFromSection(notes, 'study_notes_status'), element: notes },
+      { key: 'materials', title: '3 · Class materials', status: materialStatus(materials), element: materials },
+      { key: 'transcript', title: '4 · Reference Transcript', status: statusFromSection(transcript, 'transcript_status'), element: transcript },
+    ]
+
+    for (const editor of editorStates) {
+      editor.element.classList.add('admin-editor-source')
+      editor.element.setAttribute('tabindex', '-1')
+    }
 
     const compactMount = document.createElement('div')
     compactMount.className = 'admin-editor-cards-mount'
-    notes.parentElement?.insertBefore(compactMount, notes)
+    details.parentElement?.insertBefore(compactMount, details)
     setMount(compactMount)
-    setEditors([
-      { key: 'notes', title: 'Study Notes', status: statusFromSection(notes, 'study_notes_status'), element: notes },
-      { key: 'transcript', title: 'Reference Transcript', status: statusFromSection(transcript, 'transcript_status'), element: transcript },
-    ])
+    setEditors(editorStates)
 
     const lead = main.querySelector<HTMLElement>(':scope > .lead')
     const bottomActions = Array.from(main.querySelectorAll<HTMLElement>('.section .actions')).find((actions) => {
@@ -63,6 +83,7 @@ export default function AdminSessionEnhancer() {
 
     // Replace label-only file pickers with an explicit button trigger. This is more reliable
     // in Safari and inside the modal editor than a hidden input nested inside a label.
+    const pickerCleanups: Array<() => void> = []
     for (const label of Array.from(main.querySelectorAll<HTMLLabelElement>('label.button'))) {
       if (!label.textContent?.includes('Import DOCX / MD / TXT')) continue
       const input = label.querySelector<HTMLInputElement>('input[type="file"]')
@@ -75,16 +96,24 @@ export default function AdminSessionEnhancer() {
         event.preventDefault()
         input.click()
       }
+      const openWithKeyboard = (event: KeyboardEvent) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return
+        openPicker(event)
+      }
       label.addEventListener('click', openPicker)
-      label.addEventListener('keydown', (event) => {
-        const keyboard = event as KeyboardEvent
-        if (keyboard.key === 'Enter' || keyboard.key === ' ') openPicker(event)
+      label.addEventListener('keydown', openWithKeyboard)
+      pickerCleanups.push(() => {
+        label.removeEventListener('click', openPicker)
+        label.removeEventListener('keydown', openWithKeyboard)
       })
     }
 
     return () => {
-      notes.classList.remove('admin-editor-source', 'is-open')
-      transcript.classList.remove('admin-editor-source', 'is-open')
+      for (const editor of editorStates) {
+        editor.element.classList.remove('admin-editor-source', 'is-open')
+        editor.element.removeAttribute('tabindex')
+      }
+      pickerCleanups.forEach((cleanup) => cleanup())
       compactMount.remove()
       topNav?.remove()
       setMount(null)
@@ -97,10 +126,20 @@ export default function AdminSessionEnhancer() {
   useEffect(() => {
     for (const editor of editors) editor.element.classList.toggle('is-open', editor.key === activeKey)
     document.body.classList.toggle('admin-modal-open', Boolean(activeKey))
-  }, [activeKey, editors])
+    if (activeEditor) window.requestAnimationFrame(() => activeEditor.element.focus({ preventScroll: true }))
+  }, [activeKey, activeEditor, editors])
+
+  useEffect(() => {
+    if (!activeKey) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setActiveKey(null)
+    }
+    document.addEventListener('keydown', closeOnEscape)
+    return () => document.removeEventListener('keydown', closeOnEscape)
+  }, [activeKey])
 
   const cards = mount ? createPortal(
-    <section className="admin-editor-cards" aria-label="Session text content">
+    <section className="admin-editor-cards" aria-label="Session editors">
       {editors.map((editor) => (
         <div className="admin-editor-card" key={editor.key}>
           <div>
