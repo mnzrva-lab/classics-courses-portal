@@ -22,10 +22,11 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
 
   const { data: group } = await supabase
     .from('content_groups')
-    .select('id, slug, label, title, kind, starts_on, ends_on')
+    .select('id, slug, label, title, kind, starts_on, ends_on, course_offerings!inner(status)')
     .eq('course_id', course.id)
     .eq('slug', termSlug)
     .eq('status', 'published')
+    .eq('course_offerings.status', 'published')
     .maybeSingle()
   if (!group) notFound()
 
