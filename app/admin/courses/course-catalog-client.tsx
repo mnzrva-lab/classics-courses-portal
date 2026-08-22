@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import ArtworkUploadForm from '@/app/admin/offerings/[id]/artwork-upload-form'
 import { createProgram, updateCourse } from './actions'
 
 type Offering = {
@@ -10,6 +11,7 @@ type Offering = {
   label: string
   status: string
   sort_order: number | null
+  artwork_url: string | null
 }
 
 type Course = {
@@ -36,6 +38,7 @@ function typeLabel(kind: string) {
 
 export default function CourseCatalogClient({ courses, initialCourseId }: { courses: Course[]; initialCourseId?: string | null }) {
   const [modal, setModal] = useState<ModalState>(() => initialCourseId && courses.some((course) => course.id === initialCourseId) ? { kind: 'edit', courseId: initialCourseId } : null)
+  const [artworkOfferingId, setArtworkOfferingId] = useState<string | null>(null)
   const activeCourse = useMemo(
     () => modal?.kind === 'edit' ? courses.find((course) => course.id === modal.courseId) ?? null : null,
     [courses, modal],
@@ -44,6 +47,10 @@ export default function CourseCatalogClient({ courses, initialCourseId }: { cour
   useEffect(() => {
     if (initialCourseId && courses.some((course) => course.id === initialCourseId)) setModal({ kind: 'edit', courseId: initialCourseId })
   }, [courses, initialCourseId])
+
+  useEffect(() => {
+    setArtworkOfferingId(null)
+  }, [modal])
 
   useEffect(() => {
     document.body.classList.toggle('admin-modal-open', Boolean(modal))
@@ -165,12 +172,34 @@ export default function CourseCatalogClient({ courses, initialCourseId }: { cour
                   </div>
                   {[...(activeCourse.course_offerings ?? [])]
                     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-                    .map((offering) => (
-                      <div className="admin-course-offering-row" key={offering.id}>
-                        <span>{offering.label} <small>{offering.status}</small></span>
-                        <Link className="button" href={`/admin/offerings/${offering.id}`}>Manage</Link>
-                      </div>
-                    ))}
+                    .map((offering) => {
+                      const canEditArtwork = activeCourse.kind === 'living_lam_rim' || activeCourse.kind === 'book'
+                      const artworkOpen = artworkOfferingId === offering.id
+                      return (
+                        <div className="admin-course-offering-item" key={offering.id}>
+                          <div className="admin-course-offering-row">
+                            <div className="admin-course-offering-copy">
+                              <span>{offering.label} <small>{offering.status}</small></span>
+                              {canEditArtwork ? <small className="admin-artwork-status">{offering.artwork_url ? 'Artwork added' : 'No artwork yet'}</small> : null}
+                            </div>
+                            <div className="actions" style={{ marginTop: 0 }}>
+                              {canEditArtwork ? <button className="button" type="button" onClick={() => setArtworkOfferingId(artworkOpen ? null : offering.id)}>{artworkOpen ? 'Close artwork' : 'Artwork'}</button> : null}
+                              <Link className="button" href={`/admin/offerings/${offering.id}`}>Manage</Link>
+                            </div>
+                          </div>
+                          {canEditArtwork && artworkOpen ? (
+                            <div className="admin-course-offering-artwork">
+                              <div>
+                                <div className="eyebrow">Course artwork</div>
+                                <strong>{offering.label}</strong>
+                                <p className="meta">Upload or replace the image used for this course.</p>
+                              </div>
+                              <ArtworkUploadForm offeringId={offering.id} />
+                            </div>
+                          ) : null}
+                        </div>
+                      )
+                    })}
                   {!activeCourse.course_offerings?.length ? <p className="meta">No Course Offerings yet.</p> : null}
                 </div>
               </div>
