@@ -22,8 +22,8 @@ export default function AdminOfferingQuickTools() {
     if (!main) return
 
     const sections = Array.from(main.querySelectorAll<HTMLElement>('section.section.card'))
-    const sessionsSection = sections.find((section) => section.querySelector<HTMLElement>(':scope > .eyebrow')?.textContent?.trim() === 'Sessions')
-    const target = sessionsSection ?? sections[0] ?? null
+    const offeringSection = sections.find((section) => section.querySelector<HTMLElement>(':scope > .eyebrow')?.textContent?.trim() === 'Course Offering')
+    const target = offeringSection ?? sections[0] ?? null
     const compactMount = document.createElement('div')
     compactMount.className = 'admin-offering-quick-tools-mount'
     if (target) target.insertAdjacentElement('afterend', compactMount)
