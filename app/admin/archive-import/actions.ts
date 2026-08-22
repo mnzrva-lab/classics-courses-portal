@@ -144,7 +144,7 @@ async function ensureGroup(supabase: Awaited<ReturnType<typeof createClient>>, b
   return data.id
 }
 
-async function uniqueSessionSlug(supabase: Awaited<ReturnType<typeof createClient>>, courseId: string, offeringId: string, groupId: string | null, proposed: string) {
+async function uniqueSessionSlug(supabase: Awaited<ReturnType<typeof createClient>>, courseId: string, offeringId: string, proposed: string) {
   const base = slugify(proposed, 'session')
   const { data, error } = await supabase.from('sessions').select('slug').eq('course_id', courseId).eq('offering_id', offeringId).like('slug', `${base}%`)
   if (error) throw new Error(error.message)
@@ -228,14 +228,15 @@ export async function applyArchiveBatches(batches: ArchiveBatchInput[]) {
           const slugSeed = session.code || session.title || `session-${session.sortOrder + 1}`
           const { data, error } = await supabase.from('sessions').insert({
             ...payload,
-            slug: await uniqueSessionSlug(supabase, batch.courseId, offeringId, groupId, slugSeed),
+            slug: await uniqueSessionSlug(supabase, batch.courseId, offeringId, slugSeed),
             created_at: new Date().toISOString(),
           }).select('id').single()
-          if (error || !data) throw new Error(error?.message ?? 'Could not create session.')
-          sessionId = data.id
+          if (error || !data?.id) throw new Error(error?.message ?? 'Could not create session.')
+          sessionId = String(data.id)
           createdSessions += 1
         }
 
+        if (!sessionId) throw new Error('Could not resolve the imported session ID.')
         await replaceTeachers(supabase, sessionId, session.teacherIds)
       }
 
