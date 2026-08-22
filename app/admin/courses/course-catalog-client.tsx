@@ -34,12 +34,16 @@ function typeLabel(kind: string) {
   return 'Other Program'
 }
 
-export default function CourseCatalogClient({ courses }: { courses: Course[] }) {
-  const [modal, setModal] = useState<ModalState>(null)
+export default function CourseCatalogClient({ courses, initialCourseId }: { courses: Course[]; initialCourseId?: string | null }) {
+  const [modal, setModal] = useState<ModalState>(() => initialCourseId && courses.some((course) => course.id === initialCourseId) ? { kind: 'edit', courseId: initialCourseId } : null)
   const activeCourse = useMemo(
     () => modal?.kind === 'edit' ? courses.find((course) => course.id === modal.courseId) ?? null : null,
     [courses, modal],
   )
+
+  useEffect(() => {
+    if (initialCourseId && courses.some((course) => course.id === initialCourseId)) setModal({ kind: 'edit', courseId: initialCourseId })
+  }, [courses, initialCourseId])
 
   useEffect(() => {
     document.body.classList.toggle('admin-modal-open', Boolean(modal))
@@ -107,9 +111,9 @@ export default function CourseCatalogClient({ courses }: { courses: Course[] }) 
                     </select>
                   </label>
                   <label>Status
-                    <select className="input" name="status" defaultValue="draft">
-                      <option value="draft">Draft</option>
+                    <select className="input" name="status" defaultValue="published">
                       <option value="published">Published</option>
+                      <option value="draft">Draft</option>
                       <option value="archived">Archived</option>
                     </select>
                   </label>
@@ -146,8 +150,8 @@ export default function CourseCatalogClient({ courses }: { courses: Course[] }) 
                   <label>Description<textarea className="input" name="description" rows={4} defaultValue={activeCourse.description ?? ''} /></label>
                   <label>Status
                     <select className="input" name="status" defaultValue={activeCourse.status}>
-                      <option value="draft">Draft</option>
                       <option value="published">Published</option>
+                      <option value="draft">Draft</option>
                       <option value="archived">Archived</option>
                     </select>
                   </label>
