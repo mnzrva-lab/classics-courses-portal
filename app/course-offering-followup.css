@@ -7,16 +7,69 @@
   width: 100%;
 }
 
+/* V12 course identity: artwork fills the entire hero instead of sitting in a separate panel. */
+.offering-hero.offering-hero-artwork {
+  display: block;
+  min-height: clamp(440px, 46vw, 620px);
+  padding: clamp(34px, 5vw, 62px);
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  color: var(--cream);
+}
+.offering-hero.offering-hero-artwork .offering-hero-copy {
+  width: min(980px, 76%);
+  min-height: inherit;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.offering-hero.offering-hero-artwork .offering-title {
+  max-width: 940px;
+  color: var(--cream);
+  font-size: clamp(54px, 7vw, 92px);
+  line-height: .98;
+  text-shadow: 0 2px 24px rgba(0,0,0,.22);
+}
+.offering-hero.offering-hero-artwork .eyebrow,
+.offering-hero.offering-hero-artwork .lead,
+.offering-hero.offering-hero-artwork .offering-description {
+  color: var(--cream);
+}
+.offering-hero.offering-hero-artwork .eyebrow {
+  letter-spacing: .11em;
+}
+.offering-hero.offering-hero-artwork .lead {
+  font-size: clamp(18px, 2vw, 26px);
+  text-shadow: 0 1px 16px rgba(0,0,0,.28);
+}
+.offering-hero.offering-hero-artwork .offering-description {
+  max-width: 760px;
+  opacity: .92;
+}
+.offering-hero.offering-hero-artwork .offering-meta {
+  margin-top: 26px;
+}
+.offering-hero.offering-hero-artwork .offering-meta .pill {
+  min-height: 44px;
+  padding: 0 16px;
+  border-color: rgba(240,231,214,.52);
+  background: rgba(240,231,214,.92);
+  color: var(--ink);
+  backdrop-filter: blur(8px);
+}
+
+/* Course resources live after progress, but without another container card. */
 .course-resources-row {
   display: grid;
-  grid-template-columns: minmax(180px, .42fr) minmax(0, 1.58fr);
-  gap: 22px;
+  grid-template-columns: minmax(170px, .36fr) minmax(0, 1.64fr);
+  gap: 20px;
   align-items: center;
-  margin-top: 18px;
-  padding: 18px 20px;
-  border: 1px solid var(--line);
-  border-radius: 20px;
-  background: var(--cream);
+  margin-top: 14px;
+  padding: 14px 0 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   box-shadow: none;
 }
 .course-resources-heading {
@@ -24,22 +77,22 @@
 }
 .course-resources-heading > strong {
   display: block;
-  margin-top: 5px;
-  font-size: 17px;
+  margin-top: 4px;
+  font-size: 15px;
   line-height: 1.25;
 }
 .course-resource-buttons {
   display: flex;
   justify-content: flex-end;
-  gap: 8px;
+  gap: 7px;
   flex-wrap: wrap;
 }
 .course-resource-button {
   width: auto !important;
-  min-height: 40px !important;
-  padding: 0 14px !important;
-  background: var(--paper) !important;
-  font-size: 12px !important;
+  min-height: 38px !important;
+  padding: 0 13px !important;
+  background: var(--cream) !important;
+  font-size: 11.5px !important;
   white-space: normal;
   text-align: left;
 }
@@ -48,11 +101,90 @@
   background: var(--white) !important;
 }
 
+/* Stateful study buttons are always reversible. */
+.button.is-active,
+.recording-tool-button.is-active,
+button[aria-pressed="true"] {
+  border-color: var(--sage-700) !important;
+  background: var(--sage-100) !important;
+  color: var(--sage-900) !important;
+}
+.button.is-active:hover,
+.recording-tool-button.is-active:hover,
+button[aria-pressed="true"]:hover {
+  background: var(--paper) !important;
+}
+
+/* Compact resources belong with the study actions beside the recording. */
+.recording-resource-list {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(31,27,24,.13);
+}
+.recording-resource-title {
+  margin-bottom: 3px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.recording-resource-link {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 1px 8px;
+  padding: 8px 9px;
+  border-radius: 12px;
+  color: var(--ink);
+  background: rgba(255,255,255,.48);
+  text-decoration: none;
+}
+.recording-resource-link:hover {
+  background: var(--paper);
+}
+.recording-resource-link > span {
+  grid-column: 1;
+  color: var(--sage-900);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.recording-resource-link > strong {
+  grid-column: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11.5px;
+  line-height: 1.25;
+}
+.recording-resource-link > small {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: center;
+  color: var(--ink-soft);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .offering-hero.offering-hero-artwork {
+    min-height: 430px;
+    background-position: 58% center;
+  }
+  .offering-hero.offering-hero-artwork .offering-hero-copy {
+    width: min(100%, 760px);
+  }
+}
+
 @media (max-width: 760px) {
   .course-resources-row {
     grid-template-columns: 1fr;
-    gap: 13px;
-    padding: 16px;
+    gap: 10px;
+    padding-top: 12px;
   }
   .course-resource-buttons {
     justify-content: flex-start;
@@ -60,5 +192,24 @@
   .course-resource-button {
     width: 100% !important;
     justify-content: flex-start !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .offering-hero.offering-hero-artwork {
+    min-height: 390px;
+    padding: 28px 24px;
+    background-position: 62% center;
+  }
+  .offering-hero.offering-hero-artwork .offering-title {
+    font-size: clamp(42px, 13vw, 62px);
+  }
+  .offering-hero.offering-hero-artwork .lead {
+    font-size: 17px;
+  }
+  .offering-hero.offering-hero-artwork .offering-meta .pill {
+    min-height: 38px;
+    padding: 0 12px;
+    font-size: 11px;
   }
 }
