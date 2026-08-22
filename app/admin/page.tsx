@@ -3,17 +3,24 @@ import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
-type CourseRelation = {
-  slug: string
-  title: string
+type CourseRow = {
+  id: string
+  kind: string
   canonical_number: number | null
+  title: string
+  status: string
+  course_offerings: Array<{ id: string; status: string }> | null
 }
 
-type OfferingRelation = {
-  id: string
-  slug: string
-  label: string
-  status: string
+function courseLink(course: CourseRow) {
+  const label = course.canonical_number ? `Course ${course.canonical_number}` : course.title
+  const count = course.course_offerings?.length ?? 0
+  return (
+    <Link className="admin-index-link" key={course.id} href={`/admin/courses?course=${encodeURIComponent(course.id)}`}>
+      <strong>{label}</strong>
+      <span>{count} offering{count === 1 ? '' : 's'}</span>
+    </Link>
+  )
 }
 
 export default async function AdminPage() {
@@ -30,131 +37,71 @@ export default async function AdminPage() {
     return <main className="container page"><div className="card"><h1>Admin access has not been assigned</h1><p>Your study account is working. Admin access is assigned separately.</p><Link className="button" href="/my-learning">Back to My Learning</Link></div></main>
   }
 
-  const [{ data: offeringRows }, { data: sessionRows }] = await Promise.all([
-    supabase
-      .from('course_offerings')
-      .select('id, slug, label, status, sort_order, courses(slug, title, canonical_number)')
-      .order('sort_order', { ascending: true }),
-    supabase
-      .from('sessions')
-      .select(`
-        id, code, title, session_type, status, session_date, recording_url,
-        courses(slug, title, canonical_number),
-        course_offerings(id, slug, label, status),
-        study_notes(status),
-        transcripts(status),
-        materials(status)
-      `)
-      .order('starts_at', { ascending: true, nullsFirst: false }),
-  ])
+  const { data: rows } = await supabase
+    .from('courses')
+    .select('id, kind, canonical_number, title, status, course_offerings(id, status)')
+    .neq('status', 'archived')
+    .order('sort_order')
 
-  const sessions = sessionRows ?? []
-  type SessionRow = (typeof sessions)[number]
-  type Group = {
-    title: string
-    courseSlug: string | null
-    offeringId: string | null
-    offeringSlug: string | null
-    offeringStatus: string | null
-    sessions: SessionRow[]
-  }
-  const groups = new Map<string, Group>()
-
-  for (const offeringRow of offeringRows ?? []) {
-    const course = offeringRow.courses as unknown as CourseRelation | null
-    const title = `${course?.canonical_number ? `Course ${course.canonical_number} · ` : ''}${course?.title ?? 'Other program'} · ${offeringRow.label}`
-    groups.set(`offering:${offeringRow.id}`, {
-      title,
-      courseSlug: course?.slug ?? null,
-      offeringId: offeringRow.id,
-      offeringSlug: offeringRow.slug,
-      offeringStatus: offeringRow.status,
-      sessions: [],
-    })
-  }
-
-  for (const session of sessions) {
-    const course = session.courses as unknown as CourseRelation | null
-    const offering = session.course_offerings as unknown as OfferingRelation | null
-    const key = offering?.id ? `offering:${offering.id}` : `${course?.slug ?? 'other'}:none`
-    const title = `${course?.canonical_number ? `Course ${course.canonical_number} · ` : ''}${course?.title ?? 'Other program'}${offering ? ` · ${offering.label}` : ''}`
-    if (!groups.has(key)) {
-      groups.set(key, {
-        title,
-        courseSlug: course?.slug ?? null,
-        offeringId: offering?.id ?? null,
-        offeringSlug: offering?.slug ?? null,
-        offeringStatus: offering?.status ?? null,
-        sessions: [],
-      })
-    }
-    groups.get(key)!.sessions.push(session)
-  }
+  const courses = (rows ?? []) as CourseRow[]
+  const classics = courses.filter((course) => course.kind === 'classics').sort((a, b) => (a.canonical_number ?? 999) - (b.canonical_number ?? 999))
+  const lamRim = courses.filter((course) => course.kind === 'living_lam_rim')
+  const textStudies = courses.filter((course) => course.kind === 'book')
+  const otherPrograms = courses.filter((course) => course.kind === 'other')
 
   return (
-    <main className="container page">
+    <main className="container page admin-index-page">
       <div className="eyebrow">Admin</div>
       <h1>Teaching content</h1>
-      <p className="lead">Manage courses, Course Offerings, sessions, teachers, class materials, Study Notes, Reference Transcripts, and the meditation library.</p>
+      <p className="lead">Open the part of the library you need. Course and session detail stays hidden until you choose it.</p>
 
-      <section className="grid section">
-        <div className="card">
+      <section className="section admin-index-grid">
+        <div className="card admin-index-card admin-index-card-wide">
           <div className="eyebrow">Catalog</div>
-          <h3>Courses &amp; Programs</h3>
-          <p className="meta">Manage the canonical course catalog, additional text studies, Course Offerings, and archive-course setup from one place.</p>
-          <div className="actions">
-            <Link className="button red" href="/admin/courses">Manage courses &amp; programs</Link>
+          <div className="admin-index-card-head">
+            <div><h2>Classics Courses</h2><p className="meta">Canonical Courses 1–18. Open a course to manage its Taiwan, Arizona, or other Course Offerings.</p></div>
+            <Link className="button" href="/admin/courses">Manage courses &amp; programs</Link>
           </div>
+          <div className="admin-index-links classics">{classics.map(courseLink)}</div>
         </div>
-        <div className="card">
-          <div className="eyebrow">People</div>
-          <h3>Teachers</h3>
-          <p className="meta">Add teachers once, then assign them to any class or meditation from the session editor.</p>
-          <div className="actions"><Link className="button" href="/admin/teachers">Manage teachers</Link></div>
+
+        {lamRim.length ? (
+          <div className="card admin-index-card">
+            <div className="eyebrow">Steps on the Path Course</div>
+            <h2>Living Lam Rim</h2>
+            <div className="admin-index-links">{lamRim.map(courseLink)}</div>
+          </div>
+        ) : null}
+
+        <div className="card admin-index-card">
+          <div className="eyebrow">Text studies</div>
+          <h2>Perfection of Wisdom &amp; texts</h2>
+          <div className="admin-index-links">{textStudies.length ? textStudies.map(courseLink) : <span className="meta">No text studies yet.</span>}</div>
         </div>
-        <div className="card">
-          <div className="eyebrow">Practice library</div>
-          <h3>Meditations</h3>
-          <p className="meta">Create a canonical meditation once, then connect versions from different source classes.</p>
-          <div className="actions"><Link className="button sage" href="/admin/meditations">Manage meditations</Link></div>
-        </div>
+
+        {otherPrograms.length ? (
+          <div className="card admin-index-card">
+            <div className="eyebrow">Other teaching projects</div>
+            <h2>Other programs</h2>
+            <div className="admin-index-links">{otherPrograms.map(courseLink)}</div>
+          </div>
+        ) : null}
       </section>
 
-      {[...groups.entries()].map(([key, group]) => (
-        <section className="section card" key={key}>
-          <div className="eyebrow">Course Offering{group.offeringStatus ? ` · ${group.offeringStatus}` : ''}</div>
-          <h2>{group.title}</h2>
-          <div className="actions" style={{ marginBottom: 12 }}>
-            {group.offeringId ? <Link className="button red" href={`/admin/offerings/${group.offeringId}`}>Manage Course Offering</Link> : null}
-            {group.offeringId ? <Link className="button sage" href={`/admin/offerings/${group.offeringId}/review`}>Review content</Link> : null}
-            {group.courseSlug && group.offeringSlug && group.offeringStatus === 'published' ? <Link className="button" href={`/courses/${group.courseSlug}/${group.offeringSlug}`}>Open student view</Link> : null}
-          </div>
-
-          {group.sessions.length ? group.sessions.map((session) => {
-            const notes = (session.study_notes ?? []) as Array<{ status: string }>
-            const transcripts = (session.transcripts ?? []) as Array<{ status: string }>
-            const materials = (session.materials ?? []) as Array<{ status: string }>
-            const notesStatus = notes[0]?.status ?? 'missing'
-            const transcriptStatus = transcripts[0]?.status ?? 'missing'
-            const publishedMaterials = materials.filter((item) => item.status === 'published').length
-            return (
-              <div key={session.id} style={{ padding: '16px 0', borderTop: '1px solid var(--line)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                  <div>
-                    <strong>{session.code ? `${session.code} · ` : ''}{session.title}</strong>
-                    <div className="meta">{session.session_date ?? 'No date'} · {session.session_type} · session {session.status}</div>
-                    <div className="meta">Study Notes: {notesStatus} · Materials: {publishedMaterials} published · Transcript: {transcriptStatus} · Recording: {session.recording_url ? 'added' : 'missing'}</div>
-                  </div>
-                  <div className="actions" style={{ marginTop: 0 }}>
-                    <Link className="button" href={`/admin/sessions/${session.id}`}>Edit session</Link>
-                    {transcriptStatus !== 'missing' ? <Link className="button" href={`/admin/sessions/${session.id}/revisions`}>Transcript history</Link> : null}
-                  </div>
-                </div>
-              </div>
-            )
-          }) : <p className="meta">No sessions yet. Open this Course Offering to add the first class or import recordings.</p>}
-        </section>
-      ))}
+      <section className="section admin-tool-strip" aria-label="Admin tools">
+        <Link className="admin-tool-link red" href="/admin/archive-import">
+          <span className="eyebrow">Archives</span><strong>Bulk archive import</strong><small>CSV playlists, sessions, teachers, recordings</small>
+        </Link>
+        <Link className="admin-tool-link" href="/admin/teachers">
+          <span className="eyebrow">People</span><strong>Teachers</strong><small>Names and bios</small>
+        </Link>
+        <Link className="admin-tool-link" href="/admin/meditations">
+          <span className="eyebrow">Practice</span><strong>Meditations</strong><small>Canonical practices and versions</small>
+        </Link>
+        <Link className="admin-tool-link" href="/admin/tibetan">
+          <span className="eyebrow">Study</span><strong>Tibetan glossary</strong><small>Terms and teaching sources</small>
+        </Link>
+      </section>
     </main>
   )
 }
