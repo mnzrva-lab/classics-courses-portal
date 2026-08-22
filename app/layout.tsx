@@ -6,6 +6,7 @@ import TranscriptSync from '@/components/transcript-sync'
 import ClassStudyTabs from '@/components/class-study-tabs'
 import AdminSessionEnhancer from '@/components/admin-session-enhancer'
 import AdminOfferingQuickTools from '@/components/admin-offering-quick-tools'
+import TeacherBioEnhancer from '@/components/teacher-bio-enhancer'
 import { TELEGRAM_UPDATES_URL } from '@/lib/site-links'
 import './globals.css'
 import './learning-surfaces.css'
@@ -115,6 +116,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             {isAdmin ? <AdminOfferingQuickTools /> : null}
             {children}
             <ClassStudyTabs />
+            <TeacherBioEnhancer />
             {isAdmin ? <AdminSessionEnhancer /> : null}
             <TranscriptSync />
 
