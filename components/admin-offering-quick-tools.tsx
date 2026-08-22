@@ -81,8 +81,8 @@ export default function AdminOfferingQuickTools() {
       <div className="admin-offering-tool">
         <div>
           <div className="eyebrow">Recordings</div>
-          <strong>YouTube playlist import</strong>
-          <p className="meta">Import the playlist once and map each video directly to its class Recording URL.</p>
+          <strong>Import recordings</strong>
+          <p className="meta">Match videos to existing sessions, or create a Draft class list automatically for an archive Course Offering.</p>
         </div>
         <PlaylistCsvImport offeringId={offeringId} />
       </div>
