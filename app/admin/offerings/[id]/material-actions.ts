@@ -1,5 +1,6 @@
 'use server'
 
+import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -9,8 +10,8 @@ const TEACHING_MATERIALS_BUCKET = 'teaching-materials'
 
 async function requireAdmin() {
   const supabase = await createClient()
-  const { data } = await supabase.auth.getClaims()
-  const userId = data?.claims?.sub as string | undefined
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const userId = claimsData?.claims?.sub as string | undefined
   if (!userId) redirect('/login')
 
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).single()
@@ -41,6 +42,18 @@ function validMaterialType(value: FormDataEntryValue | null) {
   return type
 }
 
+function safeFileName(name: string) {
+  const dot = name.lastIndexOf('.')
+  const stem = (dot > 0 ? name.slice(0, dot) : name)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'file'
+  const extension = dot > 0 ? name.slice(dot + 1).replace(/[^A-Za-z0-9]+/g, '').slice(0, 12) : ''
+  return extension ? `${stem}.${extension}` : stem
+}
+
 async function nextSortOrder(supabase: Awaited<ReturnType<typeof createClient>>, offeringId: string) {
   const { data, error } = await supabase
     .from('materials')
@@ -60,6 +73,14 @@ function revalidateOffering(offeringId: string) {
   revalidatePath(`/admin/offerings/${offeringId}`)
   revalidatePath(`/admin/offerings/${offeringId}/review`)
   revalidatePath('/', 'layout')
+}
+
+export async function createOfferingMaterialUploadUrl(offeringId: string, fileName: string) {
+  const supabase = await requireAdmin()
+  const storagePath = `offerings/${offeringId}/${randomUUID()}-${safeFileName(fileName)}`
+  const { data, error } = await supabase.storage.from(TEACHING_MATERIALS_BUCKET).createSignedUploadUrl(storagePath)
+  if (error || !data?.token) throw new Error(error?.message ?? 'Could not prepare upload.')
+  return { storagePath, token: data.token }
 }
 
 export async function addOfferingMaterial(offeringId: string, formData: FormData) {
