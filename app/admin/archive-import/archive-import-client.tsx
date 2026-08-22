@@ -151,6 +151,11 @@ function isoDateFromTitle(title: string) {
   return ''
 }
 
+function isoDateFromPublishDate(value: string) {
+  const match = value.trim().match(/^(20\d{2})-(\d{2})-(\d{2})/)
+  return match ? `${match[1]}-${match[2]}-${match[3]}` : ''
+}
+
 function normalizeTeacherText(value: string) {
   return value.toLowerCase().replace(/mendosa/g, 'mendoza').replace(/briney/g, 'birney').replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()
 }
@@ -234,7 +239,7 @@ function initialRows(raw: ReturnType<typeof csvObjects>, teachers: Teacher[]) {
       code: number ? `${prefix}${number}` : '',
       title: normalizedRowTitle(kind, number, row.videoTitle),
       sessionType: kind,
-      sessionDate: isoDateFromTitle(row.videoTitle),
+      sessionDate: isoDateFromPublishDate(row.publishDate) || isoDateFromTitle(row.videoTitle),
       teacherIds: matchedTeachers(row.videoTitle, teachers),
       status: 'published',
       warning,
@@ -443,7 +448,7 @@ export default function ArchiveImportClient({
         <div>
           <div className="eyebrow">1 · Add CSV files</div>
           <strong>One playlist export per Course Offering or program section</strong>
-          <p className="meta">You can select many CSV files at once. Nothing is written until you review and click Import.</p>
+          <p className="meta">Video Publish Date is used as the session date when available. For a new Course Offering, the earliest and latest imported session dates become the offering start and end dates. Nothing is written until you review and click Import.</p>
         </div>
         <input ref={fileRef} type="file" accept=".csv,text/csv" multiple hidden onChange={readFiles} />
         <button className="button red" type="button" onClick={() => fileRef.current?.click()} disabled={busy}>+ Choose CSV files</button>
