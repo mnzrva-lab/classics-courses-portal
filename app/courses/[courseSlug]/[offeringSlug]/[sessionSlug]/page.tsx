@@ -6,7 +6,7 @@ import RecordingPlayer from '@/components/recording-player'
 import SessionTime from '@/components/session-time'
 import TranscriptControls from '@/components/transcript-controls'
 import PassageStudyTools from './passage-study-tools'
-import { markSessionComplete, saveSessionNote, toggleSessionBookmark } from './actions'
+import { saveSessionNote, toggleSessionBookmark, toggleSessionComplete } from './actions'
 
 type CourseRelation = { id: string; slug: string; title: string; canonical_number: number | null; status: string }
 type OfferingRelation = { id: string; slug: string; label: string; status: string }
@@ -111,6 +111,10 @@ export default async function SessionPage({
     }))
   }
   const [resolvedMaterials, resolvedOfferingMaterials] = await Promise.all([resolveMaterials(materials), resolveMaterials(offeringMaterials)])
+  const compactResources = [
+    ...resolvedOfferingMaterials.map((material: any) => ({ ...material, resource_scope: 'Course' })),
+    ...resolvedMaterials.map((material: any) => ({ ...material, resource_scope: 'Class' })),
+  ].filter((material: any) => Boolean(material.resolved_url))
 
   let transcriptSections: TranscriptSection[] = []
   let transcriptParagraphs: TranscriptParagraph[] = []
@@ -173,14 +177,6 @@ export default async function SessionPage({
     const stableAssets = assetsByParagraphId.get(paragraph.id)
     return stableAssets?.length ? renderAssetList(stableAssets) : renderAssetList(legacyAssetsByPosition.get(paragraph.sort_order) ?? [])
   }
-  function renderMaterialRows(rows: any[]) {
-    return <div className="list">{rows.map((material: any) => (
-      <div key={material.id} className="class-material-row">
-        <div><strong>{material.title}</strong><div className="meta">{materialLabel(material.material_type)}{material.mime_type ? ` · ${material.mime_type}` : ''}{adminContentPreview && material.status !== 'published' ? ` · ${material.status}` : ''}</div></div>
-        {material.resolved_url ? <a className="button" href={material.resolved_url} target="_blank" rel="noreferrer">Open</a> : <span className="meta">File temporarily unavailable</span>}
-      </div>
-    ))}</div>
-  }
 
   let previousSectionId: string | null | undefined = undefined
   const teachers = (session.session_teachers ?? []).map((item: any) => item.teachers?.full_name).filter(Boolean)
@@ -208,10 +204,10 @@ export default async function SessionPage({
       <nav className="card" aria-label="Class contents" style={{ marginTop: 28 }}>
         <div className="eyebrow">In this class</div>
         <div className="actions" style={{ marginTop: 10 }}>
-          <a className="button" href="#recording">Recording</a><a className="button" href="#study-notes">Study Notes</a>
-          {resolvedOfferingMaterials.length ? <a className="button" href="#course-materials">Course materials</a> : null}
-          {resolvedMaterials.length ? <a className="button" href="#materials">Class materials</a> : null}
-          <a className="button" href="#transcript">Reference Transcript</a>{userId ? <Link className="button" href="/my-notes">My Notes</Link> : null}
+          <a className="button" href="#recording">Recording</a>
+          <a className="button" href="#study-notes">Study Notes</a>
+          <a className="button" href="#transcript">Reference Transcript</a>
+          {userId ? <Link className="button" href="/my-notes">My Notes</Link> : null}
         </div>
       </nav>
 
@@ -225,14 +221,30 @@ export default async function SessionPage({
 
           <aside className="recording-study-tools" aria-label="Class study actions">
             <div className="eyebrow">Your study</div>
-            {userId ? canSaveProgress ? (
-              isCompleted
-                ? <span className="button sage recording-tool-button">✓ Completed</span>
-                : <form action={markSessionComplete.bind(null, session.id, returnPath)}><button className="button sage recording-tool-button" type="submit">✓ Mark completed</button></form>
+            {userId ? (canSaveProgress || isCompleted) ? (
+              <form action={toggleSessionComplete.bind(null, session.id, returnPath)}>
+                <button
+                  className={isCompleted ? 'button sage recording-tool-button is-active' : 'button sage recording-tool-button'}
+                  type="submit"
+                  aria-pressed={isCompleted}
+                  title={isCompleted ? 'Mark this class incomplete' : 'Mark this class completed'}
+                >
+                  {isCompleted ? '✓ Completed' : '○ Mark completed'}
+                </button>
+              </form>
             ) : <Link className="button recording-tool-button" href="/account">Progress is off</Link> : <Link className="button recording-tool-button" href="/login">Sign in to track progress</Link>}
 
             {userId && (canSaveBookmarks || sessionBookmarked) ? (
-              <form action={toggleSessionBookmark.bind(null, session.id, returnPath)}><button className="button recording-tool-button" type="submit">{sessionBookmarked ? '★ Bookmarked' : '☆ Bookmark class'}</button></form>
+              <form action={toggleSessionBookmark.bind(null, session.id, returnPath)}>
+                <button
+                  className={sessionBookmarked ? 'button recording-tool-button is-active' : 'button recording-tool-button'}
+                  type="submit"
+                  aria-pressed={sessionBookmarked}
+                  title={sessionBookmarked ? 'Remove bookmark' : 'Bookmark this class'}
+                >
+                  {sessionBookmarked ? '★ Bookmarked' : '☆ Bookmark class'}
+                </button>
+              </form>
             ) : userId ? <Link className="button recording-tool-button" href="/account">Bookmarks are off</Link> : null}
 
             {userId && canSaveNotes ? (
@@ -254,6 +266,19 @@ export default async function SessionPage({
                 </div>
               </details>
             ) : userId ? <Link className="button recording-tool-button" href="/account">Notes are off</Link> : null}
+
+            {compactResources.length ? (
+              <div className="recording-resource-list">
+                <div className="recording-resource-title">Resources</div>
+                {compactResources.map((material: any) => (
+                  <a className="recording-resource-link" key={`${material.resource_scope}-${material.id}`} href={material.resolved_url} target="_blank" rel="noreferrer">
+                    <span>{materialLabel(material.material_type)}</span>
+                    <strong>{material.title}</strong>
+                    <small>{material.resource_scope} ↗</small>
+                  </a>
+                ))}
+              </div>
+            ) : null}
           </aside>
         </div>
       </section>
@@ -273,9 +298,6 @@ export default async function SessionPage({
           </div>
         </> : <div className="card"><p className="meta">Study Notes have not been published for this session yet.</p></div>}
       </section>
-
-      {resolvedOfferingMaterials.length > 0 ? <section id="course-materials" className="section card" style={{ scrollMarginTop: 96 }}><div className="eyebrow">Course materials</div><h2>Shared resources for {offering.label}</h2><p className="meta">These materials belong to the whole Course Offering and are available from each class.</p>{renderMaterialRows(resolvedOfferingMaterials)}</section> : null}
-      {resolvedMaterials.length > 0 ? <section id="materials" className="section card" style={{ scrollMarginTop: 96 }}><div className="eyebrow">Class materials</div><h2>Resources for this class</h2>{renderMaterialRows(resolvedMaterials)}</section> : null}
 
       <section id="transcript" className="section transcript-section-v12" style={{ scrollMarginTop: 96 }}>
         {transcript ? <>
