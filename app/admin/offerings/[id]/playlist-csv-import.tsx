@@ -38,7 +38,7 @@ function rowObjects(text: string): PlaylistCsvRow[] {
   const get = (row: string[], name: string) => row[index.get(name.toLowerCase()) ?? -1]?.trim() ?? ''
   if (!index.has('video title') || !index.has('video url')) throw new Error('The CSV needs Video Title and Video URL columns.')
 
-  return rows.slice(1).map((row, rowIndex) => {
+  const parsed = rows.slice(1).map((row, rowIndex) => {
     const positionValue = get(row, 'Position')
     return {
       key: `${rowIndex}:${get(row, 'Video ID') || get(row, 'Video URL')}`,
@@ -49,8 +49,18 @@ function rowObjects(text: string): PlaylistCsvRow[] {
       videoUrl: get(row, 'Video URL'),
       availability: get(row, 'Availability Status'),
     }
-  }).filter((row) => row.videoUrl && (!row.availability || row.availability.toLowerCase() === 'available'))
-    .map(({ availability: _availability, ...row }) => row)
+  })
+
+  return parsed
+    .filter((row) => row.videoUrl && (!row.availability || row.availability.toLowerCase() === 'available'))
+    .map((row) => ({
+      key: row.key,
+      position: row.position,
+      playlistTitle: row.playlistTitle,
+      playlistUrl: row.playlistUrl,
+      videoTitle: row.videoTitle,
+      videoUrl: row.videoUrl,
+    }))
 }
 
 export default function PlaylistCsvImport({ offeringId }: { offeringId: string }) {
@@ -97,7 +107,11 @@ export default function PlaylistCsvImport({ offeringId }: { offeringId: string }
     setBusy(true)
     setMessage('Applying recording URLs and playlist…')
     try {
-      const result = await applyPlaylistCsvImport(offeringId, rows.map((row) => ({ sessionId: row.sessionId, videoUrl: row.videoUrl })), { url: playlistUrl, title: playlistTitle })
+      const result = await applyPlaylistCsvImport(
+        offeringId,
+        rows.map((row) => ({ sessionId: row.sessionId, videoUrl: row.videoUrl })),
+        { url: playlistUrl, title: playlistTitle },
+      )
       setMessage(`Done. ${result.updated} Recording URL${result.updated === 1 ? '' : 's'} updated${result.playlistSaved ? ' and the course playlist was added to Course resources' : ''}.`)
       router.refresh()
     } catch (error) {
@@ -121,7 +135,9 @@ export default function PlaylistCsvImport({ offeringId }: { offeringId: string }
                 <div><strong>{row.videoTitle}</strong><div className="meta">{row.matchNote}</div></div>
                 <select className="input" value={row.sessionId} disabled={busy} onChange={(event) => setSession(row.key, event.target.value)}>
                   <option value="">Do not import</option>
-                  {sessions.map((session) => <option key={session.id} value={session.id}>{session.code ? `${session.code} · ` : ''}{session.title}{session.recordingUrl ? ' · recording already set' : ''}</option>)}
+                  {sessions.map((session) => (
+                    <option key={session.id} value={session.id}>{session.code ? `${session.code} · ` : ''}{session.title}{session.recordingUrl ? ' · recording already set' : ''}</option>
+                  ))}
                 </select>
               </div>
             ))}
