@@ -32,6 +32,10 @@ function offeringRange(startsOn: string | null, endsOn: string | null) {
   return `${shortDate(startsOn, !sameYear)} → ${shortDate(endsOn, true)}`
 }
 
+function effectiveOfferingEnd(offering: any) {
+  return (offering.ends_on ?? offering.starts_on ?? null) as string | null
+}
+
 export default async function HomePage() {
   const supabase = await createClient()
   const now = new Date()
@@ -40,11 +44,10 @@ export default async function HomePage() {
   const nowNextWindowStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0, 10)
   const nowNextWindowEndExclusive = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 6, 1)).toISOString().slice(0, 10)
 
-  const [sessionsResult, offeringsResult, claimsResult, perfectionResult] = await Promise.all([
+  const [sessionsResult, offeringsResult, claimsResult] = await Promise.all([
     supabase.from('sessions').select(`id, slug, code, title, session_type, starts_at, ends_at, zoom_url, offering_id, courses!inner(slug, title, canonical_number, status), course_offerings!inner(slug, label, status), session_teachers(teachers(full_name))`).eq('status', 'published').eq('courses.status', 'published').eq('course_offerings.status', 'published').not('starts_at', 'is', null).gte('starts_at', recentHorizon).order('starts_at', { ascending: true }).limit(80),
-    supabase.from('course_offerings').select(`id, slug, label, location, starts_on, ends_on, artwork_url, status, courses!inner(slug, title, canonical_number, status)`).eq('status', 'published').eq('courses.status', 'published').not('starts_on', 'is', null).order('starts_on', { ascending: true }).limit(40),
+    supabase.from('course_offerings').select(`id, slug, label, location, starts_on, ends_on, artwork_url, status, courses!inner(slug, title, canonical_number, status)`).eq('status', 'published').eq('courses.status', 'published').not('starts_on', 'is', null).order('starts_on', { ascending: true }),
     supabase.auth.getClaims(),
-    supabase.from('courses').select('slug, title, subtitle, course_offerings(slug, label, status, sort_order)').eq('slug', 'perfection-of-wisdom').eq('status', 'published').maybeSingle(),
   ])
 
   const sessions = (sessionsResult.data ?? []).map((row: any) => {
@@ -55,10 +58,26 @@ export default async function HomePage() {
   })
 
   const offerings = (offeringsResult.data ?? []) as any[]
-  const currentOffering = offerings.find((offering) => offering.starts_on <= today && (!offering.ends_on || offering.ends_on >= today))
-  const latestOffering = [...offerings].reverse().find((offering) => offering.starts_on <= today)
-  const nextOffering = offerings.find((offering) => offering.starts_on > today)
+  const currentOffering = offerings
+    .filter((offering) => {
+      const end = effectiveOfferingEnd(offering)
+      return offering.starts_on <= today && Boolean(end && end >= today)
+    })
+    .sort((a, b) => String(b.starts_on).localeCompare(String(a.starts_on)))[0] ?? null
+  const latestOffering = offerings
+    .filter((offering) => {
+      const end = effectiveOfferingEnd(offering)
+      return Boolean(end && end < today)
+    })
+    .sort((a, b) => {
+      const endDifference = String(effectiveOfferingEnd(b)).localeCompare(String(effectiveOfferingEnd(a)))
+      return endDifference || String(b.starts_on).localeCompare(String(a.starts_on))
+    })[0] ?? null
+  const nextOffering = offerings
+    .filter((offering) => offering.starts_on > today)
+    .sort((a, b) => String(a.starts_on).localeCompare(String(b.starts_on)))[0] ?? null
   const activeOffering = currentOffering ?? latestOffering ?? nextOffering ?? null
+  const activeMode = currentOffering ? 'current' : latestOffering ? 'latest' : nextOffering ? 'next' : null
   const userId = claimsResult.data?.claims?.sub as string | undefined
 
   let progressPercent: number | null = null
@@ -74,10 +93,6 @@ export default async function HomePage() {
     } else progressPercent = 0
   }
 
-  const perfection = perfectionResult.data as any
-  const perfectionOffering = (perfection?.course_offerings ?? []).filter((offering: any) => offering.status === 'published').sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0]
-  const perfectionHref = perfection && perfectionOffering ? `/courses/${perfection.slug}/${perfectionOffering.slug}` : '/perfection-of-wisdom'
-
   const milestones = offerings.filter((offering) => {
     const start = offering.starts_on as string | null
     if (!start) return false
@@ -87,16 +102,32 @@ export default async function HomePage() {
   const activeCourse = activeOffering?.courses as any
   const activeHref = activeOffering && activeCourse ? `/courses/${activeCourse.slug}/${activeOffering.slug}` : null
   const activeCourseLabel = activeCourse?.canonical_number ? `Classics Course ${activeCourse.canonical_number}` : activeCourse?.title
+  const activeEyebrow = progressPercent != null && progressPercent > 0
+    ? 'Continue learning'
+    : activeMode === 'current'
+      ? 'Current course'
+      : activeMode === 'latest'
+        ? 'Latest course'
+        : 'Next course'
+
+  const nextCourse = nextOffering?.courses as any
+  const upcomingOffering = nextOffering && nextCourse ? {
+    href: `/courses/${nextCourse.slug}/${nextOffering.slug}`,
+    course_label: nextCourse?.canonical_number ? `Classics Course ${nextCourse.canonical_number}` : nextCourse?.title ?? 'Course',
+    course_title: nextCourse?.title ?? 'Course',
+    offering_label: nextOffering.label ?? null,
+    starts_on: nextOffering.starts_on ?? null,
+  } : null
 
   return (
     <main>
       <section className="hero home-v12-hero"><div className="container"><h1>Continue learning.</h1><p>Live class access, recordings, Study Notes, Reference Transcripts, meditations, and course materials in one place.</p></div></section>
-      <section className="container section home-next-section"><div className="home-time-note">Schedule times are shown in your local timezone by default.</div><NextSessionCard sessions={sessions} /></section>
+      <section className="container section home-next-section"><div className="home-time-note">Schedule times are shown in your local timezone by default.</div><NextSessionCard sessions={sessions} upcomingOffering={upcomingOffering} /></section>
 
       <section className="container home-current-grid">
         {activeOffering && activeCourse && activeHref ? <Link className="home-active-course" href={activeHref}>
           <div className={activeOffering.artwork_url ? 'home-active-artwork' : 'home-active-artwork placeholder'} style={activeOffering.artwork_url ? { backgroundImage: `url(${activeOffering.artwork_url})` } : undefined} aria-hidden="true" />
-          <div className="home-active-copy"><div className="eyebrow">{progressPercent != null && progressPercent > 0 ? 'Continue learning' : 'Current course'}</div><h2>{activeCourseLabel} · {activeOffering.label}</h2><p>{activeCourse.title}{offeringRange(activeOffering.starts_on, activeOffering.ends_on) ? ` · ${offeringRange(activeOffering.starts_on, activeOffering.ends_on)}` : ''}{activeOffering.location ? ` · ${activeOffering.location}` : ''}</p>{progressPercent != null ? <><div className="home-progress-row"><div className="home-progress"><span style={{ width: `${Math.max(0, Math.min(100, progressPercent))}%` }} /></div><strong>{progressPercent}%</strong></div><div className="meta">Your progress</div></> : null}<span className="button sage home-active-button">{progressPercent != null && progressPercent > 0 ? 'Continue course' : 'Open course'}</span></div>
+          <div className="home-active-copy"><div className="eyebrow">{activeEyebrow}</div><h2>{activeCourseLabel} · {activeOffering.label}</h2><p>{activeCourse.title}{offeringRange(activeOffering.starts_on, activeOffering.ends_on) ? ` · ${offeringRange(activeOffering.starts_on, activeOffering.ends_on)}` : ''}{activeOffering.location ? ` · ${activeOffering.location}` : ''}</p>{progressPercent != null ? <><div className="home-progress-row"><div className="home-progress"><span style={{ width: `${Math.max(0, Math.min(100, progressPercent))}%` }} /></div><strong>{progressPercent}%</strong></div><div className="meta">Your progress</div></> : null}<span className="button sage home-active-button">{progressPercent != null && progressPercent > 0 ? 'Continue course' : 'Open course'}</span></div>
         </Link> : <div className="card home-active-course-empty"><div className="eyebrow">Current course</div><h2>Published teaching will appear here.</h2></div>}
         <HomeTodayCard sessions={sessions} />
       </section>
@@ -106,7 +137,7 @@ export default async function HomePage() {
       <section className="container section"><div className="section-head"><div><h2>Explore</h2></div></div><div className="home-explore-grid">
         <Link className="card home-library-card cream" href="/courses"><div className="eyebrow">18 courses</div><h3>Classics Courses</h3><p className="meta">The full Classics curriculum, with teaching archives added course by course.</p><div className="go">Browse all 18 →</div></Link>
         <Link className="card home-library-card sage" href="/living-lam-rim"><div className="eyebrow">Steps on the Path Course</div><h3>Living Lam Rim</h3><p className="meta">Move term by term through meditation and insight teachings, with each class kept as its own study page.</p><div className="go">Open terms →</div></Link>
-        <Link className="card home-library-card" href={perfectionHref}><div className="eyebrow">Text study</div><h3>Perfection of Wisdom</h3><p className="meta">Study the long-running text and commentary project through its teaching seasons and individual sessions.</p><div className="go">Continue study →</div></Link>
+        <Link className="card home-library-card" href="/perfection-of-wisdom"><div className="eyebrow">Text study</div><h3>Perfection of Wisdom</h3><p className="meta">Study the long-running text and commentary project through its teaching seasons and individual sessions.</p><div className="go">Continue study →</div></Link>
         <Link className="card home-library-card" href="/meditations"><div className="eyebrow">Practice library</div><h3>Meditations</h3><p className="meta">Find a practice by time first, then refine by topic, teacher, or source when needed.</p><div className="go">Find a meditation →</div></Link>
       </div><div className="home-other-teachings"><Link href="/other-programs">Other teachings and study projects <span aria-hidden="true">→</span></Link><p>For individual classes, smaller study projects, and teachings that do not need to become a main Course Offering.</p></div></section>
     </main>
