@@ -1,0 +1,21 @@
+/* Final specificity fixes for legacy learning-surface rules. */
+#study-notes {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+#study-notes > .study-notes-head h2 { margin: 6px 0 0 !important; font-size: clamp(36px, 5vw, 50px) !important; }
+#transcript .transcript-paragraph-v12 { margin: 0 !important; padding: 14px 16px 16px !important; border: 0 !important; }
+#transcript .transcript-paragraph-v12 .passage-study-tools { opacity: 0; }
+#transcript .transcript-paragraph-v12:hover .passage-study-tools,
+#transcript .transcript-paragraph-v12:focus-within .passage-study-tools,
+#transcript .transcript-paragraph-v12:target .passage-study-tools,
+#transcript .transcript-paragraph-v12.is-current .passage-study-tools { opacity: 1; }
+#transcript .transcript-paragraph-v12 .passage-action { background: var(--paper); }
+#transcript .transcript-paragraph-v12 > form { opacity: 1; }
+
+@media (max-width: 720px) {
+  #transcript .transcript-paragraph-v12 { padding: 12px 8px 14px !important; }
+  #transcript .transcript-paragraph-v12 .passage-study-tools { opacity: 1; }
+}
