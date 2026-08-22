@@ -9,6 +9,7 @@ type Teacher = { id: string; full_name: string; active: boolean }
 type Offering = { id: string; course_id: string; label: string; status: string; year: number | null; location: string | null }
 type ExistingSession = { id: string; offering_id: string; code: string | null; title: string; session_type: string; status: string; sort_order: number }
 type ExistingGroup = { id: string; offering_id: string; kind: string; label: string; status: string; sort_order: number }
+type SortMode = 'class' | 'date'
 
 type ImportRow = {
   key: string
@@ -40,6 +41,7 @@ type ImportBatch = {
   offeringStatus: string
   groupKind: string
   groupLabel: string
+  sortMode: SortMode
   rows: ImportRow[]
 }
 
@@ -51,6 +53,15 @@ const sessionTypes = [
   ['vows', 'Vows'],
   ['other', 'Other'],
 ]
+
+const typeRank: Record<string, number> = {
+  class: 0,
+  meditation: 1,
+  review: 2,
+  qna: 3,
+  vows: 4,
+  other: 5,
+}
 
 function parseCsv(text: string) {
   const rows: string[][] = []
@@ -218,6 +229,33 @@ function normalizedRowTitle(kind: string, number: number | null, rawTitle: strin
   return rawTitle
 }
 
+function codeNumber(row: ImportRow) {
+  const match = row.code.match(/(\d+)/)
+  return match ? Number(match[1]) : Number.MAX_SAFE_INTEGER
+}
+
+function compareClassOrder(a: ImportRow, b: ImportRow) {
+  const typeDifference = (typeRank[a.sessionType] ?? 99) - (typeRank[b.sessionType] ?? 99)
+  if (typeDifference) return typeDifference
+  const numberDifference = codeNumber(a) - codeNumber(b)
+  if (numberDifference) return numberDifference
+  if (a.sessionDate && b.sessionDate && a.sessionDate !== b.sessionDate) return a.sessionDate.localeCompare(b.sessionDate)
+  return a.position - b.position
+}
+
+function sortImportRows(rows: ImportRow[], mode: SortMode) {
+  const copy = [...rows]
+  if (mode === 'date') {
+    return copy.sort((a, b) => {
+      if (a.sessionDate && b.sessionDate && a.sessionDate !== b.sessionDate) return a.sessionDate.localeCompare(b.sessionDate)
+      if (a.sessionDate && !b.sessionDate) return -1
+      if (!a.sessionDate && b.sessionDate) return 1
+      return compareClassOrder(a, b)
+    })
+  }
+  return copy.sort(compareClassOrder)
+}
+
 function initialRows(raw: ReturnType<typeof csvObjects>, teachers: Teacher[]) {
   const rows = [...raw].sort((a, b) => a.position - b.position).map((row, index): ImportRow => {
     const kind = sessionKind(row.videoTitle)
@@ -265,6 +303,34 @@ function initialRows(raw: ReturnType<typeof csvObjects>, teachers: Teacher[]) {
   return rows.map((row) => counts.get(row.code)! > 1 ? { ...row, warning: row.warning || `Duplicate code ${row.code}. Rename one of these rows if they are separate sessions.` } : row)
 }
 
+function batchPayload(batch: ImportBatch): ArchiveBatchInput {
+  return {
+    key: batch.key,
+    courseId: batch.courseId,
+    offeringId: batch.offeringId || null,
+    offeringLabel: batch.offeringLabel,
+    location: batch.location || null,
+    year: batch.year ? Number(batch.year) : null,
+    languages: batch.languages.split(',').map((item) => item.trim()).filter(Boolean),
+    offeringStatus: batch.offeringStatus,
+    playlistTitle: batch.playlistTitle,
+    playlistUrl: batch.playlistUrl,
+    groupKind: batch.groupLabel.trim() ? batch.groupKind : null,
+    groupLabel: batch.groupLabel.trim() || null,
+    sessions: batch.rows.filter((row) => row.include).map((row, index) => ({
+      sessionId: row.sessionId || null,
+      code: row.code,
+      title: row.title,
+      sessionType: row.sessionType,
+      sessionDate: row.sessionDate || null,
+      recordingUrl: row.videoUrl,
+      teacherIds: row.teacherIds,
+      status: row.status,
+      sortOrder: index,
+    })),
+  }
+}
+
 export default function ArchiveImportClient({
   courses,
   teachers,
@@ -304,6 +370,8 @@ export default function ArchiveImportClient({
         const location = detectLocation(file.name, playlistTitle)
         const year = detectYear(raw)
         const label = [location, year].filter(Boolean).join(' ') || playlistTitle
+        const sortMode: SortMode = course?.kind === 'classics' ? 'class' : 'date'
+        const rows = sortImportRows(initialRows(raw, teachers), sortMode)
         next.push({
           key: `${file.name}:${crypto.randomUUID()}`,
           fileName: file.name,
@@ -318,7 +386,8 @@ export default function ArchiveImportClient({
           offeringStatus: 'draft',
           groupKind: course?.kind === 'living_lam_rim' ? 'term' : course?.kind === 'book' ? 'part' : 'module',
           groupLabel: '',
-          rows: initialRows(raw, teachers),
+          sortMode,
+          rows,
         })
       } catch (error) {
         next.push({
@@ -335,6 +404,7 @@ export default function ArchiveImportClient({
           offeringStatus: 'draft',
           groupKind: 'module',
           groupLabel: '',
+          sortMode: 'class',
           rows: [],
         })
         setMessage(error instanceof Error ? `${file.name}: ${error.message}` : `${file.name}: could not read file.`)
@@ -358,10 +428,13 @@ export default function ArchiveImportClient({
 
   function setBatchCourse(batch: ImportBatch, courseId: string) {
     const course = courseMap.get(courseId)
+    const sortMode: SortMode = course?.kind === 'classics' ? 'class' : 'date'
     updateBatch(batch.key, {
       courseId,
       offeringId: '',
       groupKind: course?.kind === 'living_lam_rim' ? 'term' : course?.kind === 'book' ? 'part' : 'module',
+      sortMode,
+      rows: sortImportRows(batch.rows, sortMode),
     })
   }
 
@@ -378,6 +451,14 @@ export default function ArchiveImportClient({
         return match ? { ...row, sessionId: match.id, warning: row.warning || `Will update existing ${match.code}.` } : row
       }),
     })
+  }
+
+  function sortBatchRows(batchKey: string, mode: SortMode) {
+    setBatches((current) => current.map((batch) => batch.key === batchKey ? {
+      ...batch,
+      sortMode: mode,
+      rows: sortImportRows(batch.rows, mode),
+    } : batch))
   }
 
   function applyStatus(batchKey: string, status: string) {
@@ -400,43 +481,25 @@ export default function ArchiveImportClient({
       return
     }
 
-    const payload: ArchiveBatchInput[] = batches.map((batch) => ({
-      key: batch.key,
-      courseId: batch.courseId,
-      offeringId: batch.offeringId || null,
-      offeringLabel: batch.offeringLabel,
-      location: batch.location || null,
-      year: batch.year ? Number(batch.year) : null,
-      languages: batch.languages.split(',').map((item) => item.trim()).filter(Boolean),
-      offeringStatus: batch.offeringStatus,
-      playlistTitle: batch.playlistTitle,
-      playlistUrl: batch.playlistUrl,
-      groupKind: batch.groupLabel.trim() ? batch.groupKind : null,
-      groupLabel: batch.groupLabel.trim() || null,
-      sessions: batch.rows.filter((row) => row.include).map((row, index) => ({
-        sessionId: row.sessionId || null,
-        code: row.code,
-        title: row.title,
-        sessionType: row.sessionType,
-        sessionDate: row.sessionDate || null,
-        recordingUrl: row.videoUrl,
-        teacherIds: row.teacherIds,
-        status: row.status,
-        sortOrder: index,
-      })),
-    }))
-
+    const queue = [...batches]
+    let completed = 0
     setBusy(true)
-    setMessage('Importing archive…')
+
     try {
-      const result = await applyArchiveBatches(payload)
-      setMessage(result.message)
-      if (result.ok) {
-        setBatches([])
-        router.refresh()
+      for (let index = 0; index < queue.length; index += 1) {
+        const batch = queue[index]
+        setMessage(`Importing ${index + 1} of ${queue.length}: ${batch.fileName}…`)
+        const result = await applyArchiveBatches([batchPayload(batch)])
+        if (!result.ok) throw new Error(`${batch.fileName}: ${result.message}`)
+        completed += 1
+        setBatches((current) => current.filter((item) => item.key !== batch.key))
       }
+      setMessage(`Imported ${completed} CSV file${completed === 1 ? '' : 's'} successfully.`)
+      router.refresh()
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : 'Archive import failed.')
+      const detail = error instanceof Error ? error.message : 'Archive import failed.'
+      setMessage(`${detail}${completed ? ` ${completed} earlier CSV file${completed === 1 ? '' : 's'} finished successfully and will not be repeated.` : ''}`)
+      router.refresh()
     } finally {
       setBusy(false)
     }
@@ -507,6 +570,12 @@ export default function ArchiveImportClient({
 
             <div className="archive-bulk-controls">
               <div><strong>Bulk edit included rows</strong><span className="meta">Default session status is Published.</span></div>
+              <label>Sort rows
+                <select className="input" value={batch.sortMode} onChange={(event) => sortBatchRows(batch.key, event.target.value as SortMode)}>
+                  <option value="class">Class order</option>
+                  <option value="date">Date</option>
+                </select>
+              </label>
               <label>Status
                 <select className="input" defaultValue="published" onChange={(event) => applyStatus(batch.key, event.target.value)}>
                   <option value="published">Published</option><option value="draft">Draft</option><option value="archived">Archived</option>
@@ -519,11 +588,12 @@ export default function ArchiveImportClient({
                 </select>
               </label>
             </div>
+            <p className="meta" style={{ marginTop: 8 }}>Class order puts Classes 1–10+ first, then Meditations, Reviews, Q&amp;A, Vows, and Other. Date uses the detected session date and places undated rows last.</p>
 
             <div className="archive-row-list">
-              {batch.rows.map((row) => (
+              {batch.rows.map((row, rowIndex) => (
                 <div className={row.warning ? 'archive-row needs-review' : 'archive-row'} key={row.key}>
-                  <label className="archive-row-check"><input type="checkbox" checked={row.include} onChange={(event) => updateRow(batch.key, row.key, { include: event.target.checked })} /><span>{row.position + 1}</span></label>
+                  <label className="archive-row-check"><input type="checkbox" checked={row.include} onChange={(event) => updateRow(batch.key, row.key, { include: event.target.checked })} /><span>{rowIndex + 1}</span></label>
                   <input className="input archive-code" value={row.code} onChange={(event) => updateRow(batch.key, row.key, { code: event.target.value })} aria-label="Session code" />
                   <div className="archive-title-cell">
                     <input className="input" value={row.title} onChange={(event) => updateRow(batch.key, row.key, { title: event.target.value })} aria-label="Session title" />
@@ -555,7 +625,7 @@ export default function ArchiveImportClient({
 
       {batches.length ? (
         <div className="archive-import-submit">
-          <div><strong>{batches.length} CSV file{batches.length === 1 ? '' : 's'} ready for review</strong><div className="meta">Only checked rows will be imported.</div></div>
+          <div><strong>{batches.length} CSV file{batches.length === 1 ? '' : 's'} ready for review</strong><div className="meta">Files are imported one at a time. Only checked rows will be imported, and a safe retry will reuse recordings already created.</div></div>
           <button className="button red" type="button" disabled={busy} onClick={applyAll}>{busy ? 'Importing…' : 'Import reviewed archive'}</button>
         </div>
       ) : null}
