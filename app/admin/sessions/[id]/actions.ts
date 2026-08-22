@@ -67,46 +67,27 @@ function timestampSeconds(value: string) {
   const minutes = Number(match[2])
   const seconds = Number(match[3])
   if (minutes > 59 || seconds > 59) return { seconds: null as number | null, text: value }
-  return {
-    seconds: hours * 3600 + minutes * 60 + seconds,
-    text: value.slice(match[0].length).trim(),
-  }
+  return { seconds: hours * 3600 + minutes * 60 + seconds, text: value.slice(match[0].length).trim() }
 }
 
 function slugify(value: string, fallback: string) {
-  const slug = value
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
+  const slug = value.toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
   return slug || fallback
 }
 
 function splitSpeaker(body: string) {
   const match = body.match(/^([^:\n]{1,60}):\s+/)
   if (!match) return { speaker: null as string | null, body }
-
   const candidate = match[1].trim()
   const knownLabel = /^(?:Audience(?: Member)?|Speaker\s+\d+)$/i.test(candidate)
   const hostLabel = /^Host(?:,\s*[A-Z][A-Za-z'’.-]*(?:\s+[A-Z][A-Za-z'’.-]*){0,3})?$/u.test(candidate)
   const properName = /^(?:[A-Z][A-Za-z'’.-]*)(?:\s+[A-Z][A-Za-z'’.-]*){0,3}$/u.test(candidate)
-
   if (!knownLabel && !hostLabel && !properName) return { speaker: null as string | null, body }
-
-  return {
-    speaker: candidate,
-    body: body.slice(match[0].length).trim(),
-  }
+  return { speaker: candidate, body: body.slice(match[0].length).trim() }
 }
 
 function parseTranscript(rawText: string, transcriptId: string) {
-  const blocks = rawText
-    .replace(/\r\n/g, '\n')
-    .split(/\n\s*\n+/)
-    .map((block) => block.trim())
-    .filter(Boolean)
-
+  const blocks = rawText.replace(/\r\n/g, '\n').split(/\n\s*\n+/).map((block) => block.trim()).filter(Boolean)
   const sections: Array<{ id: string; transcript_id: string; slug: string; title: string; start_seconds: number | null; sort_order: number }> = []
   const paragraphs: Array<{ transcript_id: string; section_id: string | null; speaker: string | null; body: string; start_seconds: number | null; sort_order: number }> = []
   const assets: Array<{ transcript_id: string; after_paragraph_sort_order: number; asset_type: 'image'; storage_bucket: string; storage_path: string; mime_type: string | null; alt_text: string | null; caption: string | null; sort_order: number }> = []
@@ -118,51 +99,23 @@ function parseTranscript(rawText: string, transcriptId: string) {
   for (const block of blocks) {
     const imageMatch = block.match(/^\[\[TRANSCRIPT_IMAGE\|([^|\]]+)\|([^\]]*)\]\]$/)
     if (imageMatch) {
-      assets.push({
-        transcript_id: transcriptId,
-        after_paragraph_sort_order: paragraphOrder - 1,
-        asset_type: 'image',
-        storage_bucket: TRANSCRIPT_ASSETS_BUCKET,
-        storage_path: imageMatch[1].trim(),
-        mime_type: imageMatch[2].trim() || null,
-        alt_text: null,
-        caption: null,
-        sort_order: assetOrder++,
-      })
+      assets.push({ transcript_id: transcriptId, after_paragraph_sort_order: paragraphOrder - 1, asset_type: 'image', storage_bucket: TRANSCRIPT_ASSETS_BUCKET, storage_path: imageMatch[1].trim(), mime_type: imageMatch[2].trim() || null, alt_text: null, caption: null, sort_order: assetOrder++ })
       continue
     }
-
     const headingMatch = block.match(/^###\s+([\s\S]+)$/)
     if (headingMatch) {
       const parsed = timestampSeconds(headingMatch[1].trim())
       const title = parsed.text || `Section ${sectionOrder + 1}`
       const id = randomUUID()
       currentSectionId = id
-      sections.push({
-        id,
-        transcript_id: transcriptId,
-        slug: `${slugify(title, 'section')}-${sectionOrder + 1}`,
-        title,
-        start_seconds: parsed.seconds,
-        sort_order: sectionOrder++,
-      })
+      sections.push({ id, transcript_id: transcriptId, slug: `${slugify(title, 'section')}-${sectionOrder + 1}`, title, start_seconds: parsed.seconds, sort_order: sectionOrder++ })
       continue
     }
-
     const parsed = timestampSeconds(block)
     const split = splitSpeaker(parsed.text)
     if (!split.body) continue
-
-    paragraphs.push({
-      transcript_id: transcriptId,
-      section_id: currentSectionId,
-      speaker: split.speaker,
-      body: split.body,
-      start_seconds: parsed.seconds,
-      sort_order: paragraphOrder++,
-    })
+    paragraphs.push({ transcript_id: transcriptId, section_id: currentSectionId, speaker: split.speaker, body: split.body, start_seconds: parsed.seconds, sort_order: paragraphOrder++ })
   }
-
   return { sections, paragraphs, assets }
 }
 
@@ -171,49 +124,38 @@ export async function updateSession(sessionId: string, formData: FormData) {
   const status = validStatus(formData.get('status'))
   const sessionType = String(formData.get('session_type') ?? 'class')
   if (!['class', 'meditation', 'review', 'qna', 'vows', 'other'].includes(sessionType)) throw new Error('Invalid session type')
-
   const sessionDate = optionalText(formData.get('session_date'))
   const sourceTimezone = optionalText(formData.get('source_timezone')) ?? 'Asia/Taipei'
   const startTime = optionalText(formData.get('start_time'))
   const endTime = optionalText(formData.get('end_time'))
-
   if (!isValidTimeZone(sourceTimezone)) throw new Error('Please enter a valid timezone, such as Asia/Taipei.')
   if ((startTime || endTime) && !sessionDate) throw new Error('Choose the session date before entering a start or end time.')
-
   const startsAt = sessionDate && startTime ? zonedLocalToIso(sessionDate, startTime, sourceTimezone) : null
   const endsAt = sessionDate && endTime ? zonedLocalToIso(sessionDate, endTime, sourceTimezone) : null
 
-  const { error } = await supabase
-    .from('sessions')
-    .update({
-      code: optionalText(formData.get('code')),
-      title: requiredText(formData.get('title'), 'Title'),
-      session_type: sessionType,
-      session_date: sessionDate,
-      starts_at: startsAt,
-      ends_at: endsAt,
-      source_timezone: sourceTimezone,
-      recording_url: optionalText(formData.get('recording_url')),
-      audio_url: optionalText(formData.get('audio_url')),
-      zoom_url: optionalText(formData.get('zoom_url')),
-      required_for_completion: formData.get('required_for_completion') === 'on',
-      status,
-    })
-    .eq('id', sessionId)
-
+  const { error } = await supabase.from('sessions').update({
+    code: optionalText(formData.get('code')),
+    title: requiredText(formData.get('title'), 'Title'),
+    session_type: sessionType,
+    session_date: sessionDate,
+    starts_at: startsAt,
+    ends_at: endsAt,
+    source_timezone: sourceTimezone,
+    recording_url: optionalText(formData.get('recording_url')),
+    audio_url: optionalText(formData.get('audio_url')),
+    zoom_url: optionalText(formData.get('zoom_url')),
+    required_for_completion: formData.get('required_for_completion') === 'on',
+    status,
+  }).eq('id', sessionId)
   if (error) throw new Error(error.message)
 
   const teacherIds = Array.from(new Set(formData.getAll('teacher_id').map(String).filter(Boolean)))
   const { error: deleteTeacherError } = await supabase.from('session_teachers').delete().eq('session_id', sessionId)
   if (deleteTeacherError) throw new Error(deleteTeacherError.message)
-
   if (teacherIds.length > 0) {
-    const { error: insertTeacherError } = await supabase.from('session_teachers').insert(
-      teacherIds.map((teacherId, index) => ({ session_id: sessionId, teacher_id: teacherId, sort_order: index }))
-    )
+    const { error: insertTeacherError } = await supabase.from('session_teachers').insert(teacherIds.map((teacherId, index) => ({ session_id: sessionId, teacher_id: teacherId, sort_order: index })))
     if (insertTeacherError) throw new Error(insertTeacherError.message)
   }
-
   revalidatePath('/admin')
   revalidatePath('/', 'layout')
   redirect(`/admin/sessions/${sessionId}?saved=session`)
@@ -223,36 +165,15 @@ export async function saveStudyNotes(sessionId: string, formData: FormData) {
   const supabase = await requireAdmin()
   const status = validStatus(formData.get('study_notes_status'))
   const content = requiredText(formData.get('study_notes_content'), 'Study Notes')
-
-  const { error } = await supabase.from('study_notes').upsert({
-    session_id: sessionId,
-    language_code: 'en',
-    title: optionalText(formData.get('study_notes_title')) ?? 'Study Notes',
-    summary: optionalText(formData.get('study_notes_summary')),
-    content_markdown: content,
-    disclaimer: STUDY_NOTES_DISCLAIMER,
-    status,
-    updated_at: new Date().toISOString(),
-  }, { onConflict: 'session_id,language_code' })
-
+  const { error } = await supabase.from('study_notes').upsert({ session_id: sessionId, language_code: 'en', title: optionalText(formData.get('study_notes_title')) ?? 'Study Notes', summary: optionalText(formData.get('study_notes_summary')), content_markdown: content, disclaimer: STUDY_NOTES_DISCLAIMER, status, updated_at: new Date().toISOString() }, { onConflict: 'session_id,language_code' })
   if (error) throw new Error(error.message)
-
   revalidatePath('/', 'layout')
   redirect(`/admin/sessions/${sessionId}?saved=notes`)
 }
 
 export async function addMaterial(sessionId: string, formData: FormData) {
   const supabase = await requireAdmin()
-  const { error } = await supabase.from('materials').insert({
-    session_id: sessionId,
-    material_type: validMaterialType(formData.get('material_type')),
-    title: requiredText(formData.get('material_title'), 'Material title'),
-    url: requiredText(formData.get('material_url'), 'Material URL'),
-    mime_type: optionalText(formData.get('material_mime_type')),
-    status: validStatus(formData.get('material_status')),
-    sort_order: await nextMaterialSortOrder(supabase, sessionId),
-  })
-
+  const { error } = await supabase.from('materials').insert({ session_id: sessionId, material_type: validMaterialType(formData.get('material_type')), title: requiredText(formData.get('material_title'), 'Material title'), url: requiredText(formData.get('material_url'), 'Material URL'), mime_type: optionalText(formData.get('material_mime_type')), status: validStatus(formData.get('material_status')), sort_order: await nextMaterialSortOrder(supabase, sessionId) })
   if (error) throw new Error(error.message)
   revalidatePath('/admin')
   revalidatePath('/', 'layout')
@@ -264,10 +185,7 @@ export async function registerUploadedMaterial(sessionId: string, formData: Form
   const storagePath = requiredText(formData.get('storage_path'), 'Uploaded file')
   const originalName = requiredText(formData.get('original_name'), 'File name')
   const expectedPrefix = `sessions/${sessionId}/`
-
-  if (!storagePath.startsWith(expectedPrefix) || storagePath.includes('..')) {
-    throw new Error('Invalid upload path.')
-  }
+  if (!storagePath.startsWith(expectedPrefix) || storagePath.includes('..')) throw new Error('Invalid upload path.')
 
   const { error } = await supabase.from('materials').insert({
     session_id: sessionId,
@@ -280,44 +198,23 @@ export async function registerUploadedMaterial(sessionId: string, formData: Form
     storage_bucket: TEACHING_MATERIALS_BUCKET,
     storage_path: storagePath,
   })
-
   if (error) {
     await supabase.storage.from(TEACHING_MATERIALS_BUCKET).remove([storagePath])
     throw new Error(error.message)
   }
-
   revalidatePath('/admin')
+  revalidatePath(`/admin/sessions/${sessionId}`)
   revalidatePath('/', 'layout')
-  redirect(`/admin/sessions/${sessionId}?saved=material`)
+  return { ok: true }
 }
 
 export async function updateMaterial(sessionId: string, materialId: string, formData: FormData) {
   const supabase = await requireAdmin()
-  const { data: existing, error: readError } = await supabase
-    .from('materials')
-    .select('storage_path')
-    .eq('id', materialId)
-    .eq('session_id', sessionId)
-    .single()
-
+  const { data: existing, error: readError } = await supabase.from('materials').select('storage_path').eq('id', materialId).eq('session_id', sessionId).single()
   if (readError) throw new Error(readError.message)
-
   const url = optionalText(formData.get('material_url'))
   if (!url && !existing?.storage_path) throw new Error('Material URL is required for linked resources.')
-
-  const { error } = await supabase
-    .from('materials')
-    .update({
-      material_type: validMaterialType(formData.get('material_type')),
-      title: requiredText(formData.get('material_title'), 'Material title'),
-      url,
-      mime_type: optionalText(formData.get('material_mime_type')),
-      status: validStatus(formData.get('material_status')),
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', materialId)
-    .eq('session_id', sessionId)
-
+  const { error } = await supabase.from('materials').update({ material_type: validMaterialType(formData.get('material_type')), title: requiredText(formData.get('material_title'), 'Material title'), url, mime_type: optionalText(formData.get('material_mime_type')), status: validStatus(formData.get('material_status')), updated_at: new Date().toISOString() }).eq('id', materialId).eq('session_id', sessionId)
   if (error) throw new Error(error.message)
   revalidatePath('/admin')
   revalidatePath('/', 'layout')
@@ -326,20 +223,12 @@ export async function updateMaterial(sessionId: string, materialId: string, form
 
 export async function deleteMaterial(sessionId: string, materialId: string) {
   const supabase = await requireAdmin()
-  const { data: existing, error: readError } = await supabase
-    .from('materials')
-    .select('storage_bucket, storage_path')
-    .eq('id', materialId)
-    .eq('session_id', sessionId)
-    .single()
-
+  const { data: existing, error: readError } = await supabase.from('materials').select('storage_bucket, storage_path').eq('id', materialId).eq('session_id', sessionId).single()
   if (readError) throw new Error(readError.message)
-
   if (existing?.storage_bucket && existing.storage_path) {
     const { error: storageError } = await supabase.storage.from(existing.storage_bucket).remove([existing.storage_path])
     if (storageError) throw new Error(`Could not remove uploaded file: ${storageError.message}`)
   }
-
   const { error } = await supabase.from('materials').delete().eq('id', materialId).eq('session_id', sessionId)
   if (error) throw new Error(error.message)
   revalidatePath('/admin')
@@ -352,85 +241,25 @@ export async function saveTranscript(sessionId: string, formData: FormData) {
   const status = validStatus(formData.get('transcript_status'))
   const title = optionalText(formData.get('transcript_title')) ?? 'Reference Transcript'
   const rawText = requiredText(formData.get('transcript_content'), 'Transcript')
-
-  const { data: existing, error: existingError } = await supabase
-    .from('transcripts')
-    .select('id')
-    .eq('session_id', sessionId)
-    .eq('language_code', 'en')
-    .maybeSingle()
-
+  const { data: existing, error: existingError } = await supabase.from('transcripts').select('id').eq('session_id', sessionId).eq('language_code', 'en').maybeSingle()
   if (existingError) throw new Error(existingError.message)
-
   const transcriptId = existing?.id ?? randomUUID()
   const { sections, paragraphs, assets } = parseTranscript(rawText, transcriptId)
   if (paragraphs.length === 0) throw new Error('No transcript paragraphs were found.')
-
   const expectedAssetPrefix = `transcripts/${sessionId}/`
-  for (const asset of assets) {
-    if (!asset.storage_path.startsWith(expectedAssetPrefix) || asset.storage_path.includes('..')) {
-      throw new Error('The transcript contains an invalid image reference. Re-import the DOCX before saving.')
-    }
-  }
+  for (const asset of assets) if (!asset.storage_path.startsWith(expectedAssetPrefix) || asset.storage_path.includes('..')) throw new Error('The transcript contains an invalid image reference. Re-import the DOCX before saving.')
 
   const { data: existingParagraphs, error: paragraphsError } = existing?.id
-    ? await supabase
-      .from('transcript_paragraphs')
-      .select('id, speaker, body, start_seconds, sort_order, is_active')
-      .eq('transcript_id', transcriptId)
-      .order('sort_order')
+    ? await supabase.from('transcript_paragraphs').select('id, speaker, body, start_seconds, sort_order, is_active').eq('transcript_id', transcriptId).order('sort_order')
     : { data: [], error: null }
-
   if (paragraphsError) throw new Error(paragraphsError.message)
-
   const reconciliation = reconcileParagraphIds(existingParagraphs ?? [], paragraphs)
-  const paragraphPayload = paragraphs.map((paragraph, index) => ({
-    id: reconciliation.matchedIds[index] ?? randomUUID(),
-    section_id: paragraph.section_id,
-    speaker: paragraph.speaker,
-    body: paragraph.body,
-    start_seconds: paragraph.start_seconds,
-    sort_order: paragraph.sort_order,
-  }))
+  const paragraphPayload = paragraphs.map((paragraph, index) => ({ id: reconciliation.matchedIds[index] ?? randomUUID(), section_id: paragraph.section_id, speaker: paragraph.speaker, body: paragraph.body, start_seconds: paragraph.start_seconds, sort_order: paragraph.sort_order }))
   const paragraphIdBySortOrder = new Map(paragraphPayload.map((paragraph) => [paragraph.sort_order, paragraph.id]))
-
-  const sectionPayload = sections.map((section) => ({
-    id: section.id,
-    slug: section.slug,
-    title: section.title,
-    start_seconds: section.start_seconds,
-    sort_order: section.sort_order,
-  }))
-
-  const assetPayload = assets.map((asset) => ({
-    id: null,
-    after_paragraph_sort_order: asset.after_paragraph_sort_order,
-    after_paragraph_id: asset.after_paragraph_sort_order >= 0
-      ? paragraphIdBySortOrder.get(asset.after_paragraph_sort_order) ?? null
-      : null,
-    storage_bucket: asset.storage_bucket,
-    storage_path: asset.storage_path,
-    mime_type: asset.mime_type,
-    alt_text: asset.alt_text,
-    caption: asset.caption,
-    sort_order: asset.sort_order,
-  }))
-
-  const { error: saveError } = await supabase.rpc('save_transcript_content', {
-    p_transcript_id: transcriptId,
-    p_session_id: sessionId,
-    p_language_code: 'en',
-    p_title: title,
-    p_disclaimer: TRANSCRIPT_DISCLAIMER,
-    p_source_file_name: optionalText(formData.get('transcript_source_file_name')),
-    p_status: status,
-    p_sections: sectionPayload,
-    p_paragraphs: paragraphPayload,
-    p_assets: assetPayload,
-  })
-
+  const sectionPayload = sections.map((section) => ({ id: section.id, slug: section.slug, title: section.title, start_seconds: section.start_seconds, sort_order: section.sort_order }))
+  const assetPayload = assets.map((asset) => ({ id: null, after_paragraph_sort_order: asset.after_paragraph_sort_order, after_paragraph_id: asset.after_paragraph_sort_order >= 0 ? paragraphIdBySortOrder.get(asset.after_paragraph_sort_order) ?? null : null, storage_bucket: asset.storage_bucket, storage_path: asset.storage_path, mime_type: asset.mime_type, alt_text: asset.alt_text, caption: asset.caption, sort_order: asset.sort_order }))
+  const { error: saveError } = await supabase.rpc('save_transcript_content', { p_transcript_id: transcriptId, p_session_id: sessionId, p_language_code: 'en', p_title: title, p_disclaimer: TRANSCRIPT_DISCLAIMER, p_source_file_name: optionalText(formData.get('transcript_source_file_name')), p_status: status, p_sections: sectionPayload, p_paragraphs: paragraphPayload, p_assets: assetPayload })
   if (saveError) throw new Error(saveError.message)
-
   revalidatePath('/admin')
   revalidatePath('/', 'layout')
   redirect(`/admin/sessions/${sessionId}?saved=transcript&preserved=${reconciliation.preservedCount}&new=${reconciliation.newCount}`)
