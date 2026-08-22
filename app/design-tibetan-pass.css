@@ -79,7 +79,7 @@ nav[aria-label="Class contents"] .button:hover {
 .admin-tibetan-review-toolbar .meta { margin-right: auto; }
 .admin-tibetan-review-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(205px, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 .admin-tibetan-term-card {
@@ -146,13 +146,16 @@ nav[aria-label="Class contents"] .button:hover {
 }
 .admin-tibetan-extractor label { display: grid; gap: 6px; }
 
+@media (max-width: 1180px) {
+  .admin-tibetan-review-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
 @media (max-width: 960px) {
   .admin-tibetan-review-toolbar { top: 66px; }
+  .admin-tibetan-review-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 680px) {
-  .admin-tibetan-review-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-tibetan-extractor form { grid-template-columns: 1fr; }
 }
-@media (max-width: 440px) {
+@media (max-width: 520px) {
   .admin-tibetan-review-grid { grid-template-columns: 1fr; }
 }
