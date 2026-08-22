@@ -120,7 +120,6 @@ export async function bulkImportTibetanTerms(formData: FormData) {
       .from('tibetan_terms')
       .insert({
         slug,
-        tibetan_script: String(record.tibetan_script ?? '').trim() || null,
         transliteration,
         english_meaning: englishMeaning,
         explanation: String(record.explanation ?? '').trim() || null,
