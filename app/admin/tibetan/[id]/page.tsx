@@ -17,7 +17,7 @@ export default async function TibetanTermAdminPage({ params }: { params: Promise
 
   const { data: term } = await supabase
     .from('tibetan_terms')
-    .select('id, slug, tibetan_script, transliteration, english_meaning, status')
+    .select('id, slug, transliteration, english_meaning, status')
     .eq('id', id)
     .single()
 
@@ -44,7 +44,6 @@ export default async function TibetanTermAdminPage({ params }: { params: Promise
       </div>
 
       <div className="eyebrow">Admin · Tibetan sources</div>
-      {term.tibetan_script ? <div style={{ fontSize: 38, marginTop: 10 }}>{term.tibetan_script}</div> : null}
       <h1 style={{ fontSize: 'clamp(38px, 6vw, 64px)' }}>{term.transliteration}</h1>
       <p className="lead">{term.english_meaning}</p>
 
