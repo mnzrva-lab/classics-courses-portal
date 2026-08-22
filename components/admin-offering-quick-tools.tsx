@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
 import ArtworkUploadForm from '@/app/admin/offerings/[id]/artwork-upload-form'
 import PlaylistCsvImport from '@/app/admin/offerings/[id]/playlist-csv-import'
@@ -8,11 +9,29 @@ import PlaylistCsvImport from '@/app/admin/offerings/[id]/playlist-csv-import'
 export default function AdminOfferingQuickTools() {
   const pathname = usePathname()
   const match = pathname.match(/^\/admin\/offerings\/([^/]+)$/)
+  const offeringId = match?.[1] ?? null
+  const [mount, setMount] = useState<HTMLElement | null>(null)
 
   useEffect(() => {
-    if (!match) return
+    if (!offeringId) {
+      setMount(null)
+      return
+    }
+
+    const main = document.querySelector<HTMLElement>('main.container.page')
+    if (!main) return
+
+    const sections = Array.from(main.querySelectorAll<HTMLElement>('section.section.card'))
+    const sessionsSection = sections.find((section) => section.querySelector<HTMLElement>(':scope > .eyebrow')?.textContent?.trim() === 'Sessions')
+    const target = sessionsSection ?? sections[0] ?? null
+    const compactMount = document.createElement('div')
+    compactMount.className = 'admin-offering-quick-tools-mount'
+    if (target) target.insertAdjacentElement('afterend', compactMount)
+    else main.appendChild(compactMount)
+    setMount(compactMount)
+
     const cleanups: Array<() => void> = []
-    const labels = Array.from(document.querySelectorAll<HTMLLabelElement>('main label.button'))
+    const labels = Array.from(main.querySelectorAll<HTMLLabelElement>('label.button'))
 
     for (const label of labels) {
       const text = label.textContent ?? ''
@@ -39,14 +58,17 @@ export default function AdminOfferingQuickTools() {
       })
     }
 
-    return () => cleanups.forEach((cleanup) => cleanup())
-  }, [pathname, match])
+    return () => {
+      cleanups.forEach((cleanup) => cleanup())
+      compactMount.remove()
+      setMount(null)
+    }
+  }, [pathname, offeringId])
 
-  if (!match) return null
-  const offeringId = match[1]
+  if (!offeringId || !mount) return null
 
-  return (
-    <aside className="admin-offering-quick-tools admin-offering-tools-grid">
+  return createPortal(
+    <aside className="admin-offering-quick-tools admin-offering-tools-grid" aria-label="Course Offering tools">
       <div className="admin-offering-tool">
         <div>
           <div className="eyebrow">Course artwork</div>
@@ -64,6 +86,7 @@ export default function AdminOfferingQuickTools() {
         </div>
         <PlaylistCsvImport offeringId={offeringId} />
       </div>
-    </aside>
+    </aside>,
+    mount,
   )
 }
