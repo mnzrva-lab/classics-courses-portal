@@ -51,7 +51,7 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
 
   const { data: offering } = await supabase
     .from('course_offerings')
-    .select('id, slug, label, starts_on, ends_on, status')
+    .select('id, slug, label, starts_on, ends_on, status, artwork_url')
     .eq('course_id', course.id)
     .eq('slug', termSlug)
     .eq('status', 'published')
@@ -110,12 +110,15 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
 
   const range = dateRange(offering.starts_on, offering.ends_on)
   const label = termLabel(offering.slug)
+  const heroStyle = offering.artwork_url ? {
+    backgroundImage: `linear-gradient(90deg, rgba(14,14,15,.86) 0%, rgba(14,14,15,.68) 48%, rgba(14,14,15,.24) 100%), linear-gradient(180deg, rgba(14,14,15,.08), rgba(14,14,15,.42)), url(${offering.artwork_url})`,
+  } : undefined
 
   return (
     <main className="container page living-lam-rim-term-page">
       <Link className="living-term-back" href="/living-lam-rim">← Living Lam Rim</Link>
 
-      <header className="living-term-course-head">
+      <header className={offering.artwork_url ? 'living-term-course-head has-artwork' : 'living-term-course-head'} style={heroStyle}>
         <div className="eyebrow">{label}</div>
         <h1>{offering.label}</h1>
         <div className="living-term-course-meta">
