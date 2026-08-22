@@ -175,6 +175,10 @@ export default async function CourseOfferingPage({
   const showLiveSchedule = hasScheduledSessions && (!offering.ends_on || offering.ends_on >= today)
   const hasCourseResources = resolvedOfferingMaterials.some((material: any) => Boolean(material.resolved_url)) || Boolean(playlistSession?.recording_url)
 
+  const heroStyle = offering.artwork_url ? {
+    backgroundImage: `linear-gradient(90deg, rgba(14,14,15,.88) 0%, rgba(14,14,15,.72) 42%, rgba(14,14,15,.30) 72%, rgba(14,14,15,.12) 100%), linear-gradient(180deg, rgba(14,14,15,.10), rgba(14,14,15,.48)), url(${offering.artwork_url})`,
+  } : undefined
+
   return (
     <main className="container page">
       <div className="offering-breadcrumbs">
@@ -183,7 +187,7 @@ export default async function CourseOfferingPage({
         <span>{offering.label}</span>
       </div>
 
-      <section className={offering.artwork_url ? 'offering-hero' : 'offering-hero no-artwork'}>
+      <section className={offering.artwork_url ? 'offering-hero offering-hero-artwork' : 'offering-hero no-artwork'} style={heroStyle}>
         <div className="offering-hero-copy">
           <div className="eyebrow">{course.canonical_number ? `Classics Course ${course.canonical_number}` : course.title} · {offering.label}</div>
           <h1 className="offering-title">{course.title}</h1>
@@ -195,11 +199,6 @@ export default async function CourseOfferingPage({
             {(offering.language_codes ?? []).length ? <span className="pill">{(offering.language_codes ?? []).map((code: string) => code.toUpperCase()).join(' · ')}</span> : null}
           </div>
         </div>
-        {offering.artwork_url ? (
-          <div className="offering-artwork" style={{ backgroundImage: `linear-gradient(rgba(31,27,24,.12), rgba(31,27,24,.18)), url(${offering.artwork_url})` }}>
-            <img src={offering.artwork_url} alt="" />
-          </div>
-        ) : null}
       </section>
 
       {showLiveSchedule ? (
@@ -218,7 +217,9 @@ export default async function CourseOfferingPage({
         <div className="actions">
           {userId && (canSaveBookmarks || courseBookmarked) ? (
             <form action={toggleCourseBookmark.bind(null, course.id, publicPath)}>
-              <button className="button" type="submit">{courseBookmarked ? '★ Bookmarked' : '☆ Bookmark course'}</button>
+              <button className={courseBookmarked ? 'button is-active' : 'button'} type="submit" aria-pressed={courseBookmarked} title={courseBookmarked ? 'Remove bookmark' : 'Bookmark this course'}>
+                {courseBookmarked ? '★ Bookmarked' : '☆ Bookmark course'}
+              </button>
             </form>
           ) : !userId ? <Link className="button" href="/login">Sign in to save progress</Link> : null}
         </div>
