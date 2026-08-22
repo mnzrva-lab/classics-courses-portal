@@ -1,9 +1,13 @@
 'use server'
 
+import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { isValidTimeZone, zonedLocalToIso } from '@/lib/timezone'
+
+const ARTWORK_BUCKET = 'course-artwork'
+const ARTWORK_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 async function requireAdmin() {
   const supabase = await createClient()
@@ -42,9 +46,27 @@ function slugify(value: string) {
     .replace(/^-+|-+$/g, '') || 'session'
 }
 
+function safeFileName(value: string) {
+  const dot = value.lastIndexOf('.')
+  const stem = (dot > 0 ? value.slice(0, dot) : value)
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Za-z0-9_-]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 80) || 'artwork'
+  const extension = dot > 0 ? value.slice(dot + 1).replace(/[^A-Za-z0-9]+/g, '').slice(0, 8) : ''
+  return extension ? `${stem}.${extension}` : stem
+}
+
 function parseLanguages(value: FormDataEntryValue | null) {
   const text = typeof value === 'string' ? value : ''
   return Array.from(new Set(text.split(',').map((item) => item.trim().toLowerCase()).filter(Boolean)))
+}
+
+function revalidateOffering(offeringId: string) {
+  revalidatePath('/admin')
+  revalidatePath(`/admin/offerings/${offeringId}`)
+  revalidatePath('/', 'layout')
 }
 
 export async function updateOffering(offeringId: string, formData: FormData) {
@@ -62,7 +84,6 @@ export async function updateOffering(offeringId: string, formData: FormData) {
       language_codes: parseLanguages(formData.get('language_codes')),
       artwork_url: optionalText(formData.get('artwork_url')),
       description: optionalText(formData.get('description')),
-      telegram_url: optionalText(formData.get('telegram_url')),
       starts_on: optionalText(formData.get('starts_on')),
       ends_on: optionalText(formData.get('ends_on')),
       status: validStatus(formData.get('status')),
@@ -71,9 +92,35 @@ export async function updateOffering(offeringId: string, formData: FormData) {
     .eq('id', offeringId)
 
   if (error) throw new Error(error.message)
-  revalidatePath('/admin')
-  revalidatePath('/', 'layout')
+  revalidateOffering(offeringId)
   redirect(`/admin/offerings/${offeringId}?saved=offering`)
+}
+
+export async function createArtworkUploadUrl(offeringId: string, fileName: string, contentType: string) {
+  const supabase = await requireAdmin()
+  if (!ARTWORK_TYPES.has(contentType)) throw new Error('Artwork must be a JPG, PNG, or WebP image.')
+
+  const storagePath = `offerings/${offeringId}/${randomUUID()}-${safeFileName(fileName)}`
+  const { data, error } = await supabase.storage.from(ARTWORK_BUCKET).createSignedUploadUrl(storagePath)
+  if (error || !data?.token) throw new Error(error?.message ?? 'Could not prepare artwork upload.')
+  return { storagePath, token: data.token }
+}
+
+export async function registerArtworkUpload(offeringId: string, storagePath: string) {
+  const supabase = await requireAdmin()
+  const expectedPrefix = `offerings/${offeringId}/`
+  if (!storagePath.startsWith(expectedPrefix) || storagePath.includes('..')) throw new Error('Invalid artwork path.')
+
+  const { data } = supabase.storage.from(ARTWORK_BUCKET).getPublicUrl(storagePath)
+  const artworkUrl = data.publicUrl
+  const { error } = await supabase
+    .from('course_offerings')
+    .update({ artwork_url: artworkUrl, updated_at: new Date().toISOString() })
+    .eq('id', offeringId)
+  if (error) throw new Error(error.message)
+
+  revalidateOffering(offeringId)
+  return { artworkUrl }
 }
 
 export async function createSession(offeringId: string, courseId: string, formData: FormData) {
