@@ -26,6 +26,7 @@ import './admin-offering-compact.css'
 import './admin-material-compact.css'
 import './admin-program-artwork.css'
 import './program-archive-pass.css'
+import './program-artwork.css'
 import './student-compact-pass.css'
 
 export const metadata: Metadata = {
