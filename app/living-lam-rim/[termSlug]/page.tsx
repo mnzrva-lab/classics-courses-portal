@@ -1,12 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import SessionTime from '@/components/session-time'
+import OfferingSessionList from '@/components/offering-session-list'
 
 export const dynamic = 'force-dynamic'
-
-type OfferingRelation = { slug: string; label: string; status: string }
-type TeacherLink = { teachers: { full_name: string } | null }
 
 function dateOnly(value: string | null) {
   if (!value) return null
@@ -14,27 +11,35 @@ function dateOnly(value: string | null) {
   return Number.isNaN(date.getTime()) ? null : date
 }
 
-function dateLabel(value: string | null) {
-  const date = dateOnly(value)
-  if (!date) return null
-  return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(date)
-}
-
 function dateRange(startsOn: string | null, endsOn: string | null) {
   const start = dateOnly(startsOn)
   const end = dateOnly(endsOn)
   if (!start && !end) return null
-  if (!start) return dateLabel(endsOn)
-  if (!end) return dateLabel(startsOn)
-  const startMonthDay = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(start)
-  const endMonthDay = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(end)
-  if (start.getUTCFullYear() === end.getUTCFullYear()) return `${startMonthDay} – ${endMonthDay}, ${end.getUTCFullYear()}`
-  return `${startMonthDay}, ${start.getUTCFullYear()} – ${endMonthDay}, ${end.getUTCFullYear()}`
+  const full = (date: Date) => new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(date)
+  if (!start) return full(end!)
+  if (!end || startsOn === endsOn) return full(start)
+  const startShort = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(start)
+  const endFull = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(end)
+  return `${startShort} – ${endFull}`
+}
+
+function termLabel(slug: string) {
+  const match = slug.match(/term-(\d+)/i)
+  return match ? `Term ${match[1]}` : 'Living Lam Rim term'
+}
+
+function materialLabel(type: string) {
+  const labels: Record<string, string> = {
+    reading: 'Reading', slides: 'Slides', audio: 'Audio', video: 'Video', document: 'Document', link: 'Link', other: 'Resource',
+  }
+  return labels[type] ?? 'Resource'
 }
 
 export default async function LivingLamRimTermPage({ params }: { params: Promise<{ termSlug: string }> }) {
   const { termSlug } = await params
   const supabase = await createClient()
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const userId = claimsData?.claims?.sub as string | undefined
 
   const { data: course } = await supabase
     .from('courses')
@@ -44,68 +49,95 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
     .maybeSingle()
   if (!course) notFound()
 
-  const { data: group } = await supabase
-    .from('content_groups')
-    .select('id, slug, label, title, kind, starts_on, ends_on, course_offerings!inner(status)')
+  const { data: offering } = await supabase
+    .from('course_offerings')
+    .select('id, slug, label, starts_on, ends_on, status')
     .eq('course_id', course.id)
     .eq('slug', termSlug)
     .eq('status', 'published')
-    .eq('course_offerings.status', 'published')
     .maybeSingle()
-  if (!group) notFound()
+  if (!offering) notFound()
 
   const { data: sessions } = await supabase
     .from('sessions')
     .select(`
-      id, slug, code, title, session_type, session_date, starts_at, source_timezone,
-      course_offerings!inner(slug, label, status),
-      session_teachers(teachers(full_name))
+      id, slug, code, title, session_type, session_date, recording_url, audio_url, sort_order,
+      session_teachers(teachers(full_name)),
+      transcripts(status),
+      study_notes(status),
+      materials(material_type, status)
     `)
-    .eq('group_id', group.id)
+    .eq('offering_id', offering.id)
     .eq('status', 'published')
-    .eq('course_offerings.status', 'published')
     .order('sort_order')
 
-  const range = dateRange(group.starts_on, group.ends_on)
+  const sessionIds = (sessions ?? []).map((session: any) => session.id)
+  const { data: progressRows } = userId && sessionIds.length
+    ? await supabase.from('user_session_progress').select('session_id, started_at, completed_at').eq('user_id', userId).in('session_id', sessionIds)
+    : { data: [] as any[] }
+  const progressMap = new Map((progressRows ?? []).map((row: any) => [row.session_id, row]))
+  const completedCount = (sessions ?? []).filter((session: any) => progressMap.get(session.id)?.completed_at).length
+  const progressPercent = (sessions ?? []).length ? Math.round((completedCount / (sessions ?? []).length) * 100) : 0
+
+  let classIndex = 0
+  const sessionCards = (sessions ?? []).map((session: any) => {
+    if (session.session_type === 'class') classIndex += 1
+    const transcriptPublished = (session.transcripts ?? []).some((item: any) => item.status === 'published')
+    const notesPublished = (session.study_notes ?? []).some((item: any) => item.status === 'published')
+    const materialBadges = Array.from(new Set((session.materials ?? [])
+      .filter((item: any) => item.status === 'published')
+      .map((item: any) => materialLabel(item.material_type)))) as string[]
+    const progress = progressMap.get(session.id) as any
+    return {
+      id: session.id,
+      href: `/courses/${course.slug}/${offering.slug}/${session.slug}`,
+      code: session.code || (session.session_type === 'class' ? `C${classIndex}` : '•'),
+      title: session.title,
+      sessionType: session.session_type,
+      sessionDate: session.session_date,
+      teacherNames: (session.session_teachers ?? []).map((item: any) => item.teachers?.full_name).filter(Boolean),
+      completed: Boolean(progress?.completed_at),
+      inProgress: Boolean(progress?.started_at && !progress?.completed_at),
+      badges: [
+        session.recording_url ? 'Recording' : null,
+        !session.recording_url && session.audio_url ? 'Audio' : null,
+        notesPublished ? 'Study Notes' : null,
+        transcriptPublished ? 'Transcript' : null,
+        ...materialBadges,
+      ].filter(Boolean) as string[],
+    }
+  })
+
+  const range = dateRange(offering.starts_on, offering.ends_on)
+  const label = termLabel(offering.slug)
 
   return (
     <main className="container page living-lam-rim-term-page">
-      <div className="actions" style={{ marginTop: 0, marginBottom: 22 }}>
-        <Link className="button" href="/living-lam-rim">← Living Lam Rim</Link>
-      </div>
+      <Link className="living-term-back" href="/living-lam-rim">← Living Lam Rim</Link>
 
-      <div className="eyebrow">{group.label}</div>
-      <h1 style={{ fontSize: 'clamp(38px, 6vw, 64px)' }}>{group.title || group.label}</h1>
-      {range ? <p className="lead" style={{ fontSize: 18 }}>{range}</p> : null}
+      <header className="living-term-course-head">
+        <div className="eyebrow">{label}</div>
+        <h1>{offering.label}</h1>
+        <div className="living-term-course-meta">
+          {range ? <span>{range}</span> : null}
+          <span>{(sessions ?? []).length} sessions</span>
+        </div>
+      </header>
 
-      <section className="section card living-term-classes">
-        <div className="eyebrow">Classes</div>
-        <h2 style={{ fontSize: 32 }}>Study this term</h2>
-        {(sessions ?? []).length ? (
-          <div className="list">
-            {(sessions ?? []).map((session: any) => {
-              const offering = session.course_offerings as OfferingRelation
-              const teachers = ((session.session_teachers ?? []) as TeacherLink[])
-                .map((item) => item.teachers?.full_name)
-                .filter(Boolean)
-              const href = `/courses/${course.slug}/${offering.slug}/${session.slug}`
+      {userId ? (
+        <section className="living-term-progress" aria-label="Term study progress">
+          <div><span className="eyebrow">Your study</span><strong>{completedCount} of {(sessions ?? []).length} sessions completed</strong></div>
+          <div className="offering-progress-line" aria-label={`${progressPercent}% complete`}><span style={{ width: `${progressPercent}%` }} /></div>
+          <strong>{progressPercent}%</strong>
+        </section>
+      ) : null}
 
-              return (
-                <div className="row living-term-class-row" key={session.id}>
-                  <div className="session-code">{session.code || '•'}</div>
-                  <div>
-                    <Link href={href}><strong>{session.title}</strong></Link>
-                    <div className="meta">
-                      {teachers.length ? `${teachers.join(', ')} · ` : ''}
-                      {session.starts_at ? <SessionTime startsAt={session.starts_at} sourceTimezone={session.source_timezone} /> : dateLabel(session.session_date) ?? 'Date not added'}
-                    </div>
-                  </div>
-                  <Link className="button" href={href}>Open class</Link>
-                </div>
-              )
-            })}
-          </div>
-        ) : <p className="meta">No published classes are available in this term yet.</p>}
+      <section className="section living-term-study-section">
+        <div className="living-term-study-head">
+          <div className="eyebrow">Course content</div>
+          <h2>Study this term</h2>
+        </div>
+        {sessionCards.length ? <OfferingSessionList sessions={sessionCards} /> : <p className="meta">No published classes are available in this term yet.</p>}
       </section>
     </main>
   )
