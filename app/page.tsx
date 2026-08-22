@@ -34,8 +34,11 @@ function offeringRange(startsOn: string | null, endsOn: string | null) {
 
 export default async function HomePage() {
   const supabase = await createClient()
-  const today = new Date().toISOString().slice(0, 10)
+  const now = new Date()
+  const today = now.toISOString().slice(0, 10)
   const recentHorizon = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+  const nowNextWindowStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString().slice(0, 10)
+  const nowNextWindowEndExclusive = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 6, 1)).toISOString().slice(0, 10)
 
   const [sessionsResult, offeringsResult, claimsResult, perfectionResult] = await Promise.all([
     supabase.from('sessions').select(`id, slug, code, title, session_type, starts_at, ends_at, zoom_url, offering_id, courses!inner(slug, title, canonical_number, status), course_offerings!inner(slug, label, status), session_teachers(teachers(full_name))`).eq('status', 'published').eq('courses.status', 'published').eq('course_offerings.status', 'published').not('starts_at', 'is', null).gte('starts_at', recentHorizon).order('starts_at', { ascending: true }).limit(80),
@@ -75,7 +78,12 @@ export default async function HomePage() {
   const perfectionOffering = (perfection?.course_offerings ?? []).filter((offering: any) => offering.status === 'published').sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))[0]
   const perfectionHref = perfection && perfectionOffering ? `/courses/${perfection.slug}/${perfectionOffering.slug}` : '/perfection-of-wisdom'
 
-  const milestones = offerings.filter((offering) => offering.id === currentOffering?.id || offering.starts_on >= today || (offering.ends_on && offering.ends_on >= today)).sort((a, b) => String(a.starts_on).localeCompare(String(b.starts_on))).slice(0, 4)
+  const milestones = offerings.filter((offering) => {
+    const start = offering.starts_on as string | null
+    if (!start) return false
+    const end = (offering.ends_on ?? start) as string
+    return start < nowNextWindowEndExclusive && end >= nowNextWindowStart
+  }).sort((a, b) => String(a.starts_on).localeCompare(String(b.starts_on)))
   const activeCourse = activeOffering?.courses as any
   const activeHref = activeOffering && activeCourse ? `/courses/${activeCourse.slug}/${activeOffering.slug}` : null
   const activeCourseLabel = activeCourse?.canonical_number ? `Classics Course ${activeCourse.canonical_number}` : activeCourse?.title
