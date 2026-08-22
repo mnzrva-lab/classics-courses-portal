@@ -186,6 +186,7 @@ export default async function SessionPage({
   const isCompleted = Boolean(progress?.completed_at)
   const topics = topicHeadings(studyNotes?.content_markdown)
   const downloadBase = `${publicReturnPath}/download`
+  const hasRecording = Boolean(session.recording_url || session.audio_url)
   const transcriptChapterOptions = transcriptSections.map((section) => {
     const firstParagraph = firstParagraphBySection.get(section.id)
     return { id: firstParagraph ? `paragraph-${firstParagraph.id}` : 'transcript', label: section.title }
@@ -201,13 +202,12 @@ export default async function SessionPage({
       {teachers.length ? <p className="lead">{teachers.join(', ')}</p> : null}
       {session.starts_at ? <div className="meta"><SessionTime startsAt={session.starts_at} sourceTimezone={session.source_timezone} /></div> : null}
 
-      <nav className="card" aria-label="Class contents" style={{ marginTop: 28 }}>
+      <nav aria-label="Class contents" style={{ marginTop: 28 }}>
         <div className="eyebrow">In this class</div>
         <div className="actions" style={{ marginTop: 10 }}>
-          <a className="button" href="#recording">Recording</a>
-          <a className="button" href="#study-notes">Study Notes</a>
-          <a className="button" href="#transcript">Reference Transcript</a>
-          {userId ? <Link className="button" href="/my-notes">My Notes</Link> : null}
+          {hasRecording ? <a className="button" href="#recording">Recording</a> : <span className="class-content-coming-soon">Recording coming soon</span>}
+          {studyNotes ? <a className="button" href="#study-notes">Study Notes</a> : null}
+          {transcript ? <a className="button" href="#transcript">Reference Transcript</a> : null}
         </div>
       </nav>
 
@@ -215,7 +215,7 @@ export default async function SessionPage({
         <div className="eyebrow">Recording</div><h2>Watch or listen</h2>
         <div className="recording-layout">
           <div className="recording-main">
-            <RecordingPlayer recordingUrl={session.recording_url} title={session.title} />
+            {session.recording_url ? <RecordingPlayer recordingUrl={session.recording_url} title={session.title} /> : session.audio_url ? null : <p className="meta">Recording coming soon.</p>}
             {session.audio_url ? <audio controls src={session.audio_url} /> : null}
           </div>
 
@@ -283,51 +283,47 @@ export default async function SessionPage({
         </div>
       </section>
 
-      <section id="study-notes" className="section" style={{ scrollMarginTop: 96 }}>
+      {studyNotes ? <section id="study-notes" className="section" style={{ scrollMarginTop: 96 }}>
         <div className="study-notes-head">
-          <div><div className="eyebrow">Study aid{adminContentPreview && studyNotes?.status !== 'published' ? ` · ${studyNotes?.status ?? 'unpublished'}` : ''}</div><h2>Study Notes</h2></div>
-          {studyNotes ? <div className="text-downloads"><span>Download</span><a href={`${downloadBase}?kind=study-notes&format=txt`}>TXT</a><span>·</span><a href={`${downloadBase}?kind=study-notes&format=docx`}>DOCX</a></div> : null}
+          <div><div className="eyebrow">Study aid{adminContentPreview && studyNotes.status !== 'published' ? ` · ${studyNotes.status}` : ''}</div><h2>Study Notes</h2></div>
+          <div className="text-downloads"><span>Download</span><a href={`${downloadBase}?kind=study-notes&format=txt`}>TXT</a><span>·</span><a href={`${downloadBase}?kind=study-notes&format=docx`}>DOCX</a></div>
         </div>
-        {studyNotes ? <>
-          <div className="info-callout"><strong>About these notes</strong><br />{studyNotes.disclaimer || 'These study notes were created from the class with the assistance of AI and are provided as a study aid. They may simplify or omit parts of the teaching. Please refer to the recording and transcript for the complete class.'}</div>
-          <div className="study-notes-summary card">
-            <div className="eyebrow">Covered in this class</div><h3>Top ideas</h3>
-            {studyNotes.summary ? <p>{studyNotes.summary}</p> : <p className="meta">A short summary has not been added yet.</p>}
-            {topics.length ? <div className="study-topic-list">{topics.map((topic) => <span className="pill" key={topic}>{topic}</span>)}</div> : null}
-            <details className="full-study-notes"><summary>▶ View full study notes</summary><div className="full-study-notes-body"><MarkdownContent content={studyNotes.content_markdown} /></div></details>
-          </div>
-        </> : <div className="card"><p className="meta">Study Notes have not been published for this session yet.</p></div>}
-      </section>
+        <div className="info-callout"><strong>About these notes</strong><br />{studyNotes.disclaimer || 'These study notes were created from the class with the assistance of AI and are provided as a study aid. They may simplify or omit parts of the teaching. Please refer to the recording and transcript for the complete class.'}</div>
+        <div className="study-notes-summary card">
+          <div className="eyebrow">Covered in this class</div><h3>Top ideas</h3>
+          {studyNotes.summary ? <p>{studyNotes.summary}</p> : <p className="meta">A short summary has not been added yet.</p>}
+          {topics.length ? <div className="study-topic-list">{topics.map((topic) => <span className="pill" key={topic}>{topic}</span>)}</div> : null}
+          <details className="full-study-notes"><summary>▶ View full study notes</summary><div className="full-study-notes-body"><MarkdownContent content={studyNotes.content_markdown} /></div></details>
+        </div>
+      </section> : null}
 
-      <section id="transcript" className="section transcript-section-v12" style={{ scrollMarginTop: 96 }}>
-        {transcript ? <>
-          <div className="transcript-title-row">
-            <div><div className="eyebrow">Source reference{adminContentPreview && transcript.status !== 'published' ? ` · ${transcript.status}` : ''}</div><h2>Reference Transcript</h2></div>
-            <div className="text-downloads"><span>Download</span><a href={`${downloadBase}?kind=transcript&format=txt`}>TXT</a><span>·</span><a href={`${downloadBase}?kind=transcript&format=docx`}>DOCX</a></div>
-          </div>
-          <div className="info-callout"><strong>About this transcript</strong><br />{transcript.disclaimer}</div>
-          <TranscriptControls chapters={transcriptChapterOptions} />
-          {transcriptParagraphs.length > 0 ? <article className="transcript-v12-card">
-            {renderLeadingTranscriptAssets()}
-            {transcriptParagraphs.map((paragraph) => {
-              const section = paragraph.section_id ? sectionMap.get(paragraph.section_id) : null
-              const showHeading = paragraph.section_id !== previousSectionId && Boolean(section)
-              previousSectionId = paragraph.section_id
-              const timestamp = formatTimestamp(paragraph.start_seconds)
-              const bookmarked = paragraphBookmarkIds.has(paragraph.id)
-              const noteCount = passageNoteCounts.get(paragraph.id) ?? 0
-              const reference = [citationCourse, offering.label, session.title, timestamp].filter(Boolean).join(' · ')
-              const passagePath = `${publicReturnPath}#paragraph-${paragraph.id}`
-              return <div key={paragraph.id} id={`paragraph-${paragraph.id}`} data-transcript-paragraph className="transcript-paragraph-v12">
-                {showHeading ? <h3>{section?.title}</h3> : null}
-                <div className="transcript-copy">{timestamp ? <span className="transcript-timestamp">{timestamp}</span> : null}{paragraph.speaker ? <strong>{paragraph.speaker}: </strong> : null}<span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.body}</span></div>
-                <PassageStudyTools paragraphId={paragraph.id} sessionId={session.id} returnPath={returnPath} bookmarked={userId ? bookmarked : false} canSaveBookmarks={Boolean(userId && canSaveBookmarks)} canSaveNotes={Boolean(userId && canSaveNotes)} noteCount={userId ? noteCount : 0} reference={reference} passagePath={passagePath} />
-                {renderTranscriptAssets(paragraph)}
-              </div>
-            })}
-          </article> : transcriptAssets.length > 0 ? <div className="transcript-v12-card">{renderLeadingTranscriptAssets()}</div> : <p className="meta">Transcript metadata is published, but no paragraphs have been imported yet.</p>}
-        </> : <><div className="eyebrow">Reference Transcript</div><p className="meta">Reference transcript has not been uploaded for this session yet.</p></>}
-      </section>
+      {transcript ? <section id="transcript" className="section transcript-section-v12" style={{ scrollMarginTop: 96 }}>
+        <div className="transcript-title-row">
+          <div><div className="eyebrow">Source reference{adminContentPreview && transcript.status !== 'published' ? ` · ${transcript.status}` : ''}</div><h2>Reference Transcript</h2></div>
+          <div className="text-downloads"><span>Download</span><a href={`${downloadBase}?kind=transcript&format=txt`}>TXT</a><span>·</span><a href={`${downloadBase}?kind=transcript&format=docx`}>DOCX</a></div>
+        </div>
+        <div className="info-callout"><strong>About this transcript</strong><br />{transcript.disclaimer}</div>
+        <TranscriptControls chapters={transcriptChapterOptions} />
+        {transcriptParagraphs.length > 0 ? <article className="transcript-v12-card">
+          {renderLeadingTranscriptAssets()}
+          {transcriptParagraphs.map((paragraph) => {
+            const section = paragraph.section_id ? sectionMap.get(paragraph.section_id) : null
+            const showHeading = paragraph.section_id !== previousSectionId && Boolean(section)
+            previousSectionId = paragraph.section_id
+            const timestamp = formatTimestamp(paragraph.start_seconds)
+            const bookmarked = paragraphBookmarkIds.has(paragraph.id)
+            const noteCount = passageNoteCounts.get(paragraph.id) ?? 0
+            const reference = [citationCourse, offering.label, session.title, timestamp].filter(Boolean).join(' · ')
+            const passagePath = `${publicReturnPath}#paragraph-${paragraph.id}`
+            return <div key={paragraph.id} id={`paragraph-${paragraph.id}`} data-transcript-paragraph className="transcript-paragraph-v12">
+              {showHeading ? <h3>{section?.title}</h3> : null}
+              <div className="transcript-copy">{timestamp ? <span className="transcript-timestamp">{timestamp}</span> : null}{paragraph.speaker ? <strong>{paragraph.speaker}: </strong> : null}<span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.body}</span></div>
+              <PassageStudyTools paragraphId={paragraph.id} sessionId={session.id} returnPath={returnPath} bookmarked={userId ? bookmarked : false} canSaveBookmarks={Boolean(userId && canSaveBookmarks)} canSaveNotes={Boolean(userId && canSaveNotes)} noteCount={userId ? noteCount : 0} reference={reference} passagePath={passagePath} />
+              {renderTranscriptAssets(paragraph)}
+            </div>
+          })}
+        </article> : transcriptAssets.length > 0 ? <div className="transcript-v12-card">{renderLeadingTranscriptAssets()}</div> : <p className="meta">Transcript metadata is published, but no paragraphs have been imported yet.</p>}
+      </section> : null}
 
       <section className="section"><Link className="button" href={`/courses/${courseSlug}/${offeringSlug}`}>← Back to {offering.label}</Link></section>
     </main>
