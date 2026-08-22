@@ -84,6 +84,80 @@
 .transcript-sync-floating .meta { font-size: 10px; line-height: 1.35; }
 .transcript-sync-floating .button { min-height: 34px; padding: 0 10px; font-size: 10.5px; }
 
+/* Living Lam Rim: six term cards follow the approved V12-style overview. */
+.living-terms-section { margin-top: 58px; }
+.living-terms-heading { margin-bottom: 28px; }
+.living-terms-heading h2 {
+  margin: 0 0 8px;
+  font-size: clamp(36px, 4.2vw, 52px);
+  line-height: 1;
+  letter-spacing: -.035em;
+}
+.living-terms-heading p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: clamp(17px, 1.7vw, 22px);
+}
+.living-term-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.living-term-card {
+  min-height: 188px;
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 42px;
+  gap: 28px;
+  align-items: center;
+  padding: 30px 34px;
+  border: 1px solid var(--line);
+  border-radius: 34px;
+  background: #fff;
+  color: var(--ink);
+  text-decoration: none;
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.living-term-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(31,27,24,.24);
+  box-shadow: 0 14px 36px rgba(31,27,24,.07);
+}
+.living-term-badge {
+  width: 92px;
+  height: 92px;
+  display: grid;
+  place-items: center;
+  border-radius: 28px;
+  background: rgba(157,189,184,.34);
+  color: #173f3b;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -.03em;
+}
+.living-term-copy { min-width: 0; }
+.living-term-copy h3 {
+  margin: 0;
+  font-size: clamp(25px, 2.25vw, 34px);
+  line-height: 1.08;
+  letter-spacing: -.035em;
+}
+.living-term-dates,
+.living-term-count {
+  margin: 14px 0 0;
+  color: var(--ink-soft);
+  font-size: 17px;
+  line-height: 1.25;
+}
+.living-term-count { margin-top: 8px; font-size: 15px; }
+.living-term-arrow {
+  justify-self: end;
+  color: #173f3b;
+  font-size: 38px;
+  font-weight: 500;
+  line-height: 1;
+}
+.living-term-class-row { align-items: center; }
+
 /* Admin Offering quick tools stay useful without turning into a second Admin page. */
 .admin-offering-tools-grid {
   display: grid !important;
@@ -217,6 +291,7 @@ body.admin-modal-open { overflow: hidden; }
     width: min(100%, 720px) !important;
     min-height: 280px !important;
   }
+  .living-term-grid { grid-template-columns: 1fr; }
   .admin-offering-tools-grid,
   .admin-editor-cards { grid-template-columns: 1fr; }
 }
@@ -230,6 +305,25 @@ body.admin-modal-open { overflow: hidden; }
   .offering-hero.offering-hero-artwork .offering-title { font-size: clamp(40px, 12vw, 58px) !important; }
   .class-study-tabs { width: 100%; }
   .class-study-tab { flex: 1 1 0; padding: 0 10px; }
+  .living-terms-section { margin-top: 42px; }
+  .living-term-grid { gap: 14px; }
+  .living-term-card {
+    min-height: 136px;
+    grid-template-columns: 64px minmax(0, 1fr) 26px;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 24px;
+  }
+  .living-term-badge {
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+    font-size: 20px;
+  }
+  .living-term-copy h3 { font-size: 23px; }
+  .living-term-dates { margin-top: 10px; font-size: 15px; }
+  .living-term-count { font-size: 13px; }
+  .living-term-arrow { font-size: 28px; }
   .playlist-import-row { grid-template-columns: 1fr; }
   .admin-editor-source.is-open { top: 3vh; width: calc(100vw - 22px); max-height: 94vh; }
   .admin-editor-closebar { top: calc(3vh + 10px); width: calc(100vw - 46px); }
