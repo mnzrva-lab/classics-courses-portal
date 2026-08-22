@@ -55,6 +55,32 @@ function aliases(value: FormDataEntryValue | null) {
     .filter(Boolean)
 }
 
+function suggestedMeaning(body: string, bracketIndex: number) {
+  const before = body.slice(Math.max(0, bracketIndex - 120), bracketIndex)
+  const phrase = before
+    .split(/[.!?\n:;]/)
+    .pop()
+    ?.replace(/[()“”"']/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim() ?? ''
+  const words = phrase.split(' ').filter(Boolean).slice(-8).join(' ')
+  return words ? `Review meaning: ${words}` : 'Review meaning: add English meaning'
+}
+
+function detectedTransliterations(body: string) {
+  const matches: Array<{ transliteration: string; index: number }> = []
+  const pattern = /\[([A-Z][A-Z0-9' .-]{1,70})\]/g
+  let match: RegExpExecArray | null
+  while ((match = pattern.exec(body)) !== null) {
+    const transliteration = match[1].replace(/\s+/g, ' ').trim()
+    const letters = transliteration.replace(/[^A-Za-z]/g, '')
+    if (letters.length < 2) continue
+    if (letters !== letters.toUpperCase()) continue
+    matches.push({ transliteration, index: match.index })
+  }
+  return matches
+}
+
 export async function createTibetanTerm(formData: FormData) {
   const supabase = await requireAdmin()
   const transliteration = requiredText(formData.get('transliteration'), 'Transliteration')
@@ -71,7 +97,6 @@ export async function createTibetanTerm(formData: FormData) {
 
   const { error } = await supabase.from('tibetan_terms').insert({
     slug,
-    tibetan_script: optionalText(formData.get('tibetan_script')),
     transliteration,
     english_meaning: requiredText(formData.get('english_meaning'), 'English meaning'),
     explanation: optionalText(formData.get('explanation')),
@@ -91,7 +116,6 @@ export async function updateTibetanTerm(termId: string, termSlug: string, formDa
   const { error } = await supabase
     .from('tibetan_terms')
     .update({
-      tibetan_script: optionalText(formData.get('tibetan_script')),
       transliteration: requiredText(formData.get('transliteration'), 'Transliteration'),
       english_meaning: requiredText(formData.get('english_meaning'), 'English meaning'),
       explanation: optionalText(formData.get('explanation')),
@@ -107,6 +131,107 @@ export async function updateTibetanTerm(termId: string, termSlug: string, formDa
   revalidatePath('/tibetan')
   revalidatePath(`/tibetan/${termSlug}`)
   redirect('/admin/tibetan?saved=term')
+}
+
+export async function bulkUpdateTibetanTerms(formData: FormData) {
+  const supabase = await requireAdmin()
+  const status = validStatus(formData.get('status'))
+  const ids = String(formData.get('term_ids') ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+  if (!ids.length) throw new Error('Select at least one glossary term.')
+
+  const { error } = await supabase
+    .from('tibetan_terms')
+    .update({ status, updated_at: new Date().toISOString() })
+    .in('id', ids)
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/admin/tibetan')
+  revalidatePath('/tibetan')
+  redirect(`/admin/tibetan?bulk=${status}&count=${ids.length}`)
+}
+
+export async function extractTibetanTermsFromSession(formData: FormData) {
+  const supabase = await requireAdmin()
+  const sessionId = requiredText(formData.get('session_id'), 'Source class')
+
+  const [{ data: session, error: sessionError }, { data: transcript, error: transcriptError }] = await Promise.all([
+    supabase.from('sessions').select('id, code, title').eq('id', sessionId).single(),
+    supabase.from('transcripts').select('id, title').eq('session_id', sessionId).order('created_at', { ascending: false }).limit(1).maybeSingle(),
+  ])
+  if (sessionError) throw new Error(sessionError.message)
+  if (transcriptError) throw new Error(transcriptError.message)
+  if (!transcript) throw new Error('No transcript exists for this class yet.')
+
+  const { data: paragraphs, error: paragraphsError } = await supabase
+    .from('transcript_paragraphs')
+    .select('id, body, sort_order')
+    .eq('transcript_id', transcript.id)
+    .eq('is_active', true)
+    .order('sort_order')
+  if (paragraphsError) throw new Error(paragraphsError.message)
+
+  const existingResult = await supabase.from('tibetan_terms').select('id, slug')
+  if (existingResult.error) throw new Error(existingResult.error.message)
+  const bySlug = new Map((existingResult.data ?? []).map((term) => [term.slug, term.id]))
+
+  let created = 0
+  let linked = 0
+  const seenInRun = new Set<string>()
+
+  for (const paragraph of paragraphs ?? []) {
+    for (const match of detectedTransliterations(paragraph.body ?? '')) {
+      const slug = slugify(match.transliteration)
+      const runKey = `${slug}:${paragraph.id}`
+      if (seenInRun.has(runKey)) continue
+      seenInRun.add(runKey)
+
+      let termId = bySlug.get(slug)
+      if (!termId) {
+        const { data: createdTerm, error: createError } = await supabase
+          .from('tibetan_terms')
+          .insert({
+            slug,
+            transliteration: match.transliteration,
+            english_meaning: suggestedMeaning(paragraph.body ?? '', match.index),
+            explanation: null,
+            aliases: [],
+            status: 'draft',
+            sort_order: 0,
+          })
+          .select('id')
+          .single()
+        if (createError || !createdTerm) continue
+        termId = createdTerm.id
+        bySlug.set(slug, termId)
+        created++
+      }
+
+      const { data: existingSource } = await supabase
+        .from('tibetan_term_sources')
+        .select('id')
+        .eq('term_id', termId)
+        .eq('paragraph_id', paragraph.id)
+        .maybeSingle()
+      if (existingSource) continue
+
+      const { error: sourceError } = await supabase.from('tibetan_term_sources').insert({
+        term_id: termId,
+        session_id: sessionId,
+        paragraph_id: paragraph.id,
+        source_label: [session?.code, session?.title].filter(Boolean).join(' · ') || transcript.title || 'Transcript',
+        note: 'Detected automatically from an uppercase bracketed transliteration in the transcript. Review before publishing.',
+        sort_order: paragraph.sort_order ?? 0,
+      })
+      if (!sourceError) linked++
+    }
+  }
+
+  revalidatePath('/admin/tibetan')
+  revalidatePath('/tibetan')
+  redirect(`/admin/tibetan?detected=${created}&linked=${linked}`)
 }
 
 export async function addTibetanSource(termId: string, termSlug: string, formData: FormData) {
