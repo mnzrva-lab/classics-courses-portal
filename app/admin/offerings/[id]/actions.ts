@@ -63,6 +63,49 @@ function parseLanguages(value: FormDataEntryValue | null) {
   return Array.from(new Set(text.split(',').map((item) => item.trim().toLowerCase()).filter(Boolean)))
 }
 
+function normalizeTimezoneAlias(value: string | null) {
+  if (!value) return null
+  const text = value.trim()
+  if (isValidTimeZone(text)) return text
+  const key = text.toLowerCase().replace(/[._-]+/g, ' ').replace(/\s+/g, ' ').trim()
+  const aliases: Record<string, string> = {
+    arizona: 'America/Phoenix',
+    'arizona time': 'America/Phoenix',
+    phoenix: 'America/Phoenix',
+    az: 'America/Phoenix',
+    mst: 'America/Phoenix',
+    taiwan: 'Asia/Taipei',
+    'taiwan time': 'Asia/Taipei',
+    taipei: 'Asia/Taipei',
+    japan: 'Asia/Tokyo',
+    'japan time': 'Asia/Tokyo',
+    kyoto: 'Asia/Tokyo',
+    tokyo: 'Asia/Tokyo',
+    jst: 'Asia/Tokyo',
+    spain: 'Europe/Madrid',
+    barcelona: 'Europe/Madrid',
+    madrid: 'Europe/Madrid',
+    romania: 'Europe/Bucharest',
+    bucharest: 'Europe/Bucharest',
+    germany: 'Europe/Berlin',
+    berlin: 'Europe/Berlin',
+    utc: 'UTC',
+    gmt: 'UTC',
+  }
+  return aliases[key] ?? null
+}
+
+function inferOfferingTimezone(...values: Array<string | null | undefined>) {
+  const text = values.filter(Boolean).join(' ').toLowerCase()
+  if (/\barizona\b|\bphoenix\b/.test(text)) return 'America/Phoenix'
+  if (/\btaiwan\b|\btaipei\b/.test(text)) return 'Asia/Taipei'
+  if (/\bjapan\b|\bkyoto\b|\btokyo\b/.test(text)) return 'Asia/Tokyo'
+  if (/\bspain\b|\bbarcelona\b|\bmadrid\b/.test(text)) return 'Europe/Madrid'
+  if (/\bromania\b|\bbucharest\b/.test(text)) return 'Europe/Bucharest'
+  if (/\bgermany\b|\bberlin\b/.test(text)) return 'Europe/Berlin'
+  return null
+}
+
 function revalidateOffering(offeringId: string) {
   revalidatePath('/admin')
   revalidatePath(`/admin/offerings/${offeringId}`)
@@ -198,24 +241,35 @@ export async function createSession(offeringId: string, courseId: string, formDa
   const sessionType = String(formData.get('session_type') ?? 'class')
   if (!['class', 'meditation', 'review', 'qna', 'vows', 'other'].includes(sessionType)) throw new Error('Invalid session type')
 
+  const [{ data: offering, error: offeringError }, { data: siblingRows, error: siblingError }] = await Promise.all([
+    supabase.from('course_offerings').select('label, location, starts_on, ends_on').eq('id', offeringId).single(),
+    supabase.from('sessions').select('slug, sort_order, source_timezone').eq('offering_id', offeringId),
+  ])
+  if (offeringError || !offering) throw new Error('Course Offering could not be loaded.')
+  if (siblingError) throw new Error(siblingError.message)
+
   const sessionDate = optionalText(formData.get('session_date'))
-  const sourceTimezone = optionalText(formData.get('source_timezone')) ?? 'Asia/Taipei'
+  const submittedTimezone = optionalText(formData.get('source_timezone'))
   const startTime = optionalText(formData.get('start_time'))
   const endTime = optionalText(formData.get('end_time'))
+  const existingTimezone = (siblingRows ?? [])
+    .map((row) => normalizeTimezoneAlias(row.source_timezone ?? null))
+    .find((value): value is string => Boolean(value)) ?? null
+  const inferredTimezone = inferOfferingTimezone(offering.location, offering.label)
+  const staleTaipeiFallback = !existingTimezone && inferredTimezone && submittedTimezone === 'Asia/Taipei' && inferredTimezone !== 'Asia/Taipei'
+  const sourceTimezone = staleTaipeiFallback
+    ? inferredTimezone
+    : normalizeTimezoneAlias(submittedTimezone) ?? existingTimezone ?? inferredTimezone ?? 'UTC'
 
-  if (!isValidTimeZone(sourceTimezone)) throw new Error('Please enter a valid timezone, such as Asia/Taipei.')
+  if (submittedTimezone && !staleTaipeiFallback && !normalizeTimezoneAlias(submittedTimezone)) {
+    throw new Error('Source timezone was not recognized. For Arizona use America/Phoenix; for Taiwan use Asia/Taipei.')
+  }
   if ((startTime || endTime) && !sessionDate) throw new Error('Choose the session date before entering a start or end time.')
 
   const startsAt = sessionDate && startTime ? zonedLocalToIso(sessionDate, startTime, sourceTimezone) : null
   const endsAt = sessionDate && endTime ? zonedLocalToIso(sessionDate, endTime, sourceTimezone) : null
 
   const baseSlug = slugify(code || title)
-  const { data: siblingRows, error: siblingError } = await supabase
-    .from('sessions')
-    .select('slug, sort_order')
-    .eq('offering_id', offeringId)
-
-  if (siblingError) throw new Error(siblingError.message)
   const usedSlugs = new Set((siblingRows ?? []).map((row) => row.slug))
   let slug = baseSlug
   let suffix = 2
@@ -258,7 +312,16 @@ export async function createSession(offeringId: string, courseId: string, formDa
     }
   }
 
+  if (sessionDate) {
+    const startsOn = !offering.starts_on || sessionDate < offering.starts_on ? sessionDate : offering.starts_on
+    const endsOn = !offering.ends_on || sessionDate > offering.ends_on ? sessionDate : offering.ends_on
+    if (startsOn !== offering.starts_on || endsOn !== offering.ends_on) {
+      await supabase.from('course_offerings').update({ starts_on: startsOn, ends_on: endsOn, updated_at: new Date().toISOString() }).eq('id', offeringId)
+    }
+  }
+
   revalidatePath('/admin')
+  revalidatePath(`/admin/offerings/${offeringId}`)
   revalidatePath('/', 'layout')
   redirect(`/admin/sessions/${session.id}?created=1`)
 }
