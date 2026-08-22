@@ -6,7 +6,7 @@ import RecordingPlayer from '@/components/recording-player'
 import SessionTime from '@/components/session-time'
 import TranscriptControls from '@/components/transcript-controls'
 import PassageStudyTools from './passage-study-tools'
-import { markSessionComplete, saveSessionNote, startSessionProgress, toggleSessionBookmark } from './actions'
+import { markSessionComplete, saveSessionNote, toggleSessionBookmark } from './actions'
 
 type CourseRelation = { id: string; slug: string; title: string; canonical_number: number | null; status: string }
 type OfferingRelation = { id: string; slug: string; label: string; status: string }
@@ -188,7 +188,6 @@ export default async function SessionPage({
   const returnPath = adminContentPreview ? `${publicReturnPath}?contentPreview=1` : publicReturnPath
   const citationCourse = course.canonical_number ? `Course ${course.canonical_number}` : course.title
   const isCompleted = Boolean(progress?.completed_at)
-  const isInProgress = Boolean(progress && !progress.completed_at)
   const topics = topicHeadings(studyNotes?.content_markdown)
   const downloadBase = `${publicReturnPath}/download`
   const transcriptChapterOptions = transcriptSections.map((section) => {
@@ -216,24 +215,48 @@ export default async function SessionPage({
         </div>
       </nav>
 
-      <section id="recording" className="section card" style={{ scrollMarginTop: 96 }}>
+      <section id="recording" className="section" style={{ scrollMarginTop: 96 }}>
         <div className="eyebrow">Recording</div><h2>Watch or listen</h2>
-        <RecordingPlayer recordingUrl={session.recording_url} title={session.title} />
-        <div className="actions">
-          {session.audio_url ? <audio controls src={session.audio_url} /> : null}
-          {userId && (canSaveBookmarks || sessionBookmarked) ? <form action={toggleSessionBookmark.bind(null, session.id, returnPath)}><button className="button" type="submit">{sessionBookmarked ? '★ Bookmarked' : '☆ Bookmark class'}</button></form> : userId ? <Link className="button" href="/account">Bookmarks are off</Link> : null}
+        <div className="recording-layout">
+          <div className="recording-main">
+            <RecordingPlayer recordingUrl={session.recording_url} title={session.title} />
+            {session.audio_url ? <audio controls src={session.audio_url} /> : null}
+          </div>
+
+          <aside className="recording-study-tools" aria-label="Class study actions">
+            <div className="eyebrow">Your study</div>
+            {userId ? canSaveProgress ? (
+              isCompleted
+                ? <span className="button sage recording-tool-button">✓ Completed</span>
+                : <form action={markSessionComplete.bind(null, session.id, returnPath)}><button className="button sage recording-tool-button" type="submit">✓ Mark completed</button></form>
+            ) : <Link className="button recording-tool-button" href="/account">Progress is off</Link> : <Link className="button recording-tool-button" href="/login">Sign in to track progress</Link>}
+
+            {userId && (canSaveBookmarks || sessionBookmarked) ? (
+              <form action={toggleSessionBookmark.bind(null, session.id, returnPath)}><button className="button recording-tool-button" type="submit">{sessionBookmarked ? '★ Bookmarked' : '☆ Bookmark class'}</button></form>
+            ) : userId ? <Link className="button recording-tool-button" href="/account">Bookmarks are off</Link> : null}
+
+            {userId && canSaveNotes ? (
+              <details className="recording-note-details">
+                <summary className="button recording-tool-button">✎ Add private note{sessionNotes.length ? ` · ${sessionNotes.length}` : ''}</summary>
+                <div className="recording-note-panel">
+                  <p className="meta">For notes tied to an exact teaching, use the note control beside that passage in the Reference Transcript.</p>
+                  <form className="form-stack" action={saveSessionNote.bind(null, session.id, returnPath)}>
+                    <textarea className="input" name="note" rows={4} placeholder="General note about this class…" required />
+                    <button className="button" type="submit">Save note</button>
+                  </form>
+                  {sessionNotes.length ? (
+                    <div className="recording-saved-notes">
+                      <strong>General class notes</strong>
+                      {sessionNotes.map((note: any) => <div key={note.id}><p>{note.note}</p><span className="meta">{new Date(note.updated_at).toLocaleString()}</span></div>)}
+                      <Link href="/my-notes">Open My Notes →</Link>
+                    </div>
+                  ) : null}
+                </div>
+              </details>
+            ) : userId ? <Link className="button recording-tool-button" href="/account">Notes are off</Link> : null}
+          </aside>
         </div>
       </section>
-
-      <section className="grid two section">
-        <div className={isCompleted ? 'card completed' : isInProgress ? 'card sage' : 'card'}>
-          <div className="eyebrow">Progress</div><h3>{isCompleted ? '✓ Completed' : isInProgress ? 'In progress' : 'Not started'}</h3>
-          {userId ? canSaveProgress ? isCompleted ? <p className="meta">You can revisit this class anytime.</p> : isInProgress ? <form action={markSessionComplete.bind(null, session.id, returnPath)}><button className="button sage" type="submit">Mark Complete</button></form> : <form action={startSessionProgress.bind(null, session.id, returnPath)}><button className="button sage" type="submit">Start studying</button></form> : <p className="meta">Progress saving is off. <Link href="/account">Change Privacy &amp; Data settings</Link>.</p> : <div className="actions"><Link className="button" href="/login">Sign in to save progress</Link></div>}
-        </div>
-        <div className="card"><div className="eyebrow">Private note</div><h3>Save something for later</h3>{userId ? canSaveNotes ? <form className="form-stack" action={saveSessionNote.bind(null, session.id, returnPath)}><textarea className="input" name="note" rows={5} placeholder="Write a private study note…" required /><button className="button" type="submit">Save note</button></form> : <p className="meta">Note saving is off. <Link href="/account">Change Privacy &amp; Data settings</Link>.</p> : <div className="actions"><Link className="button" href="/login">Sign in to save notes</Link></div>}</div>
-      </section>
-
-      {userId && sessionNotes.length > 0 ? <section className="section card"><div className="eyebrow">Your Class Notes</div><div className="list">{sessionNotes.map((note: any) => <div key={note.id} className="class-material-row"><div>{note.note}<div className="meta">{new Date(note.updated_at).toLocaleString()}</div></div></div>)}</div><div className="actions"><Link className="button" href="/my-notes">Open My Notes</Link></div></section> : null}
 
       <section id="study-notes" className="section" style={{ scrollMarginTop: 96 }}>
         <div className="study-notes-head">
