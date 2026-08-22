@@ -5,8 +5,8 @@ import TibetanManagerClient from './tibetan-manager-client'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AdminTibetanPage({ searchParams }: { searchParams: Promise<{ created?: string; saved?: string }> }) {
-  const { created, saved } = await searchParams
+export default async function AdminTibetanPage({ searchParams }: { searchParams: Promise<{ created?: string; saved?: string; bulk?: string; count?: string; detected?: string; linked?: string }> }) {
+  const { created, saved, bulk, count, detected, linked } = await searchParams
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub as string | undefined
@@ -15,13 +15,24 @@ export default async function AdminTibetanPage({ searchParams }: { searchParams:
   const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).single()
   if (profile?.role !== 'admin') redirect('/my-learning')
 
-  const { data: terms } = await supabase
-    .from('tibetan_terms')
-    .select('id, slug, tibetan_script, transliteration, english_meaning, explanation, aliases, status, sort_order')
-    .order('sort_order')
-    .order('transliteration')
+  const [{ data: terms }, { data: sessions }] = await Promise.all([
+    supabase
+      .from('tibetan_terms')
+      .select('id, slug, transliteration, english_meaning, explanation, aliases, status, sort_order')
+      .order('sort_order')
+      .order('transliteration'),
+    supabase
+      .from('sessions')
+      .select('id, code, title, starts_at')
+      .order('starts_at', { ascending: false, nullsFirst: false })
+      .limit(250),
+  ])
 
-  const message = created === 'term' ? 'Tibetan term created.' : saved === 'term' ? 'Tibetan term updated.' : null
+  let message: string | null = null
+  if (created === 'term') message = 'Tibetan term created as a Draft.'
+  else if (saved === 'term') message = 'Tibetan term updated.'
+  else if (bulk && count) message = `${count} term${count === '1' ? '' : 's'} moved to ${bulk}.`
+  else if (detected != null || linked != null) message = `Transcript scan finished: ${detected ?? '0'} new Draft term${detected === '1' ? '' : 's'}, ${linked ?? '0'} source link${linked === '1' ? '' : 's'} added.`
 
   return (
     <main className="container page">
@@ -32,9 +43,9 @@ export default async function AdminTibetanPage({ searchParams }: { searchParams:
       </div>
       <div className="eyebrow">Admin · Tibetan</div>
       <h1>Tibetan glossary</h1>
-      <p className="lead">Keep the glossary compact. Open a term only when you need to edit it or manage its teaching sources.</p>
+      <p className="lead">Review terms quickly, publish in batches, and connect each term to the exact teaching passages where it appears.</p>
       {message ? <div className="card completed admin-course-notice">{message}</div> : null}
-      <TibetanManagerClient terms={(terms ?? []) as any} />
+      <TibetanManagerClient terms={(terms ?? []) as any} sessions={(sessions ?? []).map((session: any) => ({ id: session.id, code: session.code, title: session.title }))} />
     </main>
   )
 }
