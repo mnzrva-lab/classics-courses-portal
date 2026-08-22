@@ -41,10 +41,10 @@ export default function HomeTodayCard({ sessions }: { sessions: Session[] }) {
       .sort((a, b) => new Date(a.starts_at!).getTime() - new Date(b.starts_at!).getTime())
 
     const today = valid.filter((session) => sameLocalDay(new Date(session.starts_at!), nowDate))
-    if (today.length) return { rows: today.slice(0, 5), isToday: true }
+    if (today.length) return { rows: today.slice(0, 4), isToday: true }
 
     const future = valid.filter((session) => new Date(session.ends_at!).getTime() >= now)
-    return { rows: future.slice(0, 4), isToday: false }
+    return { rows: future.slice(0, 3), isToday: false }
   }, [sessions, now])
 
   return (
