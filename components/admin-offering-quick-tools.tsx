@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { usePathname } from 'next/navigation'
 import ArtworkUploadForm from '@/app/admin/offerings/[id]/artwork-upload-form'
 import PlaylistCsvImport from '@/app/admin/offerings/[id]/playlist-csv-import'
+import BulkSessionEditor from '@/app/admin/offerings/[id]/bulk-session-editor'
 
 export default function AdminOfferingQuickTools() {
   const pathname = usePathname()
@@ -38,7 +39,6 @@ export default function AdminOfferingQuickTools() {
       if (!text.includes('Select transcript files') && !text.includes('Select Study Notes files')) continue
       const input = label.querySelector<HTMLInputElement>('input[type="file"]')
       if (!input) continue
-
       label.setAttribute('role', 'button')
       label.setAttribute('tabindex', '0')
       const openPicker = (event: Event) => {
@@ -68,7 +68,7 @@ export default function AdminOfferingQuickTools() {
   if (!offeringId || !mount) return null
 
   return createPortal(
-    <aside className="admin-offering-quick-tools admin-offering-tools-grid" aria-label="Course Offering tools">
+    <aside className="admin-offering-quick-tools admin-offering-tools-grid admin-offering-tools-three" aria-label="Course Offering tools">
       <div className="admin-offering-tool">
         <div>
           <div className="eyebrow">Course artwork</div>
@@ -82,9 +82,18 @@ export default function AdminOfferingQuickTools() {
         <div>
           <div className="eyebrow">Recordings</div>
           <strong>Import recordings</strong>
-          <p className="meta">Match videos to existing sessions, or create a Draft class list automatically for an archive Course Offering.</p>
+          <p className="meta">Match videos to sessions, or create a Draft class list automatically for an archive Course Offering.</p>
         </div>
         <PlaylistCsvImport offeringId={offeringId} />
+      </div>
+
+      <div className="admin-offering-tool">
+        <div>
+          <div className="eyebrow">Sessions</div>
+          <strong>Bulk edit</strong>
+          <p className="meta">Change titles, types, dates, teachers and statuses without opening every class separately.</p>
+        </div>
+        <BulkSessionEditor offeringId={offeringId} />
       </div>
     </aside>,
     mount,
