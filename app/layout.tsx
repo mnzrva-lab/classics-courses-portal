@@ -24,6 +24,7 @@ import './admin-bulk-edit.css'
 import './admin-collections.css'
 import './admin-offering-compact.css'
 import './admin-material-compact.css'
+import './admin-program-artwork.css'
 import './program-archive-pass.css'
 import './student-compact-pass.css'
 
