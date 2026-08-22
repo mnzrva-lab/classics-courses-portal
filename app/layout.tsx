@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import SiteNavigation from '@/components/site-navigation'
 import TranscriptSync from '@/components/transcript-sync'
+import { TELEGRAM_UPDATES_URL } from '@/lib/site-links'
 import './globals.css'
 import './learning-surfaces.css'
 import './portal-shell-home.css'
@@ -21,7 +22,7 @@ type CurrentCourse = {
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   let isAdmin = false
   let currentCourse: CurrentCourse = null
-  let perfectionHref = '/other-programs'
+  let perfectionHref = '/perfection-of-wisdom'
 
   try {
     const supabase = await createClient()
@@ -38,9 +39,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
       supabase
         .from('courses')
         .select('slug, title, course_offerings(slug, status, sort_order)')
+        .eq('slug', 'perfection-of-wisdom')
         .eq('status', 'published')
-        .ilike('title', '%Perfection of Wisdom%')
-        .limit(1)
         .maybeSingle(),
     ])
 
@@ -94,18 +94,21 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 <span className="sidebar-mark" aria-hidden="true">C</span>
                 <strong>Classics Courses</strong>
               </Link>
-              <Link className="portal-search-link" href="/search">
+              <form className="portal-search-form" action="/search" method="get" role="search">
                 <span aria-hidden="true">⌕</span>
-                <span>Search courses and transcripts</span>
-              </Link>
+                <input name="q" type="search" aria-label="Search courses and transcripts" placeholder="Search courses and transcripts" />
+              </form>
               <Link className="portal-notes-link" href="/my-notes">✎ <span>My Notes</span></Link>
             </header>
 
             {children}
             <TranscriptSync />
 
-            <footer className="footer">
-              <div className="container">Classics Courses with Timothy Lowenhaupt</div>
+            <footer className="footer portal-footer">
+              <div className="container portal-footer-inner">
+                <span>Classics Courses with Timothy Lowenhaupt</span>
+                <a href={TELEGRAM_UPDATES_URL} target="_blank" rel="noreferrer">Telegram updates ↗</a>
+              </div>
             </footer>
           </div>
         </div>
