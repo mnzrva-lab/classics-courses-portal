@@ -16,9 +16,10 @@ export default async function LivingLamRimPage() {
   const { data: groups } = course
     ? await supabase
         .from('content_groups')
-        .select('id, slug, label, title, kind, starts_on, ends_on, sort_order')
+        .select('id, slug, label, title, kind, starts_on, ends_on, sort_order, course_offerings!inner(status)')
         .eq('course_id', course.id)
         .eq('status', 'published')
+        .eq('course_offerings.status', 'published')
         .order('sort_order')
     : { data: [] as any[] }
 
