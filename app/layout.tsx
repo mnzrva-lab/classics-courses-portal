@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import SiteNavigation from '@/components/site-navigation'
@@ -77,8 +78,8 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         {children}
         <ClassStudyTabs />
         <TeacherBioEnhancer />
-        {isAdmin ? <AdminOfferingSectionEnhancer /> : null}
-        {isAdmin ? <AdminSessionEnhancer /> : null}
+        {isAdmin ? <Suspense fallback={null}><AdminOfferingSectionEnhancer /></Suspense> : null}
+        {isAdmin ? <Suspense fallback={null}><AdminSessionEnhancer /></Suspense> : null}
         <TranscriptSync />
         <footer className="footer portal-footer"><div className="container portal-footer-inner"><span>Classics Courses with Timothy Lowenhaupt</span><a href={TELEGRAM_UPDATES_URL} target="_blank" rel="noreferrer">Telegram updates ↗</a></div></footer>
       </div>
