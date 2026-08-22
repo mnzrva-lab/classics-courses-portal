@@ -32,12 +32,10 @@ export default function PassageStudyTools({
 
   return (
     <div className="passage-study-tools">
-      <CopyReference reference={reference} path={passagePath} />
-
       {(canSaveBookmarks || bookmarked) ? (
         <form action={toggleParagraphBookmark.bind(null, paragraphId, returnPath)}>
-          <button className="passage-action" type="submit">
-            {bookmarked ? '★ Bookmarked' : '☆ Bookmark'}
+          <button className="passage-action passage-icon" type="submit" title={bookmarked ? 'Remove bookmark' : 'Bookmark passage'} aria-label={bookmarked ? 'Remove bookmark' : 'Bookmark passage'}>
+            {bookmarked ? '★' : '☆'}
           </button>
         </form>
       ) : null}
@@ -45,19 +43,18 @@ export default function PassageStudyTools({
       {canSaveNotes ? (
         <div>
           <button
-            className={noteOpen ? 'passage-action active' : 'passage-action'}
+            className={noteOpen ? 'passage-action passage-icon active' : 'passage-action passage-icon'}
             type="button"
             onClick={() => setNoteOpen((value) => !value)}
             aria-expanded={noteOpen}
+            title="Add private note"
+            aria-label="Add private note"
           >
-            + Note
+            ✎
           </button>
 
           {noteOpen ? (
-            <form
-              className="passage-note-form"
-              action={saveParagraphNote.bind(null, paragraphId, sessionId, returnPath)}
-            >
+            <form className="passage-note-form" action={saveParagraphNote.bind(null, paragraphId, sessionId, returnPath)}>
               <label>
                 <span className="meta">Private note about this exact passage</span>
                 <textarea className="input" name="note" rows={3} required autoFocus placeholder="What do you want to remember here?" />
@@ -72,9 +69,11 @@ export default function PassageStudyTools({
         </div>
       ) : null}
 
+      <CopyReference reference={reference} path={passagePath} />
+
       {noteCount > 0 ? (
-        <Link className="passage-action" href={`/my-notes?passage=${encodeURIComponent(paragraphId)}`}>
-          {noteCount} saved note{noteCount === 1 ? '' : 's'}
+        <Link className="passage-action passage-note-count" href={`/my-notes?passage=${encodeURIComponent(paragraphId)}`} title="Open saved notes">
+          {noteCount}
         </Link>
       ) : null}
     </div>
