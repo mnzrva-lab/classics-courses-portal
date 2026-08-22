@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { googleDriveFileId, youtubeId } from '@/lib/recording'
+import { googleDriveFileId, youtubeId, youtubePlaylistId } from '@/lib/recording'
 
 type Props = {
   recordingUrl: string | null
@@ -30,7 +30,6 @@ let youtubeApiPromise: Promise<YouTubeApi> | null = null
 
 function loadYouTubeApi() {
   if (youtubeApiPromise) return youtubeApiPromise
-
   youtubeApiPromise = new Promise<YouTubeApi>((resolve) => {
     if (!document.querySelector('script[src="https://www.youtube.com/iframe_api"]')) {
       const script = document.createElement('script')
@@ -38,14 +37,12 @@ function loadYouTubeApi() {
       script.async = true
       document.head.appendChild(script)
     }
-
     const waitForApi = () => {
       if (window.YT?.Player) resolve(window.YT)
       else window.setTimeout(waitForApi, 100)
     }
     waitForApi()
   })
-
   return youtubeApiPromise
 }
 
@@ -53,6 +50,7 @@ export default function RecordingPlayer({ recordingUrl, title }: Props) {
   const playerHostRef = useRef<HTMLDivElement | null>(null)
   const [youtubeReady, setYoutubeReady] = useState(false)
   const videoId = youtubeId(recordingUrl)
+  const playlistId = youtubePlaylistId(recordingUrl)
   const driveId = googleDriveFileId(recordingUrl)
 
   useEffect(() => {
@@ -65,22 +63,17 @@ export default function RecordingPlayer({ recordingUrl, title }: Props) {
     function publishTime() {
       if (!player) return
       const seconds = player.getCurrentTime()
-      if (Number.isFinite(seconds)) {
-        window.dispatchEvent(new CustomEvent('recording-time', { detail: { seconds } }))
-      }
+      if (Number.isFinite(seconds)) window.dispatchEvent(new CustomEvent('recording-time', { detail: { seconds } }))
     }
-
     function stopTimer() {
       if (timer != null) window.clearInterval(timer)
       timer = null
     }
-
     function startTimer() {
       stopTimer()
       publishTime()
       timer = window.setInterval(publishTime, 500)
     }
-
     function onSeek(event: Event) {
       if (!player) return
       const seconds = (event as CustomEvent<{ seconds?: number }>).detail?.seconds
@@ -91,17 +84,12 @@ export default function RecordingPlayer({ recordingUrl, title }: Props) {
     }
 
     window.addEventListener('recording-seek', onSeek)
-
     loadYouTubeApi().then((api) => {
       if (disposed || !playerHostRef.current) return
       player = new api.Player(playerHostRef.current, {
         videoId,
         host: 'https://www.youtube-nocookie.com',
-        playerVars: {
-          rel: 0,
-          playsinline: 1,
-          enablejsapi: 1,
-        },
+        playerVars: { rel: 0, playsinline: 1, enablejsapi: 1 },
         events: {
           onReady: () => {
             if (disposed) return
@@ -133,13 +121,28 @@ export default function RecordingPlayer({ recordingUrl, title }: Props) {
   if (videoId) {
     return (
       <div>
-        <div className="recording-frame">
-          <div ref={playerHostRef} />
-        </div>
+        <div className="recording-frame"><div ref={playerHostRef} /></div>
         <div className="actions">
           <a className="button" href={recordingUrl} target="_blank" rel="noreferrer">Open recording in a new tab</a>
           {youtubeReady ? <span className="pill">Transcript sync ready</span> : null}
         </div>
+      </div>
+    )
+  }
+
+  if (playlistId) {
+    return (
+      <div>
+        <div className="recording-frame">
+          <iframe
+            src={`https://www.youtube-nocookie.com/embed/videoseries?list=${encodeURIComponent(playlistId)}`}
+            title={`${title} playlist`}
+            loading="lazy"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            allowFullScreen
+          />
+        </div>
+        <div className="actions"><a className="button" href={recordingUrl} target="_blank" rel="noreferrer">Open playlist on YouTube ↗</a></div>
       </div>
     )
   }
