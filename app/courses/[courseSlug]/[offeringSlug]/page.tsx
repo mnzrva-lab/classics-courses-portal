@@ -1,14 +1,18 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import SessionTime from '@/components/session-time'
+import LiveCourseSchedule from '@/components/live-course-schedule'
+import OfferingSessionList from '@/components/offering-session-list'
 import { toggleCourseBookmark } from './actions'
 
-function formatDate(value: string | null) {
-  if (!value) return null
-  const date = new Date(`${value}T12:00:00Z`)
-  if (Number.isNaN(date.getTime())) return value
-  return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(date)
+export const dynamic = 'force-dynamic'
+
+type CourseRelation = {
+  id: string
+  slug: string
+  title: string
+  canonical_number: number | null
+  status: string
 }
 
 function materialLabel(type: string) {
@@ -19,55 +23,87 @@ function materialLabel(type: string) {
     video: 'Video',
     document: 'Document',
     link: 'Link',
-    other: 'Resource',
+    other: 'Materials',
   }
-  return labels[type] ?? 'Resource'
+  return labels[type] ?? 'Materials'
 }
 
-export default async function OfferingPage({ params }: { params: Promise<{ courseSlug: string; offeringSlug: string }> }) {
+function formatRange(start: string | null, end: string | null) {
+  if (!start && !end) return null
+  const fmt = (value: string) => new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`))
+  if (!start) return fmt(end!)
+  if (!end || start === end) return fmt(start)
+  const s = new Date(`${start}T12:00:00Z`)
+  const e = new Date(`${end}T12:00:00Z`)
+  if (s.getUTCFullYear() === e.getUTCFullYear() && s.getUTCMonth() === e.getUTCMonth()) {
+    const month = new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' }).format(s)
+    return `${month} ${s.getUTCDate()}–${e.getUTCDate()}, ${e.getUTCFullYear()}`
+  }
+  return `${fmt(start)} – ${fmt(end)}`
+}
+
+export default async function CourseOfferingPage({
+  params,
+}: {
+  params: Promise<{ courseSlug: string; offeringSlug: string }>
+}) {
   const { courseSlug, offeringSlug } = await params
   const supabase = await createClient()
-
-  const { data: course } = await supabase
-    .from('courses')
-    .select('id, kind, canonical_number, title, subtitle, description')
-    .eq('slug', courseSlug)
-    .eq('status', 'published')
-    .single()
-
-  if (!course) notFound()
+  const { data: claimsData } = await supabase.auth.getClaims()
+  const userId = claimsData?.claims?.sub as string | undefined
 
   const { data: offering } = await supabase
     .from('course_offerings')
-    .select('id, label, location, year, starts_on, ends_on, language_codes, telegram_url, description, artwork_url')
-    .eq('course_id', course.id)
+    .select('id, slug, label, location, year, language_codes, artwork_url, description, starts_on, ends_on, status, courses!inner(id, slug, title, canonical_number, status)')
     .eq('slug', offeringSlug)
     .eq('status', 'published')
+    .eq('courses.slug', courseSlug)
+    .eq('courses.status', 'published')
     .single()
 
   if (!offering) notFound()
+  const course = offering.courses as unknown as CourseRelation
 
-  const [{ data: sessions }, { data: materialRows }, { data: claimsData }] = await Promise.all([
+  const [sessionsResult, offeringMaterialsResult, bookmarkResult, settingsResult] = await Promise.all([
     supabase
       .from('sessions')
       .select(`
-        id, slug, code, title, session_type, starts_at, ends_at, source_timezone, recording_url, required_for_completion,
-        session_teachers(teachers(full_name))
+        id, slug, code, title, session_type, session_date, starts_at, ends_at, source_timezone, recording_url, zoom_url, sort_order,
+        session_teachers(teachers(full_name)),
+        transcripts(status),
+        study_notes(status),
+        materials(material_type, status)
       `)
       .eq('offering_id', offering.id)
       .eq('status', 'published')
-      .order('sort_order', { ascending: true }),
+      .order('sort_order'),
     supabase
       .from('materials')
-      .select('id, material_type, title, url, mime_type, storage_bucket, storage_path, sort_order')
+      .select('id, title, material_type, mime_type, url, storage_bucket, storage_path')
       .eq('offering_id', offering.id)
       .is('session_id', null)
       .eq('status', 'published')
       .order('sort_order'),
-    supabase.auth.getClaims(),
+    userId
+      ? supabase.from('user_course_bookmarks').select('course_id').eq('user_id', userId).eq('course_id', course.id).maybeSingle()
+      : Promise.resolve({ data: null } as any),
+    userId
+      ? supabase.from('user_settings').select('save_bookmarks, save_progress').eq('user_id', userId).maybeSingle()
+      : Promise.resolve({ data: null } as any),
   ])
 
-  const offeringMaterials = await Promise.all((materialRows ?? []).map(async (material: any) => {
+  const sessions = sessionsResult.data ?? []
+  const sessionIds = sessions.map((session: any) => session.id)
+  const progressResult = userId && sessionIds.length
+    ? await supabase.from('user_session_progress').select('session_id, started_at, completed_at').eq('user_id', userId).in('session_id', sessionIds)
+    : { data: [] as any[] }
+  const progressMap = new Map((progressResult.data ?? []).map((row: any) => [row.session_id, row]))
+  const completedCount = sessions.filter((session: any) => progressMap.get(session.id)?.completed_at).length
+  const progressPercent = sessions.length ? Math.round((completedCount / sessions.length) * 100) : 0
+  const canSaveBookmarks = settingsResult.data?.save_bookmarks ?? true
+  const courseBookmarked = Boolean(bookmarkResult.data)
+
+  const resolvedOfferingMaterials = await Promise.all((offeringMaterialsResult.data ?? []).map(async (material: any) => {
     if (material.storage_bucket && material.storage_path) {
       const { data } = await supabase.storage.from(material.storage_bucket).createSignedUrl(material.storage_path, 60 * 60)
       return { ...material, resolved_url: data?.signedUrl ?? null }
@@ -75,179 +111,120 @@ export default async function OfferingPage({ params }: { params: Promise<{ cours
     return { ...material, resolved_url: material.url ?? null }
   }))
 
-  const userId = claimsData?.claims?.sub as string | undefined
-  const returnPath = `/courses/${courseSlug}/${offeringSlug}`
-  let bookmarked = false
-  const progressBySession = new Map<string, { completed_at: string | null; last_opened_at: string | null }>()
+  const teacherNames = Array.from(new Set(sessions.flatMap((session: any) =>
+    (session.session_teachers ?? []).map((item: any) => item.teachers?.full_name).filter(Boolean)
+  ))) as string[]
 
-  if (userId) {
-    const sessionIds = (sessions ?? []).map((session: any) => session.id)
-    const [{ data: bookmark }, progressResult] = await Promise.all([
-      supabase
-        .from('user_course_bookmarks')
-        .select('course_id')
-        .eq('user_id', userId)
-        .eq('course_id', course.id)
-        .maybeSingle(),
-      sessionIds.length
-        ? supabase
-          .from('user_session_progress')
-          .select('session_id, completed_at, last_opened_at')
-          .eq('user_id', userId)
-          .in('session_id', sessionIds)
-        : Promise.resolve({ data: [] } as any),
-    ])
-    bookmarked = Boolean(bookmark)
-    for (const item of progressResult.data ?? []) {
-      progressBySession.set(item.session_id, { completed_at: item.completed_at, last_opened_at: item.last_opened_at })
+  let classIndex = 0
+  let meditationIndex = 0
+  const sessionCards = sessions.map((session: any) => {
+    if (session.session_type === 'meditation') meditationIndex += 1
+    else if (session.session_type === 'class') classIndex += 1
+    const autoCode = session.session_type === 'meditation' ? `M${meditationIndex}` : session.session_type === 'class' ? `C${classIndex}` : session.code || '•'
+    const transcriptPublished = (session.transcripts ?? []).some((item: any) => item.status === 'published')
+    const notesPublished = (session.study_notes ?? []).some((item: any) => item.status === 'published')
+    const materialBadges = Array.from(new Set((session.materials ?? [])
+      .filter((item: any) => item.status === 'published')
+      .map((item: any) => materialLabel(item.material_type)))) as string[]
+    const badges = [
+      session.recording_url ? 'Recording' : null,
+      notesPublished ? 'Study Notes' : null,
+      transcriptPublished ? 'Transcript' : null,
+      ...materialBadges,
+    ].filter(Boolean) as string[]
+    const progress = progressMap.get(session.id) as any
+    return {
+      id: session.id,
+      href: `/courses/${courseSlug}/${offeringSlug}/${session.slug}`,
+      code: session.code || autoCode,
+      title: session.title,
+      sessionType: session.session_type,
+      sessionDate: session.session_date,
+      teacherNames: (session.session_teachers ?? []).map((item: any) => item.teachers?.full_name).filter(Boolean),
+      completed: Boolean(progress?.completed_at),
+      inProgress: Boolean(progress?.started_at && !progress?.completed_at),
+      badges,
     }
-  }
+  })
 
-  const requiredSessions = (sessions ?? []).filter((session: any) => session.required_for_completion)
-  const completedRequired = requiredSessions.filter((session: any) => progressBySession.get(session.id)?.completed_at).length
-  const offeringCompleted = requiredSessions.length > 0 && completedRequired === requiredSessions.length
-  const progressPercent = requiredSessions.length ? Math.round((completedRequired / requiredSessions.length) * 100) : 0
-
-  const startsOn = formatDate(offering.starts_on)
-  const endsOn = formatDate(offering.ends_on)
-  const dateRange = startsOn && endsOn ? `${startsOn} to ${endsOn}` : startsOn ?? endsOn
-  const eyebrow = course.canonical_number ? `Classics Course ${course.canonical_number}` : course.kind === 'living_lam_rim' ? 'Living Lam Rim' : 'Program'
-  const description = offering.description ?? course.description
+  const liveScheduleSessions = sessions.map((session: any) => ({
+    id: session.id,
+    code: session.code,
+    title: session.title,
+    startsAt: session.starts_at,
+    endsAt: session.ends_at,
+    sourceTimezone: session.source_timezone,
+    zoomUrl: session.zoom_url,
+    teacherNames: (session.session_teachers ?? []).map((item: any) => item.teachers?.full_name).filter(Boolean),
+  }))
+  const publicPath = `/courses/${courseSlug}/${offeringSlug}`
 
   return (
     <main className="container page">
-      <div className="offering-breadcrumbs" aria-label="Breadcrumb">
-        <Link href="/courses">Classics Courses</Link>
-        <span>/</span>
+      <div className="offering-breadcrumbs">
+        <Link href="/courses">Classics Courses</Link><span>/</span>
+        <span>{course.canonical_number ? `Course ${course.canonical_number}` : course.title}</span><span>/</span>
         <span>{offering.label}</span>
       </div>
 
-      <section className={`offering-hero${offering.artwork_url ? '' : ' no-artwork'}`}>
+      <section className={offering.artwork_url ? 'offering-hero' : 'offering-hero no-artwork'}>
         <div className="offering-hero-copy">
-          <div className="eyebrow">{eyebrow}</div>
+          <div className="eyebrow">{course.canonical_number ? `Classics Course ${course.canonical_number}` : course.title} · {offering.label}</div>
           <h1 className="offering-title">{course.title}</h1>
-          {course.subtitle ? <p className="lead" style={{ marginTop: -4 }}>{course.subtitle}</p> : null}
-          {description ? <p className="lead offering-description">{description}</p> : null}
+          {teacherNames.length ? <p className="lead">with {teacherNames.join(' and ')}</p> : null}
+          {offering.description ? <p className="lead offering-description">{offering.description}</p> : null}
           <div className="offering-meta">
-            <span className="pill">{offering.label}</span>
-            {dateRange ? <span className="pill">{dateRange}</span> : null}
+            {formatRange(offering.starts_on, offering.ends_on) ? <span className="pill">{formatRange(offering.starts_on, offering.ends_on)}</span> : null}
             {offering.location ? <span className="pill">{offering.location}</span> : null}
-            {offering.language_codes?.length ? <span className="pill">{offering.language_codes.join(' · ').toUpperCase()}</span> : null}
+            {(offering.language_codes ?? []).length ? <span className="pill">{(offering.language_codes ?? []).map((code: string) => code.toUpperCase()).join(' · ')}</span> : null}
           </div>
         </div>
-
-        {offering.artwork_url ? (
-          <div className="offering-artwork">
-            <img src={offering.artwork_url} alt={`${course.title} artwork`} />
-          </div>
-        ) : null}
+        {offering.artwork_url ? <div className="offering-artwork"><img src={offering.artwork_url} alt="" /></div> : null}
       </section>
 
-      <section className="offering-summary-grid" aria-label="Course Offering summary">
-        <div className="card sage offering-summary-card">
+      <div className="offering-live-grid">
+        <section className="card offering-summary-card cream">
           <div className="eyebrow">Course Offering</div>
           <h3>{offering.label}</h3>
-          {dateRange ? <p className="meta">{dateRange}</p> : null}
-          {offering.location ? <p className="meta">{offering.location}</p> : null}
-          <div className="actions">
-            <Link className="button" href={`/courses/${courseSlug}/${offeringSlug}/calendar`}>Add full schedule to calendar</Link>
-          </div>
-        </div>
+          <p className="meta">{formatRange(offering.starts_on, offering.ends_on) ?? 'Dates to be announced'}{offering.location ? ` · ${offering.location}` : ''}</p>
+          {resolvedOfferingMaterials.length ? (
+            <div className="course-resource-strip">
+              {resolvedOfferingMaterials.slice(0, 3).map((material: any) => material.resolved_url ? (
+                <a key={material.id} href={material.resolved_url} target="_blank" rel="noreferrer">▤ {material.title}</a>
+              ) : null)}
+            </div>
+          ) : null}
+        </section>
 
-        <div className={offeringCompleted ? 'card completed offering-summary-card' : 'card offering-summary-card'}>
+        <LiveCourseSchedule sessions={liveScheduleSessions} calendarHref={`${publicPath}/calendar`} />
+      </div>
+
+      <section className="section offering-study-strip">
+        <div>
           <div className="eyebrow">Your study</div>
-          <h3>{userId ? (offeringCompleted ? '✓ Course Offering completed' : 'Your progress') : 'Save progress and notes'}</h3>
-          {userId ? (
-            <>
-              {requiredSessions.length ? (
-                <>
-                  <div className="offering-progress-line" aria-hidden="true"><span style={{ width: `${progressPercent}%` }} /></div>
-                  <p className="meta">{completedRequired} of {requiredSessions.length} required sessions completed. The Path of Classics Master counts the canonical course only once.</p>
-                </>
-              ) : <p className="meta">Bookmarks, progress, and private notes follow your Google study account across devices.</p>}
-              <div className="actions">
-                <form action={toggleCourseBookmark.bind(null, course.id, returnPath)}>
-                  <button className={bookmarked ? 'button sage' : 'button'} type="submit">{bookmarked ? '✓ Course bookmarked' : 'Bookmark course'}</button>
-                </form>
-                <Link className="button" href="/my-learning">My Learning</Link>
-              </div>
-            </>
-          ) : (
-            <>
-              <p className="meta">Anyone can study the course. Sign in only when you want private notes, bookmarks, and progress to follow you across devices.</p>
-              <div className="actions"><Link className="button" href="/login">Sign in</Link></div>
-            </>
-          )}
+          <strong>{completedCount} of {sessions.length} sessions completed</strong>
+        </div>
+        <div className="offering-progress-line" aria-label={`${progressPercent}% complete`}><span style={{ width: `${progressPercent}%` }} /></div>
+        <strong>{progressPercent}%</strong>
+        <div className="actions">
+          {userId && (canSaveBookmarks || courseBookmarked) ? (
+            <form action={toggleCourseBookmark.bind(null, course.id, publicPath)}>
+              <button className="button" type="submit">{courseBookmarked ? '★ Bookmarked' : '☆ Bookmark course'}</button>
+            </form>
+          ) : !userId ? <Link className="button" href="/login">Sign in to save progress</Link> : null}
         </div>
       </section>
-
-      {offeringMaterials.length > 0 ? (
-        <section className="section">
-          <div className="offering-section-head">
-            <div>
-              <div className="eyebrow">Course materials</div>
-              <h2>Shared resources</h2>
-              <p>These materials apply to the whole Course Offering and remain available from each class.</p>
-            </div>
-          </div>
-          <div className="offering-materials">
-            {offeringMaterials.map((material: any) => (
-              <div className="offering-material-row" key={material.id}>
-                <div>
-                  <strong>{material.title}</strong>
-                  <div className="meta">{materialLabel(material.material_type)}{material.mime_type ? ` · ${material.mime_type}` : ''}</div>
-                </div>
-                {material.resolved_url ? <a className="button" href={material.resolved_url} target="_blank" rel="noreferrer">Open</a> : <span className="meta">File temporarily unavailable</span>}
-              </div>
-            ))}
-          </div>
-        </section>
-      ) : null}
 
       <section className="section">
         <div className="offering-section-head">
           <div>
-            <div className="eyebrow">Classes &amp; meditations</div>
-            <h2>Course schedule</h2>
-            <p>Times are shown in your local timezone by default. Use “Show source time” when you want to compare with the teaching location.</p>
+            <div className="eyebrow">Course content</div>
+            <h2>Classes &amp; materials</h2>
+            <p>Available recordings, Study Notes, Reference Transcripts, and class materials appear automatically.</p>
           </div>
         </div>
-
-        <div className="offering-schedule-surface">
-          <div className="list">
-            {(sessions ?? []).length ? (sessions ?? []).map((session: any) => {
-              const teachers = (session.session_teachers ?? []).map((x: any) => x.teachers?.full_name).filter(Boolean)
-              const progress = progressBySession.get(session.id)
-              const completed = Boolean(progress?.completed_at)
-              const inProgress = Boolean(progress && !progress.completed_at)
-              return (
-                <div className={completed ? 'row completed' : inProgress ? 'row sage' : 'row'} key={session.id}>
-                  <div className="session-code">{session.code || '•'}</div>
-                  <div>
-                    <Link href={`/courses/${courseSlug}/${offeringSlug}/${session.slug}`}><strong>{session.title}</strong></Link>
-                    <div className="meta">
-                      {teachers.join(', ') || 'Teacher to be added'} · <SessionTime startsAt={session.starts_at} sourceTimezone={session.source_timezone} />
-                    </div>
-                    {userId ? <div className="meta" style={{ marginTop: 4 }}>{completed ? '✓ Completed' : inProgress ? 'In progress' : 'Not started'}{session.required_for_completion ? ' · Required' : ''}</div> : session.required_for_completion ? <div className="meta" style={{ marginTop: 4 }}>Required</div> : null}
-                  </div>
-                  <div className="actions" style={{ marginTop: 0 }}>
-                    <Link className="button" href={`/courses/${courseSlug}/${offeringSlug}/${session.slug}`}>{completed ? 'Review class' : inProgress ? 'Continue' : 'Open class'}</Link>
-                  </div>
-                </div>
-              )
-            }) : <p className="meta">No sessions have been published for this Course Offering yet.</p>}
-          </div>
-        </div>
+        <OfferingSessionList sessions={sessionCards} />
       </section>
-
-      {offering.telegram_url && (
-        <section className="section card offering-updates">
-          <div className="eyebrow">Course updates</div>
-          <h3 style={{ marginTop: 10 }}>Telegram</h3>
-          <p className="meta">Kept here at the end of the course page so it does not compete with the learning flow.</p>
-          <div className="actions"><a className="button" href={offering.telegram_url} target="_blank" rel="noreferrer">Open Telegram updates</a></div>
-        </section>
-      )}
     </main>
   )
 }
