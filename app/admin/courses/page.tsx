@@ -4,8 +4,8 @@ import CourseCatalogClient from './course-catalog-client'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AdminCoursesPage({ searchParams }: { searchParams: Promise<{ saved?: string }> }) {
-  const { saved } = await searchParams
+export default async function AdminCoursesPage({ searchParams }: { searchParams: Promise<{ saved?: string; course?: string }> }) {
+  const { saved, course: initialCourseId } = await searchParams
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub as string | undefined
@@ -34,7 +34,7 @@ export default async function AdminCoursesPage({ searchParams }: { searchParams:
 
       {notice ? <div className="card completed admin-course-notice">{notice}</div> : null}
 
-      <CourseCatalogClient courses={(courses ?? []) as any} />
+      <CourseCatalogClient courses={(courses ?? []) as any} initialCourseId={initialCourseId ?? null} />
 
       <section className="section"><Link className="button" href="/admin">← Back to admin</Link></section>
     </main>
