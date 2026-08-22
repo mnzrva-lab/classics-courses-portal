@@ -5,14 +5,8 @@ import { createPortal } from 'react-dom'
 import { usePathname, useSearchParams } from 'next/navigation'
 
 type Entry = { key: string; title: string; subtitle: string; status: string; element: HTMLElement }
-
-function eyebrow(section: HTMLElement) {
-  return section.querySelector<HTMLElement>(':scope > .eyebrow')?.textContent?.trim() ?? ''
-}
-
-function heading(section: HTMLElement) {
-  return section.querySelector<HTMLElement>(':scope > h2')?.textContent?.trim() ?? ''
-}
+function eyebrow(section: HTMLElement) { return section.querySelector<HTMLElement>(':scope > .eyebrow')?.textContent?.trim() ?? '' }
+function heading(section: HTMLElement) { return section.querySelector<HTMLElement>(':scope > h2')?.textContent?.trim() ?? '' }
 
 export default function AdminOfferingSectionEnhancer() {
   const pathname = usePathname()
@@ -37,10 +31,20 @@ export default function AdminOfferingSectionEnhancer() {
     const sessions = sections.find((section) => eyebrow(section) === 'Sessions')
     const addSession = sections.find((section) => eyebrow(section) === 'Add session')
 
+    // New linked resources follow the archive default: Published inside the Course Offering.
+    // Existing resources keep their stored status.
+    if (materials) {
+      for (const form of Array.from(materials.querySelectorAll<HTMLFormElement>('form'))) {
+        const title = form.querySelector<HTMLInputElement>('input[name="material_title"]')
+        const status = form.querySelector<HTMLSelectElement>('select[name="material_status"]')
+        if (title && !title.value.trim() && status) status.value = 'published'
+      }
+    }
+
     const next: Entry[] = []
     if (materials) {
       const materialForms = materials.querySelectorAll('input[name="material_title"]').length
-      next.push({ key: 'materials', title: 'Shared materials', subtitle: 'Course-wide readings, slides and files', status: materialForms ? `${Math.max(0, materialForms - 1)} resource fields` : 'No resources yet', element: materials })
+      next.push({ key: 'materials', title: 'Shared materials', subtitle: 'Course-wide readings, slides and files', status: materialForms > 1 ? `${materialForms - 1} resource${materialForms - 1 === 1 ? '' : 's'}` : 'No resources yet', element: materials })
     }
     if (structure) {
       const groupForms = structure.querySelectorAll('form').length
@@ -55,7 +59,6 @@ export default function AdminOfferingSectionEnhancer() {
     if (addSession) next.push({ key: 'add-session', title: 'Add one session', subtitle: 'Use only when bulk/archive import is not appropriate', status: 'Manual creation', element: addSession })
 
     for (const item of next) item.element.classList.add('admin-offering-section-source')
-
     const cardsMount = document.createElement('div')
     cardsMount.className = 'admin-offering-section-cards-mount'
     const quickMount = main.querySelector<HTMLElement>('.admin-offering-quick-tools-mount')
@@ -65,22 +68,16 @@ export default function AdminOfferingSectionEnhancer() {
     setEntries(next)
 
     const cleanups: Array<() => void> = []
-    for (const item of next) {
-      for (const form of Array.from(item.element.querySelectorAll<HTMLFormElement>('form'))) {
-        const close = () => setActiveKey(null)
-        form.addEventListener('submit', close)
-        cleanups.push(() => form.removeEventListener('submit', close))
-      }
+    for (const item of next) for (const form of Array.from(item.element.querySelectorAll<HTMLFormElement>('form'))) {
+      const close = () => setActiveKey(null)
+      form.addEventListener('submit', close)
+      cleanups.push(() => form.removeEventListener('submit', close))
     }
 
     return () => {
       next.forEach((item) => item.element.classList.remove('admin-offering-section-source', 'is-open'))
       cleanups.forEach((cleanup) => cleanup())
-      cardsMount.remove()
-      setMount(null)
-      setEntries([])
-      setActiveKey(null)
-      document.body.classList.remove('admin-modal-open')
+      cardsMount.remove(); setMount(null); setEntries([]); setActiveKey(null); document.body.classList.remove('admin-modal-open')
     }
   }, [pathname, navigationKey])
 
@@ -98,22 +95,11 @@ export default function AdminOfferingSectionEnhancer() {
 
   const cards = mount ? createPortal(
     <section className="admin-offering-section-cards" aria-label="Course Offering content managers">
-      {entries.map((entry) => (
-        <article className="admin-offering-section-card" key={entry.key}>
-          <div><div className="eyebrow">{entry.title}</div><strong>{entry.subtitle}</strong><span className="meta">{entry.status}</span></div>
-          <button className="button" type="button" onClick={() => setActiveKey(entry.key)}>Open</button>
-        </article>
-      ))}
+      {entries.map((entry) => <article className="admin-offering-section-card" key={entry.key}><div><div className="eyebrow">{entry.title}</div><strong>{entry.subtitle}</strong><span className="meta">{entry.status}</span></div><button className="button" type="button" onClick={() => setActiveKey(entry.key)}>Open</button></article>)}
     </section>, mount,
   ) : null
 
   const active = entries.find((entry) => entry.key === activeKey)
-  const modal = active ? createPortal(
-    <>
-      <button className="admin-editor-backdrop" type="button" aria-label="Close section" onClick={() => setActiveKey(null)} />
-      <div className="admin-editor-closebar admin-offering-closebar"><strong>{active.title}</strong><button className="button" type="button" onClick={() => setActiveKey(null)}>Close ×</button></div>
-    </>, document.body,
-  ) : null
-
+  const modal = active ? createPortal(<><button className="admin-editor-backdrop" type="button" aria-label="Close section" onClick={() => setActiveKey(null)} /><div className="admin-editor-closebar admin-offering-closebar"><strong>{active.title}</strong><button className="button" type="button" onClick={() => setActiveKey(null)}>Close ×</button></div></>, document.body) : null
   return <>{cards}{modal}</>
 }
