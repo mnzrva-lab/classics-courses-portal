@@ -5,20 +5,41 @@ import { createPortal } from 'react-dom'
 import { usePathname, useSearchParams } from 'next/navigation'
 
 type EditorKey = 'details' | 'notes' | 'materials' | 'transcript'
-
 type EditorState = { key: EditorKey; title: string; status: string; element: HTMLElement }
 
-function statusFromSection(section: HTMLElement, fieldName: string) {
-  const select = section.querySelector<HTMLSelectElement>(`select[name="${fieldName}"]`)
-  return select?.value || 'missing'
-}
-function directEyebrow(section: HTMLElement) {
-  return section.querySelector<HTMLElement>(':scope > .eyebrow')?.textContent ?? section.querySelector<HTMLElement>('.eyebrow')?.textContent ?? ''
-}
+function statusFromSection(section: HTMLElement, fieldName: string) { return section.querySelector<HTMLSelectElement>(`select[name="${fieldName}"]`)?.value || 'missing' }
+function directEyebrow(section: HTMLElement) { return section.querySelector<HTMLElement>(':scope > .eyebrow')?.textContent ?? section.querySelector<HTMLElement>('.eyebrow')?.textContent ?? '' }
 function materialStatus(section: HTMLElement) {
   const titleInputs = section.querySelectorAll<HTMLInputElement>('input[name="material_title"]').length
   const count = Math.max(0, titleInputs - 2)
   return count ? `${count} resource${count === 1 ? '' : 's'}` : 'No resources yet'
+}
+
+function compactExistingMaterials(section: HTMLElement) {
+  const cleanups: Array<() => void> = []
+  const seen = new Set<HTMLElement>()
+  for (const titleInput of Array.from(section.querySelectorAll<HTMLInputElement>('input[name="material_title"]'))) {
+    if (!titleInput.value.trim()) continue
+    const form = titleInput.closest('form')
+    const wrapper = form?.parentElement
+    if (!form || !wrapper || seen.has(wrapper)) continue
+    const status = form.querySelector<HTMLSelectElement>('select[name="material_status"]')?.value ?? ''
+    const type = form.querySelector<HTMLSelectElement>('select[name="material_type"]')?.selectedOptions[0]?.textContent?.trim() ?? 'Resource'
+    seen.add(wrapper)
+    const parent = wrapper.parentElement
+    if (!parent) continue
+    const details = document.createElement('details')
+    details.className = 'admin-material-details'
+    const summary = document.createElement('summary')
+    summary.textContent = `${titleInput.value.trim()} · ${type}${status ? ` · ${status}` : ''}`
+    parent.insertBefore(details, wrapper)
+    details.append(summary, wrapper)
+    cleanups.push(() => {
+      if (details.parentElement) details.parentElement.insertBefore(wrapper, details)
+      details.remove()
+    })
+  }
+  return cleanups
 }
 
 export default function AdminSessionEnhancer() {
@@ -41,8 +62,6 @@ export default function AdminSessionEnhancer() {
     const transcript = sections.find((section) => directEyebrow(section).includes('Reference Transcript'))
     if (!details || !notes || !materials || !transcript) return
 
-    // Archive workflow defaults: new content is Published inside the usually-Draft Course Offering.
-    // Existing content keeps its saved status.
     const notesContent = notes.querySelector<HTMLTextAreaElement>('textarea[name="study_notes_content"]')
     const transcriptContent = transcript.querySelector<HTMLTextAreaElement>('textarea[name="transcript_content"]')
     const notesStatusSelect = notes.querySelector<HTMLSelectElement>('select[name="study_notes_status"]')
@@ -54,6 +73,7 @@ export default function AdminSessionEnhancer() {
       const status = form.querySelector<HTMLSelectElement>('select[name="material_status"]')
       if (title && !title.value.trim() && status) status.value = 'published'
     }
+    const materialCleanups = compactExistingMaterials(materials)
 
     const editorStates: EditorState[] = [
       { key: 'details', title: '1 · Session details', status: statusFromSection(details, 'status'), element: details },
@@ -61,23 +81,18 @@ export default function AdminSessionEnhancer() {
       { key: 'materials', title: '3 · Class materials', status: materialStatus(materials), element: materials },
       { key: 'transcript', title: '4 · Reference Transcript', status: transcriptContent?.value.trim() ? statusFromSection(transcript, 'transcript_status') : 'missing', element: transcript },
     ]
-
     for (const editor of editorStates) { editor.element.classList.add('admin-editor-source'); editor.element.setAttribute('tabindex', '-1') }
+
     const compactMount = document.createElement('div')
     compactMount.className = 'admin-editor-cards-mount'
     details.parentElement?.insertBefore(compactMount, details)
-    setMount(compactMount)
-    setEditors(editorStates)
+    setMount(compactMount); setEditors(editorStates)
 
     const lead = main.querySelector<HTMLElement>(':scope > .lead')
-    const bottomActions = Array.from(main.querySelectorAll<HTMLElement>('.section .actions')).find((actions) => {
-      const text = actions.textContent ?? ''
-      return text.includes('Back to admin') && text.includes('Open Course Offering')
-    })
+    const bottomActions = Array.from(main.querySelectorAll<HTMLElement>('.section .actions')).find((actions) => { const text = actions.textContent ?? ''; return text.includes('Back to admin') && text.includes('Open Course Offering') })
     let topNav: HTMLElement | null = null
     if (lead && bottomActions) {
-      topNav = document.createElement('div')
-      topNav.className = 'actions admin-session-top-actions'
+      topNav = document.createElement('div'); topNav.className = 'actions admin-session-top-actions'
       for (const link of Array.from(bottomActions.querySelectorAll('a'))) topNav.appendChild(link.cloneNode(true))
       lead.insertAdjacentElement('afterend', topNav)
     }
@@ -87,29 +102,23 @@ export default function AdminSessionEnhancer() {
       if (!label.textContent?.includes('Import DOCX / MD / TXT')) continue
       const input = label.querySelector<HTMLInputElement>('input[type="file"]')
       if (!input || label.dataset.importEnhanced === '1') continue
-      label.dataset.importEnhanced = '1'
-      label.setAttribute('role', 'button')
-      label.setAttribute('tabindex', '0')
+      label.dataset.importEnhanced = '1'; label.setAttribute('role', 'button'); label.setAttribute('tabindex', '0')
       const openPicker = (event: Event) => { if (event.target === input) return; event.preventDefault(); input.click() }
       const openWithKeyboard = (event: KeyboardEvent) => { if (event.key === 'Enter' || event.key === ' ') openPicker(event) }
-      label.addEventListener('click', openPicker)
-      label.addEventListener('keydown', openWithKeyboard)
+      label.addEventListener('click', openPicker); label.addEventListener('keydown', openWithKeyboard)
       pickerCleanups.push(() => { label.removeEventListener('click', openPicker); label.removeEventListener('keydown', openWithKeyboard) })
     }
 
     const submitCleanups: Array<() => void> = []
-    for (const editor of editorStates) {
-      for (const form of Array.from(editor.element.querySelectorAll<HTMLFormElement>('form'))) {
-        const closeOnSubmit = () => setActiveKey(null)
-        form.addEventListener('submit', closeOnSubmit)
-        submitCleanups.push(() => form.removeEventListener('submit', closeOnSubmit))
-      }
+    for (const editor of editorStates) for (const form of Array.from(editor.element.querySelectorAll<HTMLFormElement>('form'))) {
+      const closeOnSubmit = () => setActiveKey(null)
+      form.addEventListener('submit', closeOnSubmit); submitCleanups.push(() => form.removeEventListener('submit', closeOnSubmit))
     }
 
     return () => {
       for (const editor of editorStates) { editor.element.classList.remove('admin-editor-source', 'is-open'); editor.element.removeAttribute('tabindex') }
-      pickerCleanups.forEach((cleanup) => cleanup())
-      submitCleanups.forEach((cleanup) => cleanup())
+      materialCleanups.reverse().forEach((cleanup) => cleanup())
+      pickerCleanups.forEach((cleanup) => cleanup()); submitCleanups.forEach((cleanup) => cleanup())
       compactMount.remove(); topNav?.remove(); setMount(null); setEditors([]); setActiveKey(null); document.body.classList.remove('admin-modal-open')
     }
   }, [pathname, navigationKey])
@@ -119,28 +128,9 @@ export default function AdminSessionEnhancer() {
     document.body.classList.toggle('admin-modal-open', Boolean(activeKey))
     if (activeEditor) window.requestAnimationFrame(() => activeEditor.element.focus({ preventScroll: true }))
   }, [activeKey, activeEditor, editors])
+  useEffect(() => { if (!activeKey) return; const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setActiveKey(null) }; document.addEventListener('keydown', close); return () => document.removeEventListener('keydown', close) }, [activeKey])
 
-  useEffect(() => {
-    if (!activeKey) return
-    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') setActiveKey(null) }
-    document.addEventListener('keydown', closeOnEscape)
-    return () => document.removeEventListener('keydown', closeOnEscape)
-  }, [activeKey])
-
-  const cards = mount ? createPortal(
-    <section className="admin-editor-cards" aria-label="Session editors">
-      {editors.map((editor) => (
-        <div className="admin-editor-card" key={editor.key}>
-          <div><div className="eyebrow">{editor.title}</div><strong>{editor.status === 'missing' ? 'Not added yet' : editor.status}</strong></div>
-          <button className="button" type="button" onClick={() => setActiveKey(editor.key)}>Edit</button>
-        </div>
-      ))}
-    </section>, mount,
-  ) : null
-
-  const modal = activeEditor ? createPortal(
-    <><button className="admin-editor-backdrop" type="button" aria-label="Close editor" onClick={() => setActiveKey(null)} /><div className="admin-editor-closebar"><strong>{activeEditor.title}</strong><button className="button" type="button" onClick={() => setActiveKey(null)}>Close ×</button></div></>, document.body,
-  ) : null
-
+  const cards = mount ? createPortal(<section className="admin-editor-cards" aria-label="Session editors">{editors.map((editor) => <div className="admin-editor-card" key={editor.key}><div><div className="eyebrow">{editor.title}</div><strong>{editor.status === 'missing' ? 'Not added yet' : editor.status}</strong></div><button className="button" type="button" onClick={() => setActiveKey(editor.key)}>Edit</button></div>)}</section>, mount) : null
+  const modal = activeEditor ? createPortal(<><button className="admin-editor-backdrop" type="button" aria-label="Close editor" onClick={() => setActiveKey(null)} /><div className="admin-editor-closebar"><strong>{activeEditor.title}</strong><button className="button" type="button" onClick={() => setActiveKey(null)}>Close ×</button></div></>, document.body) : null
   return <>{cards}{modal}</>
 }
