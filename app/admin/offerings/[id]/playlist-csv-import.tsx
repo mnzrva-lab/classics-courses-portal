@@ -1,6 +1,7 @@
 'use client'
 
 import { ChangeEvent, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { applyPlaylistCsvImport, preparePlaylistCsvImport, type PlaylistCsvRow, type PlaylistPreparedRow, type PlaylistSessionOption } from './playlist-actions'
 
 function parseCsv(text: string) {
@@ -49,18 +50,22 @@ function rowObjects(text: string) {
   const get = (row: string[], name: string) => row[index.get(name.toLowerCase()) ?? -1]?.trim() ?? ''
   if (!index.has('video title') || !index.has('video url')) throw new Error('The CSV needs Video Title and Video URL columns.')
 
-  return rows.slice(1).map((row, rowIndex) => ({
-    key: `${rowIndex}:${get(row, 'Video ID') || get(row, 'Video URL')}`,
-    position: Number.isFinite(Number(get(row, 'Position'))) ? Number(get(row, 'Position')) : null,
-    playlistTitle: get(row, 'Playlist Title'),
-    playlistUrl: get(row, 'Playlist URL'),
-    videoTitle: get(row, 'Video Title'),
-    videoUrl: get(row, 'Video URL'),
-    availability: get(row, 'Availability Status'),
-  })).filter((row) => row.videoUrl && (!row.availability || row.availability.toLowerCase() === 'available'))
+  return rows.slice(1).map((row, rowIndex) => {
+    const positionValue = get(row, 'Position')
+    return {
+      key: `${rowIndex}:${get(row, 'Video ID') || get(row, 'Video URL')}`,
+      position: positionValue !== '' && Number.isFinite(Number(positionValue)) ? Number(positionValue) : null,
+      playlistTitle: get(row, 'Playlist Title'),
+      playlistUrl: get(row, 'Playlist URL'),
+      videoTitle: get(row, 'Video Title'),
+      videoUrl: get(row, 'Video URL'),
+      availability: get(row, 'Availability Status'),
+    }
+  }).filter((row) => row.videoUrl && (!row.availability || row.availability.toLowerCase() === 'available'))
 }
 
 export default function PlaylistCsvImport({ offeringId }: { offeringId: string }) {
+  const router = useRouter()
   const fileRef = useRef<HTMLInputElement | null>(null)
   const [rows, setRows] = useState<PlaylistPreparedRow[]>([])
   const [sessions, setSessions] = useState<PlaylistSessionOption[]>([])
@@ -109,6 +114,7 @@ export default function PlaylistCsvImport({ offeringId }: { offeringId: string }
         { url: playlistUrl, title: playlistTitle },
       )
       setMessage(`Done. ${result.updated} Recording URL${result.updated === 1 ? '' : 's'} updated${result.playlistSaved ? ' and the course playlist was added to Course resources' : ''}.`)
+      router.refresh()
     } catch (error) {
       setMessage(error instanceof Error ? error.message : 'Playlist import failed.')
     } finally {
