@@ -15,6 +15,18 @@ export function youtubeId(url: string | null | undefined) {
   return null
 }
 
+export function youtubePlaylistId(url: string | null | undefined) {
+  if (!url) return null
+  try {
+    const parsed = new URL(url)
+    const host = parsed.hostname.replace(/^www\./, '')
+    if (!['youtube.com', 'm.youtube.com', 'music.youtube.com'].includes(host)) return null
+    return parsed.searchParams.get('list')
+  } catch {
+    return null
+  }
+}
+
 export function googleDriveFileId(url: string | null | undefined) {
   if (!url) return null
   try {
