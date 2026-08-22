@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { createOfferingMaterialUploadUrl, registerOfferingUploadedMaterial } from './material-actions'
 
@@ -19,6 +20,7 @@ const materialTypes = [
 ]
 
 export default function OfferingUploadMaterialForm({ offeringId }: { offeringId: string }) {
+  const router = useRouter()
   const [message, setMessage] = useState<string | null>(null)
   const [uploading, setUploading] = useState(false)
 
@@ -28,57 +30,63 @@ export default function OfferingUploadMaterialForm({ offeringId }: { offeringId:
 
     const form = event.currentTarget
     const formData = new FormData(form)
-    const file = formData.get('material_file')
+    const files = formData.getAll('material_files').filter((value): value is File => value instanceof File && value.size > 0)
+    if (!files.length) return setMessage('Choose one or more files to upload.')
+    const tooLarge = files.find((file) => file.size > MAX_UPLOAD_BYTES)
+    if (tooLarge) return setMessage(`${tooLarge.name} is larger than 50 MB. Use a stable external link for larger media.`)
 
-    if (!(file instanceof File) || file.size === 0) return setMessage('Choose a file to upload.')
-    if (file.size > MAX_UPLOAD_BYTES) return setMessage('This storage area accepts files up to 50 MB. Use a stable external link for larger media.')
-
+    const materialType = String(formData.get('material_type') ?? 'reading')
+    const materialStatus = String(formData.get('material_status') ?? 'published')
     setUploading(true)
-    setMessage('Preparing secure upload…')
 
     try {
-      const { storagePath, token } = await createOfferingMaterialUploadUrl(offeringId, file.name)
       const supabase = createClient()
-      const { error: uploadError } = await supabase.storage.from(BUCKET).uploadToSignedUrl(storagePath, token, file, {
-        contentType: file.type || undefined,
-      })
-      if (uploadError) throw uploadError
+      for (let index = 0; index < files.length; index += 1) {
+        const file = files[index]
+        setMessage(`Uploading ${index + 1} of ${files.length}: ${file.name}`)
+        const { storagePath, token } = await createOfferingMaterialUploadUrl(offeringId, file.name)
+        const { error: uploadError } = await supabase.storage.from(BUCKET).uploadToSignedUrl(storagePath, token, file, { contentType: file.type || undefined })
+        if (uploadError) throw uploadError
 
-      setMessage('Saving material…')
-      const metadata = new FormData()
-      metadata.set('material_type', String(formData.get('material_type') ?? 'reading'))
-      metadata.set('material_status', String(formData.get('material_status') ?? 'draft'))
-      metadata.set('material_title', String(formData.get('material_title') ?? '').trim() || file.name)
-      metadata.set('storage_path', storagePath)
-      metadata.set('original_name', file.name)
-      metadata.set('material_mime_type', file.type || '')
-      await registerOfferingUploadedMaterial(offeringId, metadata)
+        const metadata = new FormData()
+        metadata.set('material_type', materialType)
+        metadata.set('material_status', materialStatus)
+        metadata.set('material_title', file.name.replace(/\.[^.]+$/, ''))
+        metadata.set('storage_path', storagePath)
+        metadata.set('original_name', file.name)
+        metadata.set('material_mime_type', file.type || '')
+        await registerOfferingUploadedMaterial(offeringId, metadata)
+      }
+
+      form.reset()
+      setMessage(`${files.length} file${files.length === 1 ? '' : 's'} uploaded as ${materialStatus}.`)
+      router.refresh()
     } catch (error) {
-      setUploading(false)
       setMessage(error instanceof Error ? `Upload failed: ${error.message}` : 'Upload failed.')
+    } finally {
+      setUploading(false)
     }
   }
 
   return (
-    <form className="form-stack" onSubmit={handleSubmit}>
+    <form className="form-stack compact-bulk-upload" onSubmit={handleSubmit}>
       <div className="grid two">
-        <label>Type
+        <label>Type for all files
           <select className="input" name="material_type" defaultValue="reading">
             {materialTypes.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
           </select>
         </label>
-        <label>Status
-          <select className="input" name="material_status" defaultValue="draft">
-            <option value="draft">Draft</option>
+        <label>Status for all files
+          <select className="input" name="material_status" defaultValue="published">
             <option value="published">Published</option>
+            <option value="draft">Draft</option>
           </select>
         </label>
       </div>
-      <label>Title<input className="input" name="material_title" placeholder="Optional. File name is used if blank." /></label>
-      <label>File<input className="input" type="file" name="material_file" required /></label>
-      <p className="meta">Upload once for the whole Course Offering. Published files remain private in Storage and are delivered to students through signed links. Maximum 50 MB.</p>
+      <label>Files<input className="input" type="file" name="material_files" multiple required /></label>
+      <p className="meta">Upload several shared readings, PDFs, slides, or documents at once. File names become titles and can be edited afterward. Maximum 50 MB per file.</p>
       {message ? <p className="meta" aria-live="polite">{message}</p> : null}
-      <div className="actions"><button className="button sage" type="submit" disabled={uploading}>{uploading ? 'Uploading…' : 'Upload file'}</button></div>
+      <div className="actions"><button className="button sage" type="submit" disabled={uploading}>{uploading ? 'Uploading…' : 'Upload selected files'}</button></div>
     </form>
   )
 }
