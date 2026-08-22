@@ -3,10 +3,12 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import SiteNavigation from '@/components/site-navigation'
 import TranscriptSync from '@/components/transcript-sync'
+import AdminOfferingQuickTools from '@/components/admin-offering-quick-tools'
 import { TELEGRAM_UPDATES_URL } from '@/lib/site-links'
 import './globals.css'
 import './learning-surfaces.css'
 import './portal-shell-home.css'
+import './v12-content-pass.css'
 
 export const metadata: Metadata = {
   title: 'Classics Courses with Timothy Lowenhaupt',
@@ -101,6 +103,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <Link className="portal-notes-link" href="/my-notes">✎ <span>My Notes</span></Link>
             </header>
 
+            {isAdmin ? <AdminOfferingQuickTools /> : null}
             {children}
             <TranscriptSync />
 
