@@ -101,11 +101,9 @@ export default async function AdminPage() {
         <div className="card">
           <div className="eyebrow">Catalog</div>
           <h3>Courses &amp; Programs</h3>
-          <p className="meta">Manage the canonical course catalog and create additional text studies or other programs without touching code.</p>
+          <p className="meta">Manage the canonical course catalog, additional text studies, Course Offerings, and archive-course setup from one place.</p>
           <div className="actions">
             <Link className="button red" href="/admin/courses">Manage courses &amp; programs</Link>
-            <Link className="button" href="/admin/offerings/new">Create Course Offering</Link>
-            <Link className="button sage" href="/admin/bulk-sessions">Bulk create sessions</Link>
           </div>
         </div>
         <div className="card">
@@ -154,7 +152,7 @@ export default async function AdminPage() {
                 </div>
               </div>
             )
-          }) : <p className="meta">No sessions yet. Open this Course Offering to add the first class or meditation.</p>}
+          }) : <p className="meta">No sessions yet. Open this Course Offering to add the first class or import recordings.</p>}
         </section>
       ))}
     </main>
