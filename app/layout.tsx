@@ -28,6 +28,7 @@ import './admin-program-artwork.css'
 import './program-archive-pass.css'
 import './program-artwork.css'
 import './student-compact-pass.css'
+import './design-tibetan-pass.css'
 
 export const metadata: Metadata = {
   title: 'Classics Courses with Timothy Lowenhaupt',
