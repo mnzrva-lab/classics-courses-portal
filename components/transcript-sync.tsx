@@ -25,7 +25,7 @@ function scanTranscript() {
 
   paragraphs.forEach((paragraph) => {
     const id = paragraph.id.replace(/^paragraph-/, '')
-    const timestamp = paragraph.querySelector<HTMLElement>(':scope > div .meta')
+    const timestamp = paragraph.querySelector<HTMLElement>('.transcript-copy .transcript-timestamp, :scope > div .meta')
     if (!id || !timestamp) return
     const seconds = parseTimestamp(timestamp.textContent ?? '')
     if (seconds == null) return
@@ -166,8 +166,8 @@ export default function TranscriptSync() {
   return (
     <div className="transcript-sync-floating" aria-label="Transcript playback controls">
       <div>
-        <strong>Synced transcript</strong>
-        <div className="meta">Timestamps jump to the matching moment.</div>
+        <strong>Video + transcript sync</strong>
+        <div className="meta">Click a timestamp to seek. Follow playback highlights the current passage.</div>
       </div>
       <button
         className={follow ? 'button sage' : 'button'}
