@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { usePathname } from 'next/navigation'
+import { usePathname, useSearchParams } from 'next/navigation'
 
 type EditorKey = 'details' | 'notes' | 'materials' | 'transcript'
 
@@ -23,8 +23,6 @@ function directEyebrow(section: HTMLElement) {
 }
 
 function materialStatus(section: HTMLElement) {
-  // The section always contains one upload form and one "add linked resource" form.
-  // Existing resources each add one more material_title input.
   const titleInputs = section.querySelectorAll<HTMLInputElement>('input[name="material_title"]').length
   const count = Math.max(0, titleInputs - 2)
   return count ? `${count} resource${count === 1 ? '' : 's'}` : 'No resources yet'
@@ -32,6 +30,8 @@ function materialStatus(section: HTMLElement) {
 
 export default function AdminSessionEnhancer() {
   const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const navigationKey = `${pathname}?${searchParams.toString()}`
   const [mount, setMount] = useState<HTMLElement | null>(null)
   const [editors, setEditors] = useState<EditorState[]>([])
   const [activeKey, setActiveKey] = useState<EditorKey | null>(null)
@@ -81,8 +81,6 @@ export default function AdminSessionEnhancer() {
       lead.insertAdjacentElement('afterend', topNav)
     }
 
-    // Replace label-only file pickers with an explicit button trigger. This is more reliable
-    // in Safari and inside the modal editor than a hidden input nested inside a label.
     const pickerCleanups: Array<() => void> = []
     for (const label of Array.from(main.querySelectorAll<HTMLLabelElement>('label.button'))) {
       if (!label.textContent?.includes('Import DOCX / MD / TXT')) continue
@@ -108,12 +106,24 @@ export default function AdminSessionEnhancer() {
       })
     }
 
+    // Close the modal as soon as a save starts. The server action may replace the page
+    // with a ?saved=... result, and navigationKey below re-applies the compact cards.
+    const submitCleanups: Array<() => void> = []
+    for (const editor of editorStates) {
+      for (const form of Array.from(editor.element.querySelectorAll<HTMLFormElement>('form'))) {
+        const closeOnSubmit = () => setActiveKey(null)
+        form.addEventListener('submit', closeOnSubmit)
+        submitCleanups.push(() => form.removeEventListener('submit', closeOnSubmit))
+      }
+    }
+
     return () => {
       for (const editor of editorStates) {
         editor.element.classList.remove('admin-editor-source', 'is-open')
         editor.element.removeAttribute('tabindex')
       }
       pickerCleanups.forEach((cleanup) => cleanup())
+      submitCleanups.forEach((cleanup) => cleanup())
       compactMount.remove()
       topNav?.remove()
       setMount(null)
@@ -121,7 +131,7 @@ export default function AdminSessionEnhancer() {
       setActiveKey(null)
       document.body.classList.remove('admin-modal-open')
     }
-  }, [pathname])
+  }, [pathname, navigationKey])
 
   useEffect(() => {
     for (const editor of editors) editor.element.classList.toggle('is-open', editor.key === activeKey)
