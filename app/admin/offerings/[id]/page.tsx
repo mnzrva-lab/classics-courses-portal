@@ -7,6 +7,7 @@ import { assignSessionGroup, createContentGroup, updateContentGroup } from './st
 import BulkTranscriptImport from './bulk-transcript-import'
 import BulkStudyNotesImport from './bulk-study-notes-import'
 import OfferingUploadMaterialForm from './upload-material-form'
+import DeleteOfferingControl from './delete-offering-control'
 
 export const dynamic = 'force-dynamic'
 
@@ -464,6 +465,10 @@ export default async function AdminOfferingPage({
 
           <button className="button sage" type="submit">Create session</button>
         </form>
+      </section>
+
+      <section className="section">
+        <DeleteOfferingControl offeringId={offering.id} label={offering.label} status={offering.status} />
       </section>
 
       <section className="section"><Link className="button" href="/admin">← Back to admin</Link></section>
