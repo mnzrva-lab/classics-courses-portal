@@ -61,7 +61,7 @@ export default async function PerfectionOfWisdomPage() {
   const { data: offering } = course
     ? await supabase
         .from('course_offerings')
-        .select('id, slug, label, starts_on, ends_on, status, sort_order')
+        .select('id, slug, label, starts_on, ends_on, status, sort_order, artwork_url')
         .eq('course_id', course.id)
         .eq('status', 'published')
         .order('sort_order')
@@ -110,10 +110,13 @@ export default async function PerfectionOfWisdomPage() {
 
   const playlist = materials.find((material) => material.material_type === 'video' && material.url?.includes('list='))
   const recordingCount = sessions.length || 58
+  const heroStyle = offering?.artwork_url ? {
+    backgroundImage: `linear-gradient(90deg, rgba(14,14,15,.88) 0%, rgba(14,14,15,.70) 52%, rgba(14,14,15,.28) 100%), linear-gradient(180deg, rgba(14,14,15,.12), rgba(14,14,15,.46)), url(${offering.artwork_url})`,
+  } : undefined
 
   return (
     <main className="container page">
-      <section className="program-hero">
+      <section className={offering?.artwork_url ? 'program-hero program-hero-artwork' : 'program-hero'} style={heroStyle}>
         <div className="eyebrow">Diamond Cutter Classics · Book 1</div>
         <h1>{course?.title ?? 'A Dialectic Analysis of the Perfection of Wisdom'}</h1>
         <p className="program-subtitle"><i>String of White Lotuses</i> (PAD MA DKAR PO’I PHRENG BA) · a dialectical analysis (MTHA’ DPYOD) of the Perfection of Wisdom.</p>
