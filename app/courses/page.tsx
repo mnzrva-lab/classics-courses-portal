@@ -1,6 +1,11 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 
+function offeringLabel(offering: { label: string; location: string | null; year: number | null }) {
+  if (offering.location && offering.year) return `${offering.location} ${offering.year}`
+  return offering.label
+}
+
 export default async function CoursesPage() {
   const supabase = await createClient()
   const { data: courses } = await supabase
@@ -35,7 +40,7 @@ export default async function CoursesPage() {
                   {courseOfferings.map((offering: any, index: number) => (
                     <span key={offering.id}>
                       {index > 0 ? <span className="classics-offering-separator"> · </span> : null}
-                      <Link href={`/courses/${course.slug}/${offering.slug}`}>{offering.label}</Link>
+                      <Link href={`/courses/${course.slug}/${offering.slug}`}>{offeringLabel(offering)}</Link>
                     </span>
                   ))}
                 </div>
