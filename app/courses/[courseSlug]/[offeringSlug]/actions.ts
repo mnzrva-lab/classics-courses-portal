@@ -15,14 +15,22 @@ async function requireUser() {
 export async function toggleCourseBookmark(courseId: string, returnPath: string) {
   const { supabase, userId } = await requireUser()
 
-  const { data: existing, error: existingError } = await supabase
-    .from('user_course_bookmarks')
-    .select('course_id')
-    .eq('user_id', userId)
-    .eq('course_id', courseId)
-    .maybeSingle()
+  const [{ data: existing, error: existingError }, { data: settings, error: settingsError }] = await Promise.all([
+    supabase
+      .from('user_course_bookmarks')
+      .select('course_id')
+      .eq('user_id', userId)
+      .eq('course_id', courseId)
+      .maybeSingle(),
+    supabase
+      .from('user_settings')
+      .select('save_bookmarks')
+      .eq('user_id', userId)
+      .maybeSingle(),
+  ])
 
-  if (existingError) throw new Error('Could not read bookmark state.')
+  if (existingError || settingsError) throw new Error('Could not read bookmark state.')
+  if (!existing && !(settings?.save_bookmarks ?? true)) throw new Error('Bookmark saving is turned off in Privacy & Data.')
 
   if (existing) {
     const { error } = await supabase
@@ -38,4 +46,5 @@ export async function toggleCourseBookmark(courseId: string, returnPath: string)
 
   revalidatePath(returnPath)
   revalidatePath('/my-learning')
+  revalidatePath('/my-notes')
 }

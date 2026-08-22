@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 
 type Session = {
@@ -14,6 +15,14 @@ type Session = {
   teacher_names: string[]
 }
 
+type UpcomingOffering = {
+  href: string
+  course_label: string
+  course_title: string
+  offering_label: string | null
+  starts_on: string | null
+}
+
 function localDateTime(value: string) {
   return new Intl.DateTimeFormat(undefined, {
     weekday: 'short',
@@ -22,6 +31,16 @@ function localDateTime(value: string) {
     hour: 'numeric',
     minute: '2-digit',
   }).format(new Date(value))
+}
+
+function offeringDate(value: string) {
+  const date = new Date(`${value}T12:00:00Z`)
+  return new Intl.DateTimeFormat(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  }).format(date)
 }
 
 function countdown(ms: number) {
@@ -35,7 +54,13 @@ function countdown(ms: number) {
   return `Starts in ${days} day${days === 1 ? '' : 's'}`
 }
 
-export default function NextSessionCard({ sessions }: { sessions: Session[] }) {
+export default function NextSessionCard({
+  sessions,
+  upcomingOffering = null,
+}: {
+  sessions: Session[]
+  upcomingOffering?: UpcomingOffering | null
+}) {
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
@@ -59,10 +84,29 @@ export default function NextSessionCard({ sessions }: { sessions: Session[] }) {
   }, [sessions, now])
 
   if (!current || !current.starts_at || !current.ends_at) {
+    if (upcomingOffering?.starts_on) {
+      return (
+        <div className="next-card">
+          <div className="next-line">
+            <div className="next-session-copy">
+              <div className="eyebrow">NEXT COURSE</div>
+              <h3>{upcomingOffering.course_label}{upcomingOffering.offering_label ? ` · ${upcomingOffering.offering_label}` : ''}</h3>
+              <div className="meta">{upcomingOffering.course_title} · begins {offeringDate(upcomingOffering.starts_on)}</div>
+              <div className="meta" style={{ marginTop: 4 }}>Individual live class times have not been added yet.</div>
+            </div>
+            <div className="next-session-action">
+              <Link className="button" href={upcomingOffering.href}>Open course</Link>
+            </div>
+          </div>
+        </div>
+      )
+    }
+
     return (
       <div className="next-card">
-        <div className="eyebrow">Next</div>
-        <h3>New live sessions will appear here.</h3>
+        <div className="eyebrow">Next live session</div>
+        <h3>No live session is scheduled yet.</h3>
+        <div className="meta">When a published class has a date, start time, and end time, it will appear here automatically.</div>
       </div>
     )
   }
@@ -75,21 +119,23 @@ export default function NextSessionCard({ sessions }: { sessions: Session[] }) {
   return (
     <div className="next-card">
       <div className="next-line">
-        <div>
+        <div className="next-session-copy">
           <div className={isLive ? 'live' : 'eyebrow'}>{isLive ? 'LIVE NOW' : 'NEXT CLASS'}</div>
-          <h3 style={{ marginTop: 8 }}>{current.course_title} · {current.code || current.title}</h3>
+          <h3>{current.course_title} · {current.code || current.title}</h3>
           <div className="meta">
             {current.offering_label ? `${current.offering_label} · ` : ''}
             {current.teacher_names.join(', ')}
           </div>
-          <div style={{ marginTop: 8 }}>{localDateTime(current.starts_at)} · your local time</div>
+          <div style={{ marginTop: 8, fontWeight: 750 }}>{localDateTime(current.starts_at)} · your local time</div>
           {!isLive && <div className="meta" style={{ marginTop: 4 }}>{countdown(start - now)}</div>}
         </div>
-        {zoomOpen && current.zoom_url && (
-          <a className="button red" href={current.zoom_url} target="_blank" rel="noreferrer">
-            Join the class on Zoom
-          </a>
-        )}
+        {zoomOpen && current.zoom_url ? (
+          <div className="next-session-action">
+            <a className="button red" href={current.zoom_url} target="_blank" rel="noreferrer">
+              Join the class on Zoom
+            </a>
+          </div>
+        ) : null}
       </div>
     </div>
   )
