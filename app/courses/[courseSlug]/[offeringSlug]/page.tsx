@@ -28,6 +28,28 @@ function materialLabel(type: string) {
   return labels[type] ?? 'Material'
 }
 
+function languageLabel(code: string) {
+  const normalized = code.trim().toLowerCase()
+  const labels: Record<string, string> = {
+    en: 'English', eng: 'English',
+    zh: 'Chinese', cn: 'Chinese', zho: 'Chinese',
+    'zh-tw': 'Traditional Chinese', 'zh-hant': 'Traditional Chinese', tcn: 'Traditional Chinese', tch: 'Traditional Chinese',
+    'zh-cn': 'Simplified Chinese', 'zh-hans': 'Simplified Chinese', scn: 'Simplified Chinese',
+    es: 'Spanish', spa: 'Spanish',
+    ru: 'Russian', rus: 'Russian',
+    uk: 'Ukrainian', ukr: 'Ukrainian',
+    de: 'German', ger: 'German', deu: 'German',
+    it: 'Italian', ita: 'Italian',
+    ro: 'Romanian', rom: 'Romanian',
+    vi: 'Vietnamese', vie: 'Vietnamese',
+    ja: 'Japanese', jpn: 'Japanese',
+    id: 'Indonesian', idn: 'Indonesian',
+    bg: 'Bulgarian', bul: 'Bulgarian',
+    tr: 'Turkish', tur: 'Turkish',
+  }
+  return labels[normalized] ?? code.trim().replace(/\b\w/g, (letter) => letter.toUpperCase())
+}
+
 function formatRange(start: string | null, end: string | null) {
   if (!start && !end) return null
   const fmt = (value: string) => new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`))
@@ -79,7 +101,7 @@ export default async function CourseOfferingPage({
     supabase
       .from('sessions')
       .select(`
-        id, slug, code, title, session_type, session_date, starts_at, ends_at, source_timezone, recording_url, zoom_url, sort_order,
+        id, slug, code, title, session_type, session_date, starts_at, ends_at, source_timezone, recording_url, audio_url, zoom_url, sort_order,
         session_teachers(teachers(full_name)),
         transcripts(status),
         study_notes(status),
@@ -139,6 +161,7 @@ export default async function CourseOfferingPage({
       .map((item: any) => materialLabel(item.material_type)))) as string[]
     const badges = [
       session.recording_url ? 'Recording' : null,
+      !session.recording_url && session.audio_url ? 'Audio' : null,
       notesPublished ? 'Study Notes' : null,
       transcriptPublished ? 'Transcript' : null,
       ...materialBadges,
@@ -196,7 +219,7 @@ export default async function CourseOfferingPage({
           <div className="offering-meta">
             {formatRange(offering.starts_on, offering.ends_on) ? <span className="pill">{formatRange(offering.starts_on, offering.ends_on)}</span> : null}
             {offering.location ? <span className="pill">{offering.location}</span> : null}
-            {(offering.language_codes ?? []).length ? <span className="pill">{(offering.language_codes ?? []).map((code: string) => code.toUpperCase()).join(' · ')}</span> : null}
+            {(offering.language_codes ?? []).length ? <span className="pill">{(offering.language_codes ?? []).map((code: string) => languageLabel(code)).join(' · ')}</span> : null}
           </div>
         </div>
       </section>
