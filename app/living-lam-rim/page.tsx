@@ -3,6 +3,32 @@ import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
+function dateOnly(value: string | null) {
+  if (!value) return null
+  const date = new Date(`${value}T12:00:00Z`)
+  return Number.isNaN(date.getTime()) ? null : date
+}
+
+function termDateRange(startsOn: string | null, endsOn: string | null) {
+  const start = dateOnly(startsOn)
+  const end = dateOnly(endsOn)
+  if (!start && !end) return null
+  if (!start) return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(end!)
+  if (!end) return new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(start)
+
+  const startMonthDay = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(start)
+  const endMonthDay = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(end)
+  const sameYear = start.getUTCFullYear() === end.getUTCFullYear()
+
+  if (sameYear) return `${startMonthDay} – ${endMonthDay}, ${end.getUTCFullYear()}`
+  return `${startMonthDay}, ${start.getUTCFullYear()} – ${endMonthDay}, ${end.getUTCFullYear()}`
+}
+
+function termBadge(label: string | null, sortOrder: number) {
+  const match = label?.match(/(\d+)/)
+  return `T${match?.[1] ?? Math.max(1, Math.round(sortOrder / 10))}`
+}
+
 export default async function LivingLamRimPage() {
   const supabase = await createClient()
 
@@ -39,32 +65,41 @@ export default async function LivingLamRimPage() {
   }
 
   return (
-    <main className="container page">
+    <main className="container page living-lam-rim-page">
       <div className="eyebrow">Ongoing program</div>
       <h1 style={{ fontSize: 'clamp(38px, 6vw, 64px)' }}>Living Lam Rim</h1>
-      <p className="lead">Browse by term, then open the individual class you want to study.</p>
+      <p className="lead">Browse the teaching archive term by term.</p>
 
       {(groups ?? []).length ? (
-        <section className="section grid two">
-          {(groups ?? []).map((group: any) => {
-            const count = sessionCount.get(group.id) ?? 0
-            const dateRange = group.starts_on || group.ends_on
-              ? [group.starts_on, group.ends_on].filter(Boolean).join(' to ')
-              : null
-            return (
-              <Link className="card" key={group.id} href={`/living-lam-rim/${group.slug}`}>
-                <div className="eyebrow">{group.label || 'Term'}</div>
-                <h2 style={{ fontSize: 30, marginTop: 10 }}>{group.title || group.label}</h2>
-                {dateRange ? <p className="meta">{dateRange}</p> : null}
-                <div className="actions"><span className="pill">{count} published class{count === 1 ? '' : 'es'}</span></div>
-              </Link>
-            )
-          })}
+        <section className="section living-terms-section">
+          <div className="living-terms-heading">
+            <h2>Terms</h2>
+            <p>Choose a term to open its classes and teaching archive.</p>
+          </div>
+
+          <div className="living-term-grid">
+            {(groups ?? []).map((group: any) => {
+              const count = sessionCount.get(group.id) ?? 0
+              const dateRange = termDateRange(group.starts_on, group.ends_on)
+              const badge = termBadge(group.label, group.sort_order)
+              return (
+                <Link className="living-term-card" key={group.id} href={`/living-lam-rim/${group.slug}`}>
+                  <div className="living-term-badge" aria-hidden="true">{badge}</div>
+                  <div className="living-term-copy">
+                    <h3>{group.title || group.label}</h3>
+                    {dateRange ? <p className="living-term-dates">{dateRange}</p> : null}
+                    <p className="living-term-count">{count} session{count === 1 ? '' : 's'}</p>
+                  </div>
+                  <span className="living-term-arrow" aria-hidden="true">→</span>
+                </Link>
+              )
+            })}
+          </div>
         </section>
       ) : (
         <section className="section card">
           <h2>Living Lam Rim terms are being organized for the library.</h2>
-          <p className="meta">The production structure is ready for Term → Class navigation. Published terms will appear here automatically.</p>
+          <p className="meta">Published terms and classes will appear here automatically.</p>
         </section>
       )}
     </main>
