@@ -55,10 +55,22 @@ export async function startSessionProgress(sessionId: string, returnPath: string
   revalidatePath('/my-learning')
 }
 
-export async function markSessionComplete(sessionId: string, returnPath: string) {
+export async function toggleSessionComplete(sessionId: string, returnPath: string) {
   const { supabase, userId } = await requireUser()
-  const settings = await readSettings(supabase, userId)
-  if (!settings.saveProgress) throw new Error('Progress saving is turned off in Privacy & Data.')
+  const [settings, currentResult] = await Promise.all([
+    readSettings(supabase, userId),
+    supabase
+      .from('user_session_progress')
+      .select('started_at, completed_at')
+      .eq('user_id', userId)
+      .eq('session_id', sessionId)
+      .maybeSingle(),
+  ])
+
+  if (currentResult.error) throw new Error('Could not read completion state.')
+  const current = currentResult.data
+  const isCompleted = Boolean(current?.completed_at)
+  if (!isCompleted && !settings.saveProgress) throw new Error('Progress saving is turned off in Privacy & Data.')
 
   const now = new Date().toISOString()
   const { error } = await supabase
@@ -67,14 +79,19 @@ export async function markSessionComplete(sessionId: string, returnPath: string)
       {
         user_id: userId,
         session_id: sessionId,
+        started_at: current?.started_at ?? now,
         last_opened_at: now,
-        completed_at: now,
+        completed_at: isCompleted ? null : now,
       },
       { onConflict: 'user_id,session_id' }
     )
 
-  if (error) throw new Error('Could not save completion.')
+  if (error) throw new Error(isCompleted ? 'Could not remove completion.' : 'Could not save completion.')
+
   revalidatePath(returnPath)
+  const cleanPath = returnPath.split('?')[0]
+  const parentPath = cleanPath.split('/').slice(0, -1).join('/')
+  if (parentPath) revalidatePath(parentPath)
   revalidatePath('/my-learning')
 }
 
