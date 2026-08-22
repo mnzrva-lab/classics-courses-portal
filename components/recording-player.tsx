@@ -48,7 +48,7 @@ function loadYouTubeApi() {
 
 export default function RecordingPlayer({ recordingUrl, title }: Props) {
   const playerHostRef = useRef<HTMLDivElement | null>(null)
-  const [youtubeReady, setYoutubeReady] = useState(false)
+  const [, setYoutubeReady] = useState(false)
   const videoId = youtubeId(recordingUrl)
   const playlistId = youtubePlaylistId(recordingUrl)
   const driveId = googleDriveFileId(recordingUrl)
@@ -124,7 +124,6 @@ export default function RecordingPlayer({ recordingUrl, title }: Props) {
         <div className="recording-frame"><div ref={playerHostRef} /></div>
         <div className="actions">
           <a className="button" href={recordingUrl} target="_blank" rel="noreferrer">Open recording in a new tab</a>
-          {youtubeReady ? <span className="pill">Transcript sync ready</span> : null}
         </div>
       </div>
     )
