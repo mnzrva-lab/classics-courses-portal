@@ -23,9 +23,9 @@ function materialLabel(type: string) {
     video: 'Video',
     document: 'Document',
     link: 'Link',
-    other: 'Materials',
+    other: 'Material',
   }
-  return labels[type] ?? 'Materials'
+  return labels[type] ?? 'Material'
 }
 
 function formatRange(start: string | null, end: string | null) {
@@ -170,6 +170,10 @@ export default async function CourseOfferingPage({
   }))
   const playlistSession = sessions.find((session: any) => isYouTubePlaylist(session.recording_url)) as any
   const publicPath = `/courses/${courseSlug}/${offeringSlug}`
+  const today = new Date().toISOString().slice(0, 10)
+  const hasScheduledSessions = liveScheduleSessions.some((session) => session.startsAt)
+  const showLiveSchedule = hasScheduledSessions && (!offering.ends_on || offering.ends_on >= today)
+  const hasCourseResources = resolvedOfferingMaterials.some((material: any) => Boolean(material.resolved_url)) || Boolean(playlistSession?.recording_url)
 
   return (
     <main className="container page">
@@ -198,22 +202,11 @@ export default async function CourseOfferingPage({
         ) : null}
       </section>
 
-      <div className="offering-live-grid">
-        <section className="card offering-summary-card cream course-resources-card">
-          <div className="eyebrow">Course resources</div>
-          <h3>Reading &amp; recordings</h3>
-          <p className="meta">Shared resources for the whole {offering.label} offering.</p>
-          <div className="course-resource-strip">
-            {resolvedOfferingMaterials.map((material: any) => material.resolved_url ? (
-              <a key={material.id} href={material.resolved_url} target="_blank" rel="noreferrer">{materialLabel(material.material_type)} · {material.title} ↗</a>
-            ) : null)}
-            {playlistSession?.recording_url ? <a href={playlistSession.recording_url} target="_blank" rel="noreferrer">Course recordings · YouTube playlist ↗</a> : null}
-            {!resolvedOfferingMaterials.length && !playlistSession?.recording_url ? <span className="meta">Shared readings and recording collections will appear here when they are published.</span> : null}
-          </div>
-        </section>
-
-        <LiveCourseSchedule sessions={liveScheduleSessions} calendarHref={`${publicPath}/calendar`} />
-      </div>
+      {showLiveSchedule ? (
+        <div className="offering-live-full">
+          <LiveCourseSchedule sessions={liveScheduleSessions} calendarHref={`${publicPath}/calendar`} />
+        </div>
+      ) : null}
 
       <section className="section offering-study-strip">
         <div>
@@ -230,6 +223,27 @@ export default async function CourseOfferingPage({
           ) : !userId ? <Link className="button" href="/login">Sign in to save progress</Link> : null}
         </div>
       </section>
+
+      {hasCourseResources ? (
+        <section className="course-resources-row" aria-label="Course resources">
+          <div className="course-resources-heading">
+            <div className="eyebrow">Course resources</div>
+            <strong>Reading &amp; recordings</strong>
+          </div>
+          <div className="course-resource-buttons">
+            {resolvedOfferingMaterials.map((material: any) => material.resolved_url ? (
+              <a className="button course-resource-button" key={material.id} href={material.resolved_url} target="_blank" rel="noreferrer">
+                {materialLabel(material.material_type)} · {material.title} ↗
+              </a>
+            ) : null)}
+            {playlistSession?.recording_url ? (
+              <a className="button course-resource-button" href={playlistSession.recording_url} target="_blank" rel="noreferrer">
+                Playlist · Course recordings ↗
+              </a>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       <section className="section">
         <div className="offering-section-head">
