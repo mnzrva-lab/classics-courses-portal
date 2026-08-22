@@ -6,6 +6,7 @@ import TranscriptSync from '@/components/transcript-sync'
 import ClassStudyTabs from '@/components/class-study-tabs'
 import AdminSessionEnhancer from '@/components/admin-session-enhancer'
 import AdminOfferingQuickTools from '@/components/admin-offering-quick-tools'
+import AdminOfferingSectionEnhancer from '@/components/admin-offering-section-enhancer'
 import TeacherBioEnhancer from '@/components/teacher-bio-enhancer'
 import { TELEGRAM_UPDATES_URL } from '@/lib/site-links'
 import './globals.css'
@@ -20,6 +21,7 @@ import './admin-compact.css'
 import './admin-archive-pass.css'
 import './admin-bulk-edit.css'
 import './admin-collections.css'
+import './admin-offering-compact.css'
 
 export const metadata: Metadata = {
   title: 'Classics Courses with Timothy Lowenhaupt',
@@ -118,6 +120,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             {children}
             <ClassStudyTabs />
             <TeacherBioEnhancer />
+            {isAdmin ? <AdminOfferingSectionEnhancer /> : null}
             {isAdmin ? <AdminSessionEnhancer /> : null}
             <TranscriptSync />
 
