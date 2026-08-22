@@ -21,7 +21,7 @@ export default async function AdminCoursesPage({ searchParams }: { searchParams:
 
   const { data: courses } = await supabase
     .from('courses')
-    .select('id, kind, canonical_number, slug, title, subtitle, description, status, sort_order, course_offerings(id, slug, label, status, sort_order)')
+    .select('id, kind, canonical_number, slug, title, subtitle, description, status, sort_order, course_offerings(id, slug, label, status, sort_order, artwork_url)')
     .order('sort_order')
 
   const notice = saved === 'created' ? 'Program created.' : saved === 'updated' ? 'Course or program updated.' : null
