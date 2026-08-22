@@ -8,6 +8,30 @@ type Entry = { key: string; title: string; subtitle: string; status: string; ele
 function eyebrow(section: HTMLElement) { return section.querySelector<HTMLElement>(':scope > .eyebrow')?.textContent?.trim() ?? '' }
 function heading(section: HTMLElement) { return section.querySelector<HTMLElement>(':scope > h2')?.textContent?.trim() ?? '' }
 
+function compactExistingMaterials(section: HTMLElement) {
+  const cleanups: Array<() => void> = []
+  const seen = new Set<HTMLElement>()
+  for (const titleInput of Array.from(section.querySelectorAll<HTMLInputElement>('input[name="material_title"]'))) {
+    if (!titleInput.value.trim()) continue
+    const form = titleInput.closest('form')
+    const wrapper = form?.parentElement
+    if (!form || !wrapper || seen.has(wrapper)) continue
+    const status = form.querySelector<HTMLSelectElement>('select[name="material_status"]')?.value ?? ''
+    const type = form.querySelector<HTMLSelectElement>('select[name="material_type"]')?.selectedOptions[0]?.textContent?.trim() ?? 'Resource'
+    seen.add(wrapper)
+    const parent = wrapper.parentElement
+    if (!parent) continue
+    const details = document.createElement('details')
+    details.className = 'admin-material-details'
+    const summary = document.createElement('summary')
+    summary.textContent = `${titleInput.value.trim()} · ${type}${status ? ` · ${status}` : ''}`
+    parent.insertBefore(details, wrapper)
+    details.append(summary, wrapper)
+    cleanups.push(() => { if (details.parentElement) details.parentElement.insertBefore(wrapper, details); details.remove() })
+  }
+  return cleanups
+}
+
 export default function AdminOfferingSectionEnhancer() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -31,14 +55,14 @@ export default function AdminOfferingSectionEnhancer() {
     const sessions = sections.find((section) => eyebrow(section) === 'Sessions')
     const addSession = sections.find((section) => eyebrow(section) === 'Add session')
 
-    // New linked resources follow the archive default: Published inside the Course Offering.
-    // Existing resources keep their stored status.
+    let materialRowCleanups: Array<() => void> = []
     if (materials) {
       for (const form of Array.from(materials.querySelectorAll<HTMLFormElement>('form'))) {
         const title = form.querySelector<HTMLInputElement>('input[name="material_title"]')
         const status = form.querySelector<HTMLSelectElement>('select[name="material_status"]')
         if (title && !title.value.trim() && status) status.value = 'published'
       }
+      materialRowCleanups = compactExistingMaterials(materials)
     }
 
     const next: Entry[] = []
@@ -64,41 +88,26 @@ export default function AdminOfferingSectionEnhancer() {
     const quickMount = main.querySelector<HTMLElement>('.admin-offering-quick-tools-mount')
     if (quickMount) quickMount.insertAdjacentElement('afterend', cardsMount)
     else core.insertAdjacentElement('afterend', cardsMount)
-    setMount(cardsMount)
-    setEntries(next)
+    setMount(cardsMount); setEntries(next)
 
     const cleanups: Array<() => void> = []
     for (const item of next) for (const form of Array.from(item.element.querySelectorAll<HTMLFormElement>('form'))) {
       const close = () => setActiveKey(null)
-      form.addEventListener('submit', close)
-      cleanups.push(() => form.removeEventListener('submit', close))
+      form.addEventListener('submit', close); cleanups.push(() => form.removeEventListener('submit', close))
     }
 
     return () => {
       next.forEach((item) => item.element.classList.remove('admin-offering-section-source', 'is-open'))
+      materialRowCleanups.reverse().forEach((cleanup) => cleanup())
       cleanups.forEach((cleanup) => cleanup())
       cardsMount.remove(); setMount(null); setEntries([]); setActiveKey(null); document.body.classList.remove('admin-modal-open')
     }
   }, [pathname, navigationKey])
 
-  useEffect(() => {
-    for (const entry of entries) entry.element.classList.toggle('is-open', entry.key === activeKey)
-    document.body.classList.toggle('admin-modal-open', Boolean(activeKey))
-  }, [entries, activeKey])
+  useEffect(() => { for (const entry of entries) entry.element.classList.toggle('is-open', entry.key === activeKey); document.body.classList.toggle('admin-modal-open', Boolean(activeKey)) }, [entries, activeKey])
+  useEffect(() => { if (!activeKey) return; const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setActiveKey(null) }; window.addEventListener('keydown', close); return () => window.removeEventListener('keydown', close) }, [activeKey])
 
-  useEffect(() => {
-    if (!activeKey) return
-    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') setActiveKey(null) }
-    window.addEventListener('keydown', close)
-    return () => window.removeEventListener('keydown', close)
-  }, [activeKey])
-
-  const cards = mount ? createPortal(
-    <section className="admin-offering-section-cards" aria-label="Course Offering content managers">
-      {entries.map((entry) => <article className="admin-offering-section-card" key={entry.key}><div><div className="eyebrow">{entry.title}</div><strong>{entry.subtitle}</strong><span className="meta">{entry.status}</span></div><button className="button" type="button" onClick={() => setActiveKey(entry.key)}>Open</button></article>)}
-    </section>, mount,
-  ) : null
-
+  const cards = mount ? createPortal(<section className="admin-offering-section-cards" aria-label="Course Offering content managers">{entries.map((entry) => <article className="admin-offering-section-card" key={entry.key}><div><div className="eyebrow">{entry.title}</div><strong>{entry.subtitle}</strong><span className="meta">{entry.status}</span></div><button className="button" type="button" onClick={() => setActiveKey(entry.key)}>Open</button></article>)}</section>, mount) : null
   const active = entries.find((entry) => entry.key === activeKey)
   const modal = active ? createPortal(<><button className="admin-editor-backdrop" type="button" aria-label="Close section" onClick={() => setActiveKey(null)} /><div className="admin-editor-closebar admin-offering-closebar"><strong>{active.title}</strong><button className="button" type="button" onClick={() => setActiveKey(null)}>Close ×</button></div></>, document.body) : null
   return <>{cards}{modal}</>
