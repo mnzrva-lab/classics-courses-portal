@@ -1,0 +1,64 @@
+/* Course Offering hierarchy follow-up: live schedule is temporary and full-width; resources are compact and persistent. */
+.offering-live-full {
+  width: 100%;
+  margin-top: 22px;
+}
+.offering-live-full .live-course-card {
+  width: 100%;
+}
+
+.course-resources-row {
+  display: grid;
+  grid-template-columns: minmax(180px, .42fr) minmax(0, 1.58fr);
+  gap: 22px;
+  align-items: center;
+  margin-top: 18px;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--cream);
+  box-shadow: none;
+}
+.course-resources-heading {
+  min-width: 0;
+}
+.course-resources-heading > strong {
+  display: block;
+  margin-top: 5px;
+  font-size: 17px;
+  line-height: 1.25;
+}
+.course-resource-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.course-resource-button {
+  width: auto !important;
+  min-height: 40px !important;
+  padding: 0 14px !important;
+  background: var(--paper) !important;
+  font-size: 12px !important;
+  white-space: normal;
+  text-align: left;
+}
+.course-resource-button:hover {
+  border-color: var(--sage-500) !important;
+  background: var(--white) !important;
+}
+
+@media (max-width: 760px) {
+  .course-resources-row {
+    grid-template-columns: 1fr;
+    gap: 13px;
+    padding: 16px;
+  }
+  .course-resource-buttons {
+    justify-content: flex-start;
+  }
+  .course-resource-button {
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+}
