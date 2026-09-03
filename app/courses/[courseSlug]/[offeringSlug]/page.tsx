@@ -34,6 +34,11 @@ type ArchiveCatalog = {
 const catalog = rawCatalog as CanonicalCourse[]
 const archiveCatalog = rawArchiveCatalog as ArchiveCatalog
 
+function displayTeacher(value?: string) {
+  if (!value) return ''
+  return value.replace(/\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}$/, '').trim()
+}
+
 export default async function CourseOfferingPage({ params }: { params: Promise<{ courseSlug: string; offeringSlug: string }> }) {
   const { courseSlug, offeringSlug } = await params
   const course = catalog.find((item) => item.slug === courseSlug)
@@ -77,17 +82,20 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
         <section className="section">
           <div className="section-head"><div><div className="eyebrow">Course content</div><h2>Classes &amp; recordings</h2><p>Only recordings present in the supplied source archive are shown.</p></div></div>
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            {sessions.map((session, index) => (
-              <div className="program-session-row" key={`${session.videoId ?? session.url}-${index}`}>
-                <div className="program-session-code">{session.code}</div>
-                <div className="program-session-copy">
-                  <strong>{session.name}</strong>
-                  <div className="meta">{[session.teacher, session.date].filter(Boolean).join(' · ') || 'Source date not included'}</div>
+            {sessions.map((session, index) => {
+              const teacher = displayTeacher(session.teacher)
+              return (
+                <div className="program-session-row" key={`${session.videoId ?? session.url}-${index}`}>
+                  <div className="program-session-code">{session.code}</div>
+                  <div className="program-session-copy">
+                    <strong>{session.name}</strong>
+                    <div className="meta">{[teacher, session.date].filter(Boolean).join(' · ') || 'Source date not included'}</div>
+                  </div>
+                  <div className="meta">{session.duration}</div>
+                  <a className="button" href={session.url} target="_blank" rel="noreferrer">Open recording ↗</a>
                 </div>
-                <div className="meta">{session.duration}</div>
-                <a className="button" href={session.url} target="_blank" rel="noreferrer">Open recording ↗</a>
-              </div>
-            ))}
+              )
+            })}
           </div>
           {offering.note ? <p className="meta" style={{ marginTop: 12 }}>{offering.note}</p> : null}
         </section>
