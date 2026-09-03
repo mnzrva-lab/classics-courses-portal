@@ -88,7 +88,8 @@ export default function ClassicsCourseHub({ courseSlug }: { courseSlug: string }
                 {offering.note ? <p className="meta" style={{ marginTop: 12 }}>{offering.note}</p> : null}
                 <div className="actions" style={{ marginTop: 16 }}>
                   {offering.internalHref ? <Link className="button sage" href={offering.internalHref}>Open Library archive</Link> : null}
-                  {!offering.internalHref && offering.playlistUrl ? <a className="button sage" href={offering.playlistUrl} target="_blank" rel="noreferrer">Open full playlist ↗</a> : null}
+                  {!offering.internalHref ? <Link className="button sage" href={`/courses/${course.slug}/${offering.slug}`}>Open Course Offering</Link> : null}
+                  {!offering.internalHref && offering.playlistUrl ? <a className="button" href={offering.playlistUrl} target="_blank" rel="noreferrer">Playlist ↗</a> : null}
                 </div>
               </article>
             ))}
