@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 import rawMaterials from '@/content/classics/course-08/taiwan-2026/materials.json'
+import styles from './course-offering.module.css'
 
 type CourseSession = {
   id: string
@@ -55,9 +56,10 @@ const courseData = rawCourseData as CourseData
 const materialsData = rawMaterials as MaterialsData
 
 function sessionMarker(session: CourseSession) {
-  const number = session.label.match(/\d+/)?.[0]
-  if (session.kind === 'Meditation') return number ? `M${number}` : 'M'
-  if (session.kind === 'Class') return number ? `C${number}` : 'C'
+  const match = session.label.match(/(\d+)$/)
+  const number = match?.[1] ?? ''
+  if (session.kind === 'Meditation') return `M${number}`
+  if (session.kind === 'Class') return `C${number}`
   return '•'
 }
 
@@ -124,15 +126,15 @@ export default function Course8TaiwanPage() {
           </div>
         </div>
 
-        <div className="module-list">
+        <div className={styles.list}>
           {sessions.map((session) => (
-            <Link className="module" key={session.id} href={`/courses/course-8/taiwan-2026/${session.slug}`}>
-              <div className="module-num">{sessionMarker(session)}</div>
-              <div>
+            <Link className={styles.module} key={session.id} href={`/courses/course-8/taiwan-2026/${session.slug}`}>
+              <div className={styles.num}>{sessionMarker(session)}</div>
+              <div className={styles.copy}>
                 <b>{session.label}</b>
                 <small>{session.date}{session.teacher ? ` · ${session.teacher}` : ''}</small>
               </div>
-              <span className="status">{availability(session)}</span>
+              <span className={styles.status}>{availability(session)}</span>
             </Link>
           ))}
         </div>
