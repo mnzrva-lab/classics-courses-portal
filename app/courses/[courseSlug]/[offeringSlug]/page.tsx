@@ -55,7 +55,7 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
     return (
       <main className="container page">
         <div className="offering-breadcrumbs"><Link href="/courses">Classics Courses</Link><span>/</span><Link href={`/courses/${course.slug}`}>Course {course.canonicalNumber}</Link><span>/</span><span>{offering.label}</span></div>
-        <section className="section"><div className="eyebrow">Course Offering</div><h1>{course.title}</h1><p className="lead">{offering.label}</p><div className="actions"><Link className="button sage" href={offering.internalHref}>Open full Library archive</Link></div></section>
+        <section className="section"><div className="eyebrow">Course Offering</div><h1>{course.title}</h1><p className="lead">{offering.label}</p><div className="actions"><Link className="button sage" href={offering.internalHref}>Open course</Link></div></section>
       </main>
     )
   }
