@@ -18,7 +18,6 @@ type MeditationVersion = {
   duration: string
   durationSeconds: number | null
   href: string
-  combined: boolean
 }
 
 const catalog = rawCatalog as CanonicalCourse[]
@@ -36,21 +35,26 @@ function secondsFromDuration(value: string) {
   if (parts.length === 2) return parts[0] * 60 + parts[1]
   return null
 }
-function durationBucket(seconds: number | null) {
-  if (seconds == null) return 'unknown'
-  if (seconds < 30 * 60) return 'short'
-  if (seconds <= 60 * 60) return 'medium'
-  return 'long'
-}
 function isMeditationRecording(code: string, name: string) {
   const normalized = `${code} ${name}`.toLowerCase()
   return normalized.includes('meditation') || /^m\d*\b/.test(normalized)
+}
+function matchesDuration(seconds: number | null, filter: string) {
+  if (filter === 'all') return true
+  if (seconds == null) return false
+  if (filter === 'ten') return seconds <= 10 * 60
+  if (filter === 'under30') return seconds < 30 * 60
+  if (filter === '30to60') return seconds >= 30 * 60
+  return true
 }
 
 const archiveVersions: MeditationVersion[] = allArchiveSessions()
   .filter((item) => isMeditationRecording(item.code, item.name))
   .map((item) => {
     const course = courseByNumber.get(item.courseNumber)
+    const directHref = item.videoId
+      ? `/archive/classics/${course?.slug ?? `course-${item.courseNumber}`}/${item.offeringSlug}/video-${item.videoId}`
+      : `/courses/${course?.slug ?? `course-${item.courseNumber}`}/${item.offeringSlug}`
     return {
       id: `course-${item.courseNumber}-${item.offeringSlug}-${item.videoId ?? item.code}`,
       courseNumber: item.courseNumber,
@@ -61,8 +65,7 @@ const archiveVersions: MeditationVersion[] = allArchiveSessions()
       date: item.date ?? '',
       duration: item.duration,
       durationSeconds: secondsFromDuration(item.duration),
-      href: `/courses/${course?.slug ?? `course-${item.courseNumber}`}/${item.offeringSlug}#recording-${item.videoId}`,
-      combined: item.name.toLowerCase().includes('class') && item.name.toLowerCase().includes('meditation'),
+      href: directHref,
     }
   })
 
@@ -79,56 +82,49 @@ const course8Versions: MeditationVersion[] = course8.sessions
     duration: '',
     durationSeconds: null,
     href: `/courses/course-8/taiwan-2026/${session.slug}`,
-    combined: false,
   }))
 
 const versions = [...archiveVersions, ...course8Versions]
+const filters = [
+  { value: 'all', label: 'All' },
+  { value: 'ten', label: '10 minutes' },
+  { value: 'under30', label: 'Under 30 min' },
+  { value: '30to60', label: '30–60 min' },
+]
 
-export default async function MeditationsPage({ searchParams }: { searchParams: Promise<{ course?: string; duration?: string }> }) {
+export default async function MeditationsPage({ searchParams }: { searchParams: Promise<{ duration?: string }> }) {
   const params = await searchParams
-  const courseFilter = Number(params.course || 0)
-  const durationFilter = params.duration || 'all'
-  const filtered = versions.filter((item) =>
-    (!courseFilter || item.courseNumber === courseFilter)
-    && (durationFilter === 'all' || durationBucket(item.durationSeconds) === durationFilter)
-  )
-  const courseOptions = Array.from(new Map(versions.map((item) => [item.courseNumber, item.sourceLabel] as const))).sort((a, b) => a[0] - b[0])
+  const durationFilter = filters.some((filter) => filter.value === params.duration) ? params.duration! : 'all'
+  const filtered = versions.filter((item) => matchesDuration(item.durationSeconds, durationFilter))
 
   return (
     <main className="container page meditation-library-simple">
-      <div className="eyebrow">Practice library</div>
-      <h1>Meditations</h1>
-      <p className="lead">Meditation recordings already identified inside reviewed Course Offerings, collected here without removing their original course context.</p>
+      <header className="compact-page-head">
+        <div className="eyebrow">Practice library</div>
+        <h1>Meditations</h1>
+        <p className="lead">Meditation recordings identified inside reviewed Course Offerings, kept with their original course context.</p>
+      </header>
 
-      <section className="section">
-        <div className="card cream">
-          <div className="eyebrow">Source-linked practice index</div>
-          <h2>{versions.length} meditation recording{versions.length === 1 ? '' : 's'} currently identified</h2>
-          <p>These are teaching versions from the migrated course archives. They are not yet grouped into canonical practices such as one meditation appearing across multiple courses.</p>
-          <p className="meta">Canonical names, topics, dedicated audio files, and cross-course grouping will be added only after that meditation source data is reviewed.</p>
-        </div>
-      </section>
+      <section className="section compact-section">
+        <nav className="meditation-filter-buttons" aria-label="Filter meditations by duration">
+          {filters.map((filter) => <Link className={durationFilter === filter.value ? 'button sage' : 'button'} href={filter.value === 'all' ? '/meditations' : `/meditations?duration=${filter.value}`} key={filter.value}>{filter.label}</Link>)}
+        </nav>
 
-      <section className="section">
-        <div className="section-head"><div><div className="eyebrow">Find a recording</div><h2>Source-linked meditations</h2></div></div>
-        <form action="/meditations" method="get" className="advanced-search-form" style={{ marginBottom: 20 }}>
-          <label>Source course<select name="course" defaultValue={courseFilter || ''}><option value="">All courses</option>{courseOptions.map(([number, label]) => <option key={number} value={number}>{label}</option>)}</select></label>
-          <label>Duration<select name="duration" defaultValue={durationFilter}><option value="all">All durations</option><option value="short">Under 30 min</option><option value="medium">30–60 min</option><option value="long">60+ min</option></select></label>
-          <div className="actions"><button className="button sage" type="submit">Apply filters</button>{courseFilter || durationFilter !== 'all' ? <Link className="button" href="/meditations">Clear filters</Link> : null}</div>
-        </form>
-
-        {filtered.length ? <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          {filtered.map((item) => <div className="program-session-row" key={item.id}>
-            <div className="program-session-code">◎</div>
-            <div className="program-session-copy">
-              <strong>{item.sessionLabel}</strong>
-              <div className="meta">{item.sourceLabel} · {item.offeringLabel}</div>
-              <div className="meta">{[item.teacher, item.date, item.duration].filter(Boolean).join(' · ')}</div>
-            </div>
-            <div>{item.combined ? <span className="pill">Combined class + meditation</span> : <span className="pill">Meditation</span>}</div>
-            <Link className="button" href={item.href}>Open source</Link>
-          </div>)}
-        </div> : <div className="card"><p className="meta">No source-linked meditation recordings match these filters.</p></div>}
+        {filtered.length ? (
+          <div className="compact-session-list meditation-session-list">
+            {filtered.map((item) => (
+              <Link className="compact-session-row meditation-session-row" href={item.href} key={item.id}>
+                <span className="compact-session-code">◎</span>
+                <span className="compact-session-copy">
+                  <strong className="meditation-course-name">{item.sourceLabel}</strong>
+                  <span>{item.sessionLabel} · {item.offeringLabel}</span>
+                  <small>{[item.teacher, item.date, item.duration].filter(Boolean).join(' · ')}</small>
+                </span>
+                <span className="compact-row-arrow" aria-hidden="true">→</span>
+              </Link>
+            ))}
+          </div>
+        ) : <p className="meta">No meditation recordings match this duration.</p>}
       </section>
     </main>
   )

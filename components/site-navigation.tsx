@@ -3,12 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-type CurrentCourse = {
-  href: string
-  label: string
-  title: string
-} | null
-
+type CurrentCourse = { href: string; label: string; title: string } | null
 type Props = {
   isAdmin: boolean
   currentCourse: CurrentCourse
@@ -26,8 +21,7 @@ function SidebarLink({ pathname, href, icon, children }: { pathname: string; hre
   const active = isActivePath(pathname, href)
   return (
     <Link className={active ? 'sidebar-link active' : 'sidebar-link'} href={href} aria-current={active ? 'page' : undefined}>
-      <span aria-hidden="true">{icon}</span>
-      <span>{children}</span>
+      <span aria-hidden="true">{icon}</span><span>{children}</span>
     </Link>
   )
 }
@@ -38,30 +32,16 @@ export default function SiteNavigation({ isAdmin, currentCourse, perfectionHref,
   return (
     <>
       <aside className="portal-sidebar">
-        <Link className="sidebar-brand" href="/">
-          <span className="sidebar-mark" aria-hidden="true">C</span>
-          <span className="sidebar-brand-copy">
-            <strong>Classics Courses</strong>
-            <small>Study portal</small>
-          </span>
-        </Link>
+        <Link className="sidebar-brand" href="/"><span className="sidebar-mark" aria-hidden="true">C</span><span className="sidebar-brand-copy"><strong>Classics Courses</strong><small>Study portal</small></span></Link>
 
         <nav className="sidebar-nav" aria-label="Primary navigation">
           <SidebarLink pathname={pathname} href="/" icon="⌂">Home</SidebarLink>
-
           <div className="sidebar-label">Courses</div>
           <SidebarLink pathname={pathname} href="/courses" icon="▤">Classics Courses</SidebarLink>
           <SidebarLink pathname={pathname} href="/living-lam-rim" icon="◌">Living Lam Rim</SidebarLink>
           <SidebarLink pathname={pathname} href={perfectionHref} icon="◇">Perfection of Wisdom</SidebarLink>
-          <SidebarLink pathname={pathname} href="/other-programs" icon="＋">Other teachings</SidebarLink>
 
-          {currentCourse ? (
-            <Link className="sidebar-current-course" href={currentCourse.href}>
-              <span>LATEST</span>
-              <strong>{currentCourse.label}</strong>
-              <small>{currentCourse.title}</small>
-            </Link>
-          ) : null}
+          {currentCourse ? <Link className="sidebar-current-course" href={currentCourse.href}><span>LATEST</span><strong>{currentCourse.label}</strong><small>{currentCourse.title}</small></Link> : null}
 
           <div className="sidebar-label">Study</div>
           <SidebarLink pathname={pathname} href="/meditations" icon="◎">Meditations</SidebarLink>
@@ -81,7 +61,6 @@ export default function SiteNavigation({ isAdmin, currentCourse, perfectionHref,
           <div className="portal-mobile-more-panel">
             <Link href="/living-lam-rim">Living Lam Rim</Link>
             <Link href={perfectionHref}>Perfection of Wisdom</Link>
-            <Link href="/other-programs">Other teachings</Link>
             <Link href="/meditations">Meditations</Link>
             <Link href="/tibetan">Tibetan</Link>
             {personalStudyEnabled ? <Link href="/my-learning">My Learning</Link> : null}

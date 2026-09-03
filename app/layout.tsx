@@ -24,6 +24,7 @@ import './program-archive-pass.css'
 import './program-artwork.css'
 import './student-compact-pass.css'
 import './design-tibetan-pass.css'
+import './library-list-refinement.css'
 
 export const metadata: Metadata = {
   title: 'Classics Courses with Timothy Lowenhaupt',
@@ -31,13 +32,8 @@ export const metadata: Metadata = {
 }
 
 type CourseData = {
-  course: {
-    canonicalNumber: number
-    title: string
-  }
-  offering: {
-    label: string
-  }
+  course: { canonicalNumber: number; title: string }
+  offering: { label: string }
 }
 
 const courseData = rawCourseData as CourseData

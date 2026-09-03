@@ -13,7 +13,6 @@ type Session = {
   recordingUrl: string
   transcriptSource: string | null
 }
-
 type Term = {
   term: number
   slug: string
@@ -22,10 +21,7 @@ type Term = {
   note: string | null
   sessions: Session[]
 }
-
-type Catalog = {
-  terms: Term[]
-}
+type Catalog = { terms: Term[] }
 
 const catalog = rawCatalog as Catalog
 
@@ -36,36 +32,24 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
 
   return (
     <main className="container page living-lam-rim-term-page">
-      <div className="offering-breadcrumbs">
-        <Link href="/living-lam-rim">Living Lam Rim</Link><span>/</span>
-        <span>Term {term.term}</span>
-      </div>
+      <div className="offering-breadcrumbs"><Link href="/living-lam-rim">Living Lam Rim</Link><span>/</span><span>Term {term.term}</span></div>
 
-      <header className="living-term-course-head">
+      <header className="compact-page-head">
         <div className="eyebrow">Term {term.term}</div>
         <h1>{term.title ?? `Term ${term.term}`}</h1>
-        <div className="living-term-course-meta">
-          <span>{term.range}</span>
-          <span>{term.sessions.length} recordings</span>
-        </div>
-        {term.note ? <p className="meta" style={{ marginTop: 12 }}>{term.note}</p> : null}
+        <p className="lead">{term.range}</p>
+        {term.note ? <p className="meta">{term.note}</p> : null}
       </header>
 
-      <section className="section living-term-study-section">
-        <div className="living-term-study-head">
-          <div className="eyebrow">Course content</div>
-          <h2>Classes &amp; review</h2>
-        </div>
-
-        <div className="module-list">
+      <section className="section compact-section">
+        <div className="section-head"><div><div className="eyebrow">Course content</div><h2>Classes &amp; review</h2></div></div>
+        <div className="compact-session-list">
           {term.sessions.map((session) => (
-            <Link className="module" key={session.id} href={`/living-lam-rim/${term.slug}/${session.slug}`}>
-              <div className="module-num">{session.code}</div>
-              <div>
-                <b>{session.label}</b>
-                <small>{session.date} · {session.duration}</small>
-              </div>
-              <span className="status">Recording{session.transcriptSource ? ' · Transcript' : ''}</span>
+            <Link className="compact-session-row" href={`/living-lam-rim/${term.slug}/${session.slug}`} key={session.id}>
+              <span className="compact-session-code">{session.code}</span>
+              <span className="compact-session-copy"><strong>{session.label}</strong><small>{session.date} · {session.duration}</small></span>
+              {session.transcriptSource ? <span className="compact-session-note">Transcript</span> : null}
+              <span className="compact-row-arrow" aria-hidden="true">→</span>
             </Link>
           ))}
         </div>

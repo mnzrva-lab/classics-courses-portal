@@ -8,32 +8,25 @@ type CatalogCourse = {
   title: string
 }
 
-type ArchiveOffering = {
-  slug: string
-}
-
+type ArchiveOffering = { slug: string }
 type ArchiveCourse = {
   canonicalNumber: number
   offerings?: ArchiveOffering[]
-  status?: string
   schedule?: Array<{ label: string; date: string }>
 }
-
-type ArchiveCatalog = {
-  courses: ArchiveCourse[]
-}
+type ArchiveCatalog = { courses: ArchiveCourse[] }
 
 const catalog = rawCatalog as CatalogCourse[]
 const archiveCatalog = rawArchiveCatalog as ArchiveCatalog
 const archiveByNumber = new Map(archiveCatalog.courses.map((course) => [course.canonicalNumber, course]))
 
-function availability(course: CatalogCourse) {
+function courseMeta(course: CatalogCourse) {
   const archive = archiveByNumber.get(course.canonicalNumber)
   const offerings = archive?.offerings ?? []
-  if (offerings.length === 1) return '1 teaching archive available'
-  if (offerings.length > 1) return `${offerings.length} teaching archives available`
-  if (archive?.schedule?.length) return 'Scheduled Sep 2026 – Jan 2027'
-  return 'Teaching archive to be added'
+  if (offerings.length === 1) return '1 Course Offering'
+  if (offerings.length > 1) return `${offerings.length} Course Offerings`
+  if (archive?.schedule?.length) return 'Upcoming'
+  return ''
 }
 
 export default function CoursesPage() {
@@ -41,20 +34,17 @@ export default function CoursesPage() {
     <main className="container page classics-library-page">
       <div className="eyebrow">Classics library</div>
       <h1>The 18 Classics Courses</h1>
-      <p className="lead">Choose a course, then open the Course Offering or teaching archive you want to study.</p>
+      <p className="lead">Choose a course to see its available Course Offerings, recordings, transcripts, and materials.</p>
 
-      <section className="classics-library-grid section">
-        {catalog.map((course) => {
-          const available = Boolean(archiveByNumber.get(course.canonicalNumber)?.offerings?.length)
-          return (
-            <article className="classics-course-card" key={course.canonicalNumber}>
-              <div className="eyebrow classics-course-eyebrow">Course {course.canonicalNumber}</div>
-              <h2>{course.title}</h2>
-              <div className={available ? 'classics-offering-line' : 'classics-offering-empty'}>{availability(course)}</div>
-              <div className="actions" style={{ marginTop: 14 }}><Link className={course.canonicalNumber === 8 ? 'button sage' : 'button'} href={`/courses/${course.slug}`}>Open course</Link></div>
-            </article>
-          )
-        })}
+      <section className="section compact-course-list" aria-label="The 18 Classics Courses">
+        {catalog.map((course) => (
+          <Link className="compact-course-link" href={`/courses/${course.slug}`} key={course.canonicalNumber}>
+            <span className="compact-course-number">C{course.canonicalNumber}</span>
+            <span className="compact-course-copy"><strong>{course.title}</strong></span>
+            {courseMeta(course) ? <span className="compact-course-meta">{courseMeta(course)}</span> : null}
+            <span className="compact-row-arrow" aria-hidden="true">→</span>
+          </Link>
+        ))}
       </section>
     </main>
   )

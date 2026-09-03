@@ -8,6 +8,7 @@ type Props = {
   rebroadcastAt?: string | null
   sourceTimezone: string
   sourceLabel: string
+  compact?: boolean
 }
 
 type TimeLabels = {
@@ -40,7 +41,7 @@ function formatRange(start: string, end: string, timeZone?: string) {
   return `${formatDateTime(start, timeZone)}–${formatTime(end, timeZone)}`
 }
 
-export default function LocalSessionTime({ startsAt, endsAt, rebroadcastAt, sourceTimezone, sourceLabel }: Props) {
+export default function LocalSessionTime({ startsAt, endsAt, rebroadcastAt, sourceTimezone, sourceLabel, compact = false }: Props) {
   const [labels, setLabels] = useState<TimeLabels | null>(null)
 
   useEffect(() => {
@@ -54,6 +55,16 @@ export default function LocalSessionTime({ startsAt, endsAt, rebroadcastAt, sour
   }, [startsAt, endsAt, rebroadcastAt, sourceTimezone])
 
   if (!labels) return <div className="meta">Loading your local time…</div>
+
+  if (compact) {
+    return (
+      <div className="local-session-compact">
+        <strong>{labels.local}</strong>
+        <div className="meta">{labels.zone}</div>
+        <div className="meta">{sourceLabel}: {labels.source}{labels.rebroadcast ? ` · Rebroadcast: ${labels.rebroadcast}` : ''}</div>
+      </div>
+    )
+  }
 
   return (
     <div>

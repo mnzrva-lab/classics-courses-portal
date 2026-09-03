@@ -1,17 +1,11 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import RecordingPlayer from '@/components/recording-player'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import { archiveSessionsFor } from '@/content/classics/archive-sessions'
 import { archiveSessionSlug } from '@/content/classics/archive-route'
 
-type CanonicalCourse = {
-  canonicalNumber: number
-  slug: string
-  title: string
-}
-
+type CanonicalCourse = { canonicalNumber: number; slug: string; title: string }
 type ArchiveOffering = {
   slug: string
   label: string
@@ -22,15 +16,8 @@ type ArchiveOffering = {
   sessionCount?: number
   note?: string
 }
-
-type ArchiveCourse = {
-  canonicalNumber: number
-  offerings?: ArchiveOffering[]
-}
-
-type ArchiveCatalog = {
-  courses: ArchiveCourse[]
-}
+type ArchiveCourse = { canonicalNumber: number; offerings?: ArchiveOffering[] }
+type ArchiveCatalog = { courses: ArchiveCourse[] }
 
 const catalog = rawCatalog as CanonicalCourse[]
 const archiveCatalog = rawArchiveCatalog as ArchiveCatalog
@@ -55,64 +42,46 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
     return (
       <main className="container page">
         <div className="offering-breadcrumbs"><Link href="/courses">Classics Courses</Link><span>/</span><Link href={`/courses/${course.slug}`}>Course {course.canonicalNumber}</Link><span>/</span><span>{offering.label}</span></div>
-        <section className="section"><div className="eyebrow">Course Offering</div><h1>{course.title}</h1><p className="lead">{offering.label}</p><div className="actions"><Link className="button sage" href={offering.internalHref}>Open course</Link></div></section>
+        <section className="section"><div className="eyebrow">Course Offering</div><h1>{course.title}</h1><p className="lead">{offering.label}</p><Link className="inline-library-link" href={offering.internalHref}>Open course →</Link></section>
       </main>
     )
   }
 
   return (
-    <main className="container page">
+    <main className="container page compact-offering-page">
       <div className="offering-breadcrumbs"><Link href="/courses">Classics Courses</Link><span>/</span><Link href={`/courses/${course.slug}`}>Course {course.canonicalNumber}</Link><span>/</span><span>{offering.label}</span></div>
 
-      <section className="section">
+      <header className="compact-page-head">
         <div className="eyebrow">Classics Course {course.canonicalNumber} · Course Offering</div>
         <h1>{course.title}</h1>
-        <p className="lead">{offering.label}{offering.recordingCount != null ? ` · ${offering.recordingCount} recordings` : ''}</p>
-        <div className="actions">{offering.playlistUrl ? <a className="button sage" href={offering.playlistUrl} target="_blank" rel="noreferrer">Open full playlist ↗</a> : null}</div>
-      </section>
-
-      {offering.playlistUrl ? (
-        <section className="section">
-          <div className="eyebrow">Recording archive</div>
-          <h2>Course recordings</h2>
-          <RecordingPlayer recordingUrl={offering.playlistUrl} title={`Classics Course ${course.canonicalNumber} · ${offering.label}`} />
-        </section>
-      ) : null}
+        <p className="lead">{offering.label}</p>
+        {offering.playlistUrl ? <a className="inline-library-link" href={offering.playlistUrl} target="_blank" rel="noreferrer">Open playlist on YouTube ↗</a> : null}
+      </header>
 
       {sessions.length ? (
-        <section className="section">
-          <div className="section-head"><div><div className="eyebrow">Course content</div><h2>Classes &amp; recordings</h2><p>Only recordings present in the supplied source archive are shown.</p></div></div>
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <section className="section compact-section">
+          <div className="section-head"><div><div className="eyebrow">Course content</div><h2>Classes &amp; recordings</h2></div></div>
+          <div className="compact-session-list">
             {sessions.map((session, index) => {
               const teacher = displayTeacher(session.teacher)
               const sessionSlug = archiveSessionSlug(session, index)
               return (
-                <div className="program-session-row" id={`recording-${session.videoId ?? index + 1}`} style={{ scrollMarginTop: 96 }} key={`${session.videoId ?? session.url}-${index}`}>
-                  <div className="program-session-code">{session.code}</div>
-                  <div className="program-session-copy">
+                <Link className="compact-session-row" href={`/archive/classics/${course.slug}/${offering.slug}/${sessionSlug}`} key={`${session.videoId ?? session.url}-${index}`}>
+                  <span className="compact-session-code">{session.code}</span>
+                  <span className="compact-session-copy">
                     <strong>{session.name}</strong>
-                    <div className="meta">{[teacher, session.date].filter(Boolean).join(' · ') || 'Source date not included'}</div>
-                  </div>
-                  <div className="meta">{session.duration}</div>
-                  <div className="actions">
-                    <Link className="button sage" href={`/archive/classics/${course.slug}/${offering.slug}/${sessionSlug}`}>Open class</Link>
-                    <a className="button" href={session.url} target="_blank" rel="noreferrer">Source ↗</a>
-                  </div>
-                </div>
+                    <small>{[teacher, session.date].filter(Boolean).join(' · ') || 'Source date not included'}</small>
+                  </span>
+                  <span className="compact-session-duration">{session.duration}</span>
+                  <span className="compact-row-arrow" aria-hidden="true">→</span>
+                </Link>
               )
             })}
           </div>
           {offering.note ? <p className="meta" style={{ marginTop: 12 }}>{offering.note}</p> : null}
         </section>
       ) : (
-        <section className="section">
-          <div className="card cream">
-            <div className="eyebrow">Library migration</div>
-            <h2>Individual classes are being organized.</h2>
-            <p>The verified full playlist is available now. Individual class rows, Study Notes, transcripts, timestamps, and materials will appear here as their source data is migrated into the Library.</p>
-            {offering.note ? <p className="meta" style={{ marginTop: 12 }}>{offering.note}</p> : null}
-          </div>
-        </section>
+        <section className="section compact-section"><p className="meta">Individual class pages will appear here as verified source data is connected.</p></section>
       )}
     </main>
   )

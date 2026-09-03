@@ -1,16 +1,12 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import LocalSessionTime from '@/components/local-session-time'
+import NextClassCountdown from '@/components/next-class-countdown'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import rawCourse18Schedule from '@/content/classics/course-18-schedule.json'
 
-type CanonicalCourse = {
-  canonicalNumber: number
-  slug: string
-  title: string
-}
-
+type CanonicalCourse = { canonicalNumber: number; slug: string; title: string }
 type ArchiveOffering = {
   slug: string
   label: string
@@ -21,26 +17,14 @@ type ArchiveOffering = {
   sessionCount?: number
   note?: string
 }
-
-type ScheduleItem = {
-  label: string
-  date: string
-}
-
+type ScheduleItem = { label: string; date: string }
 type ArchiveCourse = {
   canonicalNumber: number
   offerings?: ArchiveOffering[]
-  status?: string
   sourceTimezone?: string
   schedule?: ScheduleItem[]
 }
-
-type ArchiveCatalog = {
-  schemaVersion: number
-  source: string
-  courses: ArchiveCourse[]
-}
-
+type ArchiveCatalog = { courses: ArchiveCourse[] }
 type DetailedSchedule = {
   sourceTimezone: string
   sourceLabel: string
@@ -52,19 +36,13 @@ const archiveCatalog = rawArchiveCatalog as ArchiveCatalog
 const course18Schedule = rawCourse18Schedule as DetailedSchedule
 
 function dateLabel(value: string) {
-  const date = new Date(`${value}T12:00:00Z`)
-  return new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-    timeZone: 'UTC',
-  }).format(date)
+  return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`))
 }
 
 function offeringMeta(offering: ArchiveOffering) {
-  if (offering.recordingCount != null) return `${offering.recordingCount} recordings · YouTube`
-  if (offering.sessionCount != null) return `${offering.sessionCount} sessions · Library archive`
-  return 'Teaching archive'
+  if (offering.recordingCount != null) return `${offering.recordingCount} recordings`
+  if (offering.sessionCount != null) return `${offering.sessionCount} sessions`
+  return ''
 }
 
 export default function ClassicsCourseHub({ courseSlug }: { courseSlug: string }) {
@@ -77,55 +55,58 @@ export default function ClassicsCourseHub({ courseSlug }: { courseSlug: string }
   const detailedSchedule = course.canonicalNumber === 18 ? course18Schedule.sessions : []
 
   return (
-    <main className="container page">
+    <main className="container page compact-course-hub">
       <div className="offering-breadcrumbs"><Link href="/courses">Classics Courses</Link><span>/</span><span>Course {course.canonicalNumber}</span></div>
 
-      <section className="section">
+      <header className="compact-page-head">
         <div className="eyebrow">Classics Course {course.canonicalNumber}</div>
         <h1>{course.title}</h1>
-        <p className="lead">{offerings.length ? 'Choose the Course Offering or teaching archive you want to study.' : detailedSchedule.length ? 'Upcoming live teaching schedule.' : 'Teaching archive.'}</p>
-      </section>
+      </header>
 
       {offerings.length ? (
-        <section className="section">
-          <div className="section-head"><div><div className="eyebrow">Teaching archive</div><h2>{offerings.length === 1 ? 'Available Course Offering' : 'Available Course Offerings'}</h2></div></div>
-          <div className="grid two">
-            {offerings.map((offering) => (
-              <article className="card" key={offering.slug}>
-                <div className="eyebrow">Course Offering</div>
-                <h2 style={{ fontSize: 30 }}>{offering.label}</h2>
-                <p className="meta">{offeringMeta(offering)}</p>
-                {offering.note ? <p className="meta" style={{ marginTop: 12 }}>{offering.note}</p> : null}
-                <div className="actions" style={{ marginTop: 16 }}>
-                  {offering.internalHref ? <Link className="button sage" href={offering.internalHref}>Open course</Link> : null}
-                  {!offering.internalHref ? <Link className="button sage" href={`/courses/${course.slug}/${offering.slug}`}>Open course</Link> : null}
-                  {!offering.internalHref && offering.playlistUrl ? <a className="button" href={offering.playlistUrl} target="_blank" rel="noreferrer">Playlist ↗</a> : null}
+        <section className="section compact-section">
+          <div className="section-head"><div><div className="eyebrow">Course Offerings</div><h2>Choose a course</h2></div></div>
+          <div className="compact-offering-list">
+            {offerings.map((offering) => {
+              const href = offering.internalHref ?? `/courses/${course.slug}/${offering.slug}`
+              return (
+                <div className="compact-offering-row" key={offering.slug}>
+                  <Link className="compact-offering-main" href={href}>
+                    <strong>{offering.label}</strong>
+                    {offeringMeta(offering) ? <span>{offeringMeta(offering)}</span> : null}
+                    <span className="compact-row-arrow" aria-hidden="true">→</span>
+                  </Link>
+                  {!offering.internalHref && offering.playlistUrl ? <a className="inline-library-link" href={offering.playlistUrl} target="_blank" rel="noreferrer">YouTube playlist ↗</a> : null}
                 </div>
-              </article>
-            ))}
+              )
+            })}
           </div>
-          <p className="meta" style={{ marginTop: 18 }}>Only teaching archives verified in the supplied source material are shown. Individual class pages will be added as their recording and transcript data is migrated into the Library.</p>
         </section>
       ) : detailedSchedule.length ? (
-        <section className="section">
-          <div className="section-head"><div><div className="eyebrow">Upcoming course</div><h2>Classes 1–10</h2><p>Your local time is shown first. Arizona source time remains visible underneath.</p></div></div>
-          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-            {detailedSchedule.map((item) => <div className="program-session-row" key={item.id}>
-              <div className="program-session-code">{item.label.replace('Classes ', 'C')}</div>
-              <div className="program-session-copy"><h3 style={{ margin: 0 }}>{item.label}</h3><LocalSessionTime startsAt={item.startsAt} endsAt={item.endsAt} rebroadcastAt={item.rebroadcastAt} sourceTimezone={course18Schedule.sourceTimezone} sourceLabel={course18Schedule.sourceLabel} /></div>
-            </div>)}
+        <section className="section compact-section">
+          <div className="section-head"><div><div className="eyebrow">Upcoming course</div><h2>Classes 1–10</h2></div></div>
+          <NextClassCountdown sessions={detailedSchedule} />
+          <div className="compact-schedule-list">
+            {detailedSchedule.map((item) => (
+              <div className="compact-schedule-row" key={item.id}>
+                <div className="compact-schedule-code">{item.label.replace('Classes ', 'C')}</div>
+                <div className="compact-schedule-copy">
+                  <strong>{item.label}</strong>
+                  <LocalSessionTime compact startsAt={item.startsAt} endsAt={item.endsAt} rebroadcastAt={item.rebroadcastAt} sourceTimezone={course18Schedule.sourceTimezone} sourceLabel={course18Schedule.sourceLabel} />
+                </div>
+              </div>
+            ))}
           </div>
-          <p className="meta" style={{ marginTop: 14 }}>The supplied schedule includes a 4:00 p.m. Arizona rebroadcast. This public page intentionally does not expose the Zoom registration link.</p>
         </section>
       ) : schedule.length ? (
-        <section className="section">
+        <section className="section compact-section">
           <div className="section-head"><div><div className="eyebrow">Upcoming course</div><h2>Scheduled classes</h2></div></div>
-          <div className="card">
-            {schedule.map((item) => <div className="home-milestone-row" key={`${item.label}-${item.date}`}><strong className="home-milestone-date">{dateLabel(item.date)}</strong><div><h3>{item.label}</h3><p>Classics Course {course.canonicalNumber}</p></div></div>)}
+          <div className="compact-session-list">
+            {schedule.map((item) => <div className="compact-session-static" key={`${item.label}-${item.date}`}><strong>{item.label}</strong><span>{dateLabel(item.date)}</span></div>)}
           </div>
         </section>
       ) : (
-        <section className="section"><div className="card cream"><h2>Teaching archive being organized</h2><p className="meta">No verified teaching archive has been attached to this course yet.</p></div></section>
+        <section className="section compact-section"><p className="meta">No verified Course Offering has been attached yet.</p></section>
       )}
     </main>
   )
