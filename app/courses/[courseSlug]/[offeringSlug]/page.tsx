@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import RecordingPlayer from '@/components/recording-player'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
+import { archiveSessionsFor } from '@/content/classics/archive-sessions'
 
 type CanonicalCourse = {
   canonicalNumber: number
@@ -42,6 +43,8 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
   const offering = archive?.offerings?.find((item) => item.slug === offeringSlug)
   if (!offering) notFound()
 
+  const sessions = archiveSessionsFor(course.canonicalNumber, offering.slug)
+
   if (offering.internalHref) {
     return (
       <main className="container page">
@@ -70,14 +73,34 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
         </section>
       ) : null}
 
-      <section className="section">
-        <div className="card cream">
-          <div className="eyebrow">Library migration</div>
-          <h2>Individual classes are being organized.</h2>
-          <p>The verified full playlist is available now. Individual class rows, Study Notes, transcripts, timestamps, and materials will appear here as their source data is migrated into the Library.</p>
+      {sessions.length ? (
+        <section className="section">
+          <div className="section-head"><div><div className="eyebrow">Course content</div><h2>Classes &amp; recordings</h2><p>Only recordings present in the supplied source archive are shown.</p></div></div>
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            {sessions.map((session, index) => (
+              <div className="program-session-row" key={`${session.videoId ?? session.url}-${index}`}>
+                <div className="program-session-code">{session.code}</div>
+                <div className="program-session-copy">
+                  <strong>{session.name}</strong>
+                  <div className="meta">{[session.teacher, session.date].filter(Boolean).join(' · ') || 'Source date not included'}</div>
+                </div>
+                <div className="meta">{session.duration}</div>
+                <a className="button" href={session.url} target="_blank" rel="noreferrer">Open recording ↗</a>
+              </div>
+            ))}
+          </div>
           {offering.note ? <p className="meta" style={{ marginTop: 12 }}>{offering.note}</p> : null}
-        </div>
-      </section>
+        </section>
+      ) : (
+        <section className="section">
+          <div className="card cream">
+            <div className="eyebrow">Library migration</div>
+            <h2>Individual classes are being organized.</h2>
+            <p>The verified full playlist is available now. Individual class rows, Study Notes, transcripts, timestamps, and materials will appear here as their source data is migrated into the Library.</p>
+            {offering.note ? <p className="meta" style={{ marginTop: 12 }}>{offering.note}</p> : null}
+          </div>
+        </section>
+      )}
     </main>
   )
 }
