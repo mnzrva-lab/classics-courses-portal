@@ -7,6 +7,10 @@ import class2Part1 from './class-2/transcript-part-1.json'
 import class2Part2 from './class-2/transcript-part-2.json'
 import class2Part3 from './class-2/transcript-part-3.json'
 import class2Part4 from './class-2/transcript-part-4.json'
+import class3Part1 from './class-3/transcript-part-1.json'
+import class3Part2 from './class-3/transcript-part-2.json'
+import class3Part3 from './class-3/transcript-part-3.json'
+import class3Part4 from './class-3/transcript-part-4.json'
 import med1Part1 from './meditation-1/transcript-part-1.json'
 import med1Part2 from './meditation-1/transcript-part-2.json'
 import med1Part3 from './meditation-1/transcript-part-3.json'
@@ -40,6 +44,12 @@ export const course8Transcripts: Record<string, Course8TranscriptChapter[]> = {
     ...class2Part2.chapters,
     ...class2Part3.chapters,
     ...class2Part4.chapters,
+  ],
+  class3: [
+    ...class3Part1.chapters,
+    ...class3Part2.chapters,
+    ...class3Part3.chapters,
+    ...class3Part4.chapters,
   ],
   med1: [
     ...med1Part1.chapters,
