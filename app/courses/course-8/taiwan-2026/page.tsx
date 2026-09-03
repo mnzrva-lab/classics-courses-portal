@@ -1,5 +1,56 @@
 import Link from 'next/link'
-import courseData from '@/content/classics/course-08/taiwan-2026.json'
+import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
+
+type CourseSession = {
+  id: string
+  slug: string
+  label: string
+  kind: string
+  date: string
+  teacher: string
+  startsAt: string
+  endsAt: string
+  recordingUrl: string | null
+  transcriptSource: string | null
+  studyNotesSource?: string | null
+}
+
+type CourseData = {
+  course: {
+    canonicalNumber: number
+    slug: string
+    title: string
+    fullTitle: string
+  }
+  offering: {
+    slug: string
+    label: string
+    location: string
+    year: number
+    startsOn: string
+    endsOn: string
+    languages: string[]
+    teachers: string[]
+    sourceTimezone: string
+  }
+  sessions: CourseSession[]
+}
+
+const courseData = rawCourseData as CourseData
+
+function sessionMarker(kind: string) {
+  if (kind === 'Meditation') return 'M'
+  if (kind === 'Class') return 'C'
+  return '•'
+}
+
+function availability(session: CourseSession) {
+  const available: string[] = []
+  if (session.recordingUrl) available.push('Recording')
+  if (session.transcriptSource) available.push('Transcript')
+  if (session.studyNotesSource) available.push('Study Notes')
+  return available.length ? available.join(' · ') : 'Scheduled archive'
+}
 
 export default function Course8TaiwanPage() {
   const { course, offering, sessions } = courseData
@@ -30,19 +81,19 @@ export default function Course8TaiwanPage() {
           <div>
             <div className="eyebrow">Course content</div>
             <h2>Classes &amp; meditations</h2>
-            <p>This Course Offering is now served from the GitHub Library snapshot and does not require Supabase to load.</p>
+            <p>This Course Offering is served from the GitHub Library snapshot and does not require Supabase to load.</p>
           </div>
         </div>
 
         <div className="module-list">
           {sessions.map((session) => (
             <Link className="module" key={session.id} href={`/courses/course-8/taiwan-2026/${session.slug}`}>
-              <div className="module-num">{session.kind === 'Meditation' ? 'M' : 'C'}</div>
+              <div className="module-num">{sessionMarker(session.kind)}</div>
               <div>
                 <b>{session.label}</b>
-                <small>{session.date} · {session.teacher}</small>
+                <small>{session.date}{session.teacher ? ` · ${session.teacher}` : ''}</small>
               </div>
-              <span className="status">Recording</span>
+              <span className="status">{availability(session)}</span>
             </Link>
           ))}
         </div>
