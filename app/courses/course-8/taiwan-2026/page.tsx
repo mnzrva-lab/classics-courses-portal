@@ -54,9 +54,10 @@ type MaterialsData = { materials: CourseMaterial[] }
 const courseData = rawCourseData as CourseData
 const materialsData = rawMaterials as MaterialsData
 
-function sessionMarker(kind: string) {
-  if (kind === 'Meditation') return 'M'
-  if (kind === 'Class') return 'C'
+function sessionMarker(session: CourseSession) {
+  const number = session.label.match(/\d+/)?.[0]
+  if (session.kind === 'Meditation') return number ? `M${number}` : 'M'
+  if (session.kind === 'Class') return number ? `C${number}` : 'C'
   return '•'
 }
 
@@ -126,7 +127,7 @@ export default function Course8TaiwanPage() {
         <div className="module-list">
           {sessions.map((session) => (
             <Link className="module" key={session.id} href={`/courses/course-8/taiwan-2026/${session.slug}`}>
-              <div className="module-num">{sessionMarker(session.kind)}</div>
+              <div className="module-num">{sessionMarker(session)}</div>
               <div>
                 <b>{session.label}</b>
                 <small>{session.date}{session.teacher ? ` · ${session.teacher}` : ''}</small>
