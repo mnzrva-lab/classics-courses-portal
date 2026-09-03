@@ -5,6 +5,8 @@ import { course8StudyNotes } from '@/content/classics/course-08/taiwan-2026/stud
 import { course8Transcripts } from '@/content/classics/course-08/taiwan-2026/transcripts'
 import rawLamRimCatalog from '@/content/living-lam-rim/catalog.json'
 import { livingLamRimTranscripts } from '@/content/living-lam-rim/transcripts'
+import { perfectionGroups, perfectionProgram } from '@/content/perfection-of-wisdom/catalog'
+import { perfectionTranscripts } from '@/content/perfection-of-wisdom/transcripts'
 
 type CourseSession = { id: string; slug: string; label: string; kind: string; teacher: string }
 type CourseData = {
@@ -37,12 +39,13 @@ const lamRimCatalog = rawLamRimCatalog as LamRimCatalog
 const course8Sessions = new Map(courseData.sessions.map((session) => [session.id, session]))
 const lamRimSessionIndex = new Map<string, { term: LamRimTerm; session: LamRimSession }>()
 for (const term of lamRimCatalog.terms) for (const session of term.sessions) lamRimSessionIndex.set(session.id, { term, session })
+const perfectionSessionIndex = new Map(perfectionGroups.flatMap((group) => group.sessions.map((session) => [session.id, { group, session }] as const)))
 
 function clip(text: string, length = 320) {
-  const cleaned = text.replace(/\s+/g, ' ').trim()
+  const cleaned = text.replace(/\s+/g, ' ').replace(/[*_`]/g, '').trim()
   return cleaned.length > length ? `${cleaned.slice(0, length).trim()}…` : cleaned
 }
-function normalize(value: string) { return value.toLocaleLowerCase().replace(/[“”‘’]/g, "'").replace(/\s+/g, ' ').trim() }
+function normalize(value: string) { return value.toLocaleLowerCase().replace(/[“”‘’]/g, "'").replace(/[*_`]/g, '').replace(/\s+/g, ' ').trim() }
 function searchScore(text: string, query: string) {
   const haystack = normalize(text)
   const phrase = normalize(query)
@@ -67,6 +70,13 @@ function studyNoteSections(markdown: string) {
   }
   if (lines.join(' ').trim()) sections.push({ title, body: lines.join('\n').trim() })
   return sections
+}
+function perfectionKind(name: string) {
+  const normalized = name.toLowerCase()
+  if (normalized.includes('q and a') || normalized.includes('qa ')) return 'Q&A'
+  if (normalized.includes('yoga')) return 'Yoga'
+  if (normalized.includes('translation class')) return 'Translation'
+  return 'Class'
 }
 
 function buildResults(query: string) {
@@ -102,6 +112,16 @@ function buildResults(query: string) {
     }
   }
 
+  for (const [sessionId, chapters] of Object.entries(perfectionTranscripts)) {
+    const entry = perfectionSessionIndex.get(sessionId); if (!entry) continue
+    const { group, session } = entry
+    for (const chapter of chapters) for (const paragraph of chapter.paragraphs) {
+      const score = searchScore(`${chapter.title}\n${paragraph.speaker}\n${paragraph.text}`, query); if (!score) continue
+      const href = `/perfection-of-wisdom/${group.slug}/${session.slug}#${paragraph.id}`
+      results.push({ id: paragraph.id, sourceId: perfectionProgram.slug, sourceLabel: perfectionProgram.title, contextLabel: group.title, sessionLabel: session.name, sessionKind: perfectionKind(session.name), teacher: session.teacher, contentType: 'Transcript', chapter: chapter.title.replace(/[*_`]/g, ''), speaker: paragraph.speaker, body: paragraph.text, href, score, reference: `${perfectionProgram.title} · ${group.title} · ${session.code} · Transcript` })
+    }
+  }
+
   return results.sort((a, b) => b.score - a.score || a.sourceLabel.localeCompare(b.sourceLabel)).slice(0, 100)
 }
 
@@ -121,7 +141,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
     {query ? <>
       <details className="advanced-search" open={advancedActive}><summary>Advanced search</summary><form action="/search" method="get" className="advanced-search-form">
         <input type="hidden" name="q" value={query} />
-        <label>Archive<select name="course" defaultValue={courseFilter}><option value="">All available archives</option><option value={courseData.course.slug}>Classics Course {courseData.course.canonicalNumber} · {courseData.course.title}</option><option value={lamRimCatalog.program.slug}>Living Lam Rim</option></select></label>
+        <label>Archive<select name="course" defaultValue={courseFilter}><option value="">All available archives</option><option value={courseData.course.slug}>Classics Course {courseData.course.canonicalNumber} · {courseData.course.title}</option><option value={lamRimCatalog.program.slug}>Living Lam Rim</option><option value={perfectionProgram.slug}>Perfection of Wisdom</option></select></label>
         <label>Teacher<select name="teacher" defaultValue={teacherFilter}><option value="">All teachers</option>{teacherOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
         <label>Session type<select name="type" defaultValue={typeFilter}><option value="">All session types</option>{typeOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
         <div className="actions"><button className="button sage" type="submit">Apply filters</button>{advancedActive ? <Link className="button" href={`/search?q=${encodeURIComponent(query)}`}>Clear filters</Link> : null}</div>
@@ -133,6 +153,6 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
           <div className="actions"><Link className="button" href={result.href}>Open {result.contentType === 'Transcript' ? 'passage' : 'Study Notes'}</Link><CopyReference reference={result.reference} path={result.href} /></div>
         </article>) : <p className="meta">No teaching text matched this search.</p>}
       </section>
-    </> : <section className="section search-empty"><p className="meta">Search currently includes the available Course 8 transcripts and Study Notes plus the migrated Living Lam Rim transcript. More material will appear here as it is added to the Library.</p></section>}
+    </> : <section className="section search-empty"><p className="meta">Search currently includes the migrated Course 8, Living Lam Rim, and Perfection of Wisdom transcripts, plus available Study Notes. More material will appear here as it is added to the Library.</p></section>}
   </main>
 }
