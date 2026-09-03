@@ -224,9 +224,10 @@ export async function extractTibetanTermsFromSession(formData: FormData) {
           })
           .select('id')
           .single()
-        if (createError || !createdTerm) continue
-        termId = createdTerm.id
-        byForm.set(slug, termId)
+        const createdTermId = createdTerm?.id
+        if (createError || !createdTermId) continue
+        termId = createdTermId
+        byForm.set(slug, createdTermId)
         created++
       }
 
