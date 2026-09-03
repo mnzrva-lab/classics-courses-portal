@@ -1,1 +1,65 @@
-__FROM_FILE__
+{
+  "schemaVersion": 1,
+  "course": {
+    "canonicalNumber": 8,
+    "slug": "course-8",
+    "title": "Death and the Realms of Existence",
+    "fullTitle": "Classics Course 8: Death and the Realms of Existence"
+  },
+  "offering": {
+    "slug": "taiwan-2026",
+    "label": "Taiwan 2026",
+    "location": "Online from Taiwan",
+    "year": 2026,
+    "startsOn": "2026-08-18",
+    "endsOn": "2026-08-22",
+    "languages": ["English", "Chinese"],
+    "teachers": ["Timothy Lowenhaupt", "Brian Mendoza"]
+  },
+  "sessions": [
+    {
+      "id": "class1",
+      "slug": "class-1",
+      "label": "Class 1",
+      "kind": "Class",
+      "date": "August 18, 2026",
+      "teacher": "Timothy Lowenhaupt",
+      "recordingUrl": "https://drive.google.com/file/d/1FvlgNzA9bVKcCOCPtP1eOwECwDrfXz_T/view?usp=sharing",
+      "transcriptSource": "migration-pending"
+    },
+    {
+      "id": "med1",
+      "slug": "meditation-1",
+      "label": "Meditation 1",
+      "kind": "Meditation",
+      "date": "August 19, 2026",
+      "teacher": "Brian Mendoza",
+      "recordingUrl": "https://drive.google.com/file/d/1ptDBpT_d6prx9ty1gn_j0vG9SciF6-IB/view?usp=sharing",
+      "transcriptSource": "migration-pending"
+    },
+    {
+      "id": "class2",
+      "slug": "class-2",
+      "label": "Class 2",
+      "kind": "Class",
+      "date": "August 19, 2026",
+      "teacher": "Timothy Lowenhaupt",
+      "recordingUrl": "https://drive.google.com/file/d/1ZdMpxkdJgS2mfwC57YjA3lELddhWIczC/view?usp=sharing",
+      "transcriptSource": "migration-pending"
+    },
+    {
+      "id": "class3",
+      "slug": "class-3",
+      "label": "Class 3",
+      "kind": "Class",
+      "date": "August 19, 2026",
+      "teacher": "Timothy Lowenhaupt",
+      "recordingUrl": "https://drive.google.com/file/d/1Q-9aCyxwDPGoWL69fBGR_nuSC79UYO8L/view?usp=sharing",
+      "transcriptSource": "migration-pending"
+    }
+  ],
+  "migrationNotes": {
+    "source": "Recovered from the supplied Course 8 portal prototype and project handoff.",
+    "status": "Metadata and recording links migrated. Transcript bodies are being moved separately so the preview is never pointed at incomplete content."
+  }
+}
