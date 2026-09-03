@@ -1,7 +1,9 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import LocalSessionTime from '@/components/local-session-time'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
+import rawCourse18Schedule from '@/content/classics/course-18-schedule.json'
 
 type CanonicalCourse = {
   canonicalNumber: number
@@ -39,8 +41,15 @@ type ArchiveCatalog = {
   courses: ArchiveCourse[]
 }
 
+type DetailedSchedule = {
+  sourceTimezone: string
+  sourceLabel: string
+  sessions: Array<{ id: string; label: string; startsAt: string; endsAt: string; rebroadcastAt?: string | null }>
+}
+
 const catalog = rawCatalog as CanonicalCourse[]
 const archiveCatalog = rawArchiveCatalog as ArchiveCatalog
+const course18Schedule = rawCourse18Schedule as DetailedSchedule
 
 function dateLabel(value: string) {
   const date = new Date(`${value}T12:00:00Z`)
@@ -65,6 +74,7 @@ export default function ClassicsCourseHub({ courseSlug }: { courseSlug: string }
   const archive = archiveCatalog.courses.find((item) => item.canonicalNumber === course.canonicalNumber)
   const offerings = archive?.offerings ?? []
   const schedule = archive?.schedule ?? []
+  const detailedSchedule = course.canonicalNumber === 18 ? course18Schedule.sessions : []
 
   return (
     <main className="container page">
@@ -73,7 +83,7 @@ export default function ClassicsCourseHub({ courseSlug }: { courseSlug: string }
       <section className="section">
         <div className="eyebrow">Classics Course {course.canonicalNumber}</div>
         <h1>{course.title}</h1>
-        <p className="lead">Choose the Course Offering or teaching archive you want to study.</p>
+        <p className="lead">{offerings.length ? 'Choose the Course Offering or teaching archive you want to study.' : detailedSchedule.length ? 'Upcoming live teaching schedule.' : 'Teaching archive.'}</p>
       </section>
 
       {offerings.length ? (
@@ -96,13 +106,23 @@ export default function ClassicsCourseHub({ courseSlug }: { courseSlug: string }
           </div>
           <p className="meta" style={{ marginTop: 18 }}>Only teaching archives verified in the supplied source material are shown. Individual class pages will be added as their recording and transcript data is migrated into the Library.</p>
         </section>
+      ) : detailedSchedule.length ? (
+        <section className="section">
+          <div className="section-head"><div><div className="eyebrow">Upcoming course</div><h2>Classes 1–10</h2><p>Your local time is shown first. Arizona source time remains visible underneath.</p></div></div>
+          <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+            {detailedSchedule.map((item) => <div className="program-session-row" key={item.id}>
+              <div className="program-session-code">{item.label.replace('Classes ', 'C')}</div>
+              <div className="program-session-copy"><h3 style={{ margin: 0 }}>{item.label}</h3><LocalSessionTime startsAt={item.startsAt} endsAt={item.endsAt} rebroadcastAt={item.rebroadcastAt} sourceTimezone={course18Schedule.sourceTimezone} sourceLabel={course18Schedule.sourceLabel} /></div>
+            </div>)}
+          </div>
+          <p className="meta" style={{ marginTop: 14 }}>The supplied schedule includes a 4:00 p.m. Arizona rebroadcast. This public page intentionally does not expose the Zoom registration link.</p>
+        </section>
       ) : schedule.length ? (
         <section className="section">
           <div className="section-head"><div><div className="eyebrow">Upcoming course</div><h2>Scheduled classes</h2></div></div>
           <div className="card">
             {schedule.map((item) => <div className="home-milestone-row" key={`${item.label}-${item.date}`}><strong className="home-milestone-date">{dateLabel(item.date)}</strong><div><h3>{item.label}</h3><p>Classics Course {course.canonicalNumber}</p></div></div>)}
           </div>
-          <p className="meta" style={{ marginTop: 14 }}>Source timezone: Arizona. This page intentionally does not expose the class Zoom link. Session-level local-time display and live access will be restored only with the reviewed schedule workflow.</p>
         </section>
       ) : (
         <section className="section"><div className="card cream"><h2>Teaching archive being organized</h2><p className="meta">No verified teaching archive has been attached to this course yet.</p></div></section>
