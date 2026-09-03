@@ -4,6 +4,7 @@ import RecordingPlayer from '@/components/recording-player'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import { archiveSessionsFor } from '@/content/classics/archive-sessions'
+import { archiveSessionSlug } from '@/content/classics/archive-route'
 
 type CanonicalCourse = {
   canonicalNumber: number
@@ -84,16 +85,19 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
             {sessions.map((session, index) => {
               const teacher = displayTeacher(session.teacher)
-              const anchor = `recording-${session.videoId ?? index + 1}`
+              const sessionSlug = archiveSessionSlug(session, index)
               return (
-                <div className="program-session-row" id={anchor} style={{ scrollMarginTop: 96 }} key={`${session.videoId ?? session.url}-${index}`}>
+                <div className="program-session-row" id={`recording-${session.videoId ?? index + 1}`} style={{ scrollMarginTop: 96 }} key={`${session.videoId ?? session.url}-${index}`}>
                   <div className="program-session-code">{session.code}</div>
                   <div className="program-session-copy">
                     <strong>{session.name}</strong>
                     <div className="meta">{[teacher, session.date].filter(Boolean).join(' · ') || 'Source date not included'}</div>
                   </div>
                   <div className="meta">{session.duration}</div>
-                  <a className="button" href={session.url} target="_blank" rel="noreferrer">Open recording ↗</a>
+                  <div className="actions">
+                    <Link className="button sage" href={`/archive/classics/${course.slug}/${offering.slug}/${sessionSlug}`}>Open class</Link>
+                    <a className="button" href={session.url} target="_blank" rel="noreferrer">Source ↗</a>
+                  </div>
                 </div>
               )
             })}
