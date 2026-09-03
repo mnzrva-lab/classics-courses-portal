@@ -3,7 +3,6 @@ import Link from 'next/link'
 import SiteNavigation from '@/components/site-navigation'
 import TranscriptSync from '@/components/transcript-sync'
 import ClassStudyTabs from '@/components/class-study-tabs'
-import TeacherBioEnhancer from '@/components/teacher-bio-enhancer'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 import { TELEGRAM_UPDATES_URL } from '@/lib/site-links'
 import './globals.css'
@@ -59,7 +58,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         </header>
         {children}
         <ClassStudyTabs />
-        <TeacherBioEnhancer />
         <TranscriptSync />
         <footer className="footer portal-footer"><div className="container portal-footer-inner"><span>Classics Courses with Timothy Lowenhaupt</span><a href={TELEGRAM_UPDATES_URL} target="_blank" rel="noreferrer">Telegram updates ↗</a></div></footer>
       </div>
