@@ -3,6 +3,7 @@ import CopyReference from '@/components/copy-reference'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 import { allArchiveSessions } from '@/content/classics/archive-sessions'
+import { archiveSessionSlug } from '@/content/classics/archive-route'
 import { course8StudyNotes } from '@/content/classics/course-08/taiwan-2026/study-notes'
 import { course8Transcripts } from '@/content/classics/course-08/taiwan-2026/transcripts'
 import rawLamRimCatalog from '@/content/living-lam-rim/catalog.json'
@@ -110,8 +111,7 @@ function buildResults(query: string) {
     ].filter(Boolean).join('\n')
     const score = searchScore(searchable, query)
     if (!score) continue
-    const anchor = `recording-${item.videoId ?? encodeURIComponent(item.url)}`
-    const href = `/courses/${course.slug}/${item.offeringSlug}#${anchor}`
+    const href = `/archive/classics/${course.slug}/${item.offeringSlug}/${archiveSessionSlug(item)}`
     const teacher = item.teacher ?? ''
     const details = [item.sourceTitle || item.name, teacher, item.date, item.duration].filter(Boolean).join(' · ')
     results.push({
