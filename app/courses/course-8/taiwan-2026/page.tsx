@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
+import rawMaterials from '@/content/classics/course-08/taiwan-2026/materials.json'
 
 type CourseSession = {
   id: string
@@ -36,7 +37,22 @@ type CourseData = {
   sessions: CourseSession[]
 }
 
+type CourseMaterial = {
+  id: string
+  title: string
+  kind: string
+  format: string
+  sourceFileName: string
+  sourceStatus: string
+  url: string | null
+  hostingStatus: string
+  note?: string
+}
+
+type MaterialsData = { materials: CourseMaterial[] }
+
 const courseData = rawCourseData as CourseData
+const materialsData = rawMaterials as MaterialsData
 
 function sessionMarker(kind: string) {
   if (kind === 'Meditation') return 'M'
@@ -73,6 +89,28 @@ export default function Course8TaiwanPage() {
             <span className="pill">{offering.location}</span>
             <span className="pill">{offering.languages.join(' · ')}</span>
           </div>
+        </div>
+      </section>
+
+      <section className="section" id="materials">
+        <div className="offering-section-head">
+          <div>
+            <div className="eyebrow">Course materials</div>
+            <h2>Reading</h2>
+            <p>The complete primary Course 8 reading has been recovered from the supplied project materials.</p>
+          </div>
+        </div>
+        <div className="grid two">
+          {materialsData.materials.map((material) => (
+            <div className="card" key={material.id}>
+              <div className="eyebrow">{material.kind} · {material.format}</div>
+              <h3>{material.title}</h3>
+              <p className="meta">Source: {material.sourceFileName}</p>
+              <div className="actions">
+                {material.url ? <a className="button sage" href={material.url} target="_blank" rel="noreferrer">Open reading ↗</a> : <span className="pill">Source recovered · link being connected</span>}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
