@@ -13,11 +13,12 @@ type Props = {
   isAdmin: boolean
   currentCourse: CurrentCourse
   perfectionHref: string
+  personalStudyEnabled?: boolean
 }
 
 function isActivePath(pathname: string, href: string) {
   if (href === '/') return pathname === '/'
-  if (href === '/courses') return pathname === '/courses' || pathname.startsWith('/courses/classics-course-')
+  if (href === '/courses') return pathname === '/courses' || pathname.startsWith('/courses/classics-course-') || pathname.startsWith('/courses/course-')
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
@@ -31,7 +32,7 @@ function SidebarLink({ pathname, href, icon, children }: { pathname: string; hre
   )
 }
 
-export default function SiteNavigation({ isAdmin, currentCourse, perfectionHref }: Props) {
+export default function SiteNavigation({ isAdmin, currentCourse, perfectionHref, personalStudyEnabled = true }: Props) {
   const pathname = usePathname()
 
   return (
@@ -56,7 +57,7 @@ export default function SiteNavigation({ isAdmin, currentCourse, perfectionHref 
 
           {currentCourse ? (
             <Link className="sidebar-current-course" href={currentCourse.href}>
-              <span>NOW</span>
+              <span>LATEST</span>
               <strong>{currentCourse.label}</strong>
               <small>{currentCourse.title}</small>
             </Link>
@@ -65,7 +66,7 @@ export default function SiteNavigation({ isAdmin, currentCourse, perfectionHref 
           <div className="sidebar-label">Study</div>
           <SidebarLink pathname={pathname} href="/meditations" icon="◎">Meditations</SidebarLink>
           <SidebarLink pathname={pathname} href="/tibetan" icon="T">Tibetan</SidebarLink>
-          <SidebarLink pathname={pathname} href="/my-learning" icon="✓">My Learning</SidebarLink>
+          {personalStudyEnabled ? <SidebarLink pathname={pathname} href="/my-learning" icon="✓">My Learning</SidebarLink> : null}
           {isAdmin ? <SidebarLink pathname={pathname} href="/admin" icon="⚙">Admin</SidebarLink> : null}
         </nav>
       </aside>
@@ -74,7 +75,7 @@ export default function SiteNavigation({ isAdmin, currentCourse, perfectionHref 
         <Link className={pathname === '/' ? 'active' : ''} href="/"><span aria-hidden="true">⌂</span><small>Home</small></Link>
         <Link className={isActivePath(pathname, '/courses') ? 'active' : ''} href="/courses"><span aria-hidden="true">▤</span><small>Courses</small></Link>
         <Link className={isActivePath(pathname, '/search') ? 'active' : ''} href="/search"><span aria-hidden="true">⌕</span><small>Search</small></Link>
-        <Link className={isActivePath(pathname, '/my-notes') ? 'active' : ''} href="/my-notes"><span aria-hidden="true">✎</span><small>Notes</small></Link>
+        {personalStudyEnabled ? <Link className={isActivePath(pathname, '/my-notes') ? 'active' : ''} href="/my-notes"><span aria-hidden="true">✎</span><small>Notes</small></Link> : null}
         <details className="portal-mobile-more">
           <summary><span aria-hidden="true">•••</span><small>More</small></summary>
           <div className="portal-mobile-more-panel">
@@ -83,7 +84,7 @@ export default function SiteNavigation({ isAdmin, currentCourse, perfectionHref 
             <Link href="/other-programs">Other teachings</Link>
             <Link href="/meditations">Meditations</Link>
             <Link href="/tibetan">Tibetan</Link>
-            <Link href="/my-learning">My Learning</Link>
+            {personalStudyEnabled ? <Link href="/my-learning">My Learning</Link> : null}
             {isAdmin ? <Link href="/admin">Admin</Link> : null}
           </div>
         </details>
