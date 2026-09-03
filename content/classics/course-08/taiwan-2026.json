@@ -64,7 +64,8 @@
       "startsAt": "2026-08-19T11:00:00Z",
       "endsAt": "2026-08-19T12:30:00Z",
       "recordingUrl": "https://drive.google.com/file/d/1Q-9aCyxwDPGoWL69fBGR_nuSC79UYO8L/view?usp=sharing",
-      "transcriptSource": "prototype-recovered"
+      "transcriptSource": "prototype-recovered",
+      "studyNotesSource": "prototype-recovered"
     },
     {
       "id": "med2",

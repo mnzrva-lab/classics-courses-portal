@@ -4,12 +4,8 @@ import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
 import TranscriptControls from '@/components/transcript-controls'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
+import { course8StudyNotesForSession } from '@/content/classics/course-08/taiwan-2026/study-notes'
 import { course8TranscriptForSession } from '@/content/classics/course-08/taiwan-2026/transcripts'
-import {
-  meditation2StudyNotesMarkdown,
-  meditation2StudyNotesSummary,
-  meditation2StudyNotesTopics,
-} from '@/content/classics/course-08/taiwan-2026/meditation-2/study-notes'
 
 type CourseSession = {
   id: string
@@ -38,9 +34,9 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
   if (!session) notFound()
 
   const transcriptChapters = course8TranscriptForSession(session.id)
+  const studyNotes = course8StudyNotesForSession(session.id)
   const transcriptRecovered = transcriptChapters.length > 0 || Boolean(session.transcriptSource)
-  const studyNotesRecovered = Boolean(session.studyNotesSource)
-  const isMeditation2 = session.id === 'med2'
+  const studyNotesRecovered = Boolean(studyNotes) || Boolean(session.studyNotesSource)
 
   return (
     <main className="container page">
@@ -62,7 +58,7 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
         <RecordingPlayer recordingUrl={session.recordingUrl} title={`${courseData.course.fullTitle} · ${session.label}`} />
       </section>
 
-      {studyNotesRecovered && isMeditation2 ? (
+      {studyNotes ? (
         <section className="section" id="study-notes" style={{ scrollMarginTop: 96 }}>
           <div className="study-notes-head">
             <div><div className="eyebrow">Study aid</div><h2>Study Notes</h2></div>
@@ -72,15 +68,15 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
             These study notes were created from the class with the assistance of AI and are provided as a study aid. They may simplify or omit parts of the teaching. Please refer to the recording and transcript for the complete class.
           </div>
           <div className="study-notes-summary card">
-            <div className="eyebrow">Covered in this meditation</div>
+            <div className="eyebrow">Covered in this {session.kind === 'Meditation' ? 'meditation' : 'class'}</div>
             <h3>Top ideas</h3>
-            <p>{meditation2StudyNotesSummary}</p>
+            <p>{studyNotes.summary}</p>
             <div className="study-topic-list">
-              {meditation2StudyNotesTopics.map((topic) => <span className="pill" key={topic}>{topic}</span>)}
+              {studyNotes.topics.map((topic) => <span className="pill" key={topic}>{topic}</span>)}
             </div>
             <details className="full-study-notes">
               <summary>▶ View full study notes</summary>
-              <div className="full-study-notes-body"><MarkdownContent content={meditation2StudyNotesMarkdown} /></div>
+              <div className="full-study-notes-body"><MarkdownContent content={studyNotes.markdown} /></div>
             </details>
           </div>
         </section>
@@ -88,7 +84,7 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
         <section className="section" id="study-notes">
           <div className="eyebrow">Study Notes</div>
           <h2>Study Notes recovered</h2>
-          <p>The complete Study Notes source is stored in the GitHub Library and will be connected to this page during its transcript migration.</p>
+          <p>The complete Study Notes source is stored in the GitHub Library and will be connected to this page during its content migration.</p>
         </section>
       ) : null}
 
