@@ -1,5 +1,21 @@
 import Link from 'next/link'
-import catalog from '@/content/classics/catalog.json'
+import rawCatalog from '@/content/classics/catalog.json'
+
+type CatalogOffering = {
+  slug: string
+  label: string
+  location?: string
+  year?: number
+}
+
+type CatalogCourse = {
+  canonicalNumber: number
+  slug: string
+  title: string
+  offerings?: CatalogOffering[]
+}
+
+const catalog = rawCatalog as CatalogCourse[]
 
 export default function CoursesPage() {
   return (
@@ -10,7 +26,7 @@ export default function CoursesPage() {
 
       <section className="classics-library-grid section">
         {catalog.map((course) => {
-          const offerings = 'offerings' in course ? course.offerings ?? [] : []
+          const offerings = course.offerings ?? []
           return (
             <article className="classics-course-card" key={course.canonicalNumber}>
               <div className="eyebrow classics-course-eyebrow">Course {course.canonicalNumber}</div>
