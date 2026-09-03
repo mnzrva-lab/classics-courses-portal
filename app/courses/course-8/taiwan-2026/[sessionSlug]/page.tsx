@@ -4,9 +4,7 @@ import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
 import TranscriptControls from '@/components/transcript-controls'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
-import med2Part1 from '@/content/classics/course-08/taiwan-2026/meditation-2/transcript-part-1.json'
-import med2Part2 from '@/content/classics/course-08/taiwan-2026/meditation-2/transcript-part-2.json'
-import med2Part3 from '@/content/classics/course-08/taiwan-2026/meditation-2/transcript-part-3.json'
+import { course8TranscriptForSession } from '@/content/classics/course-08/taiwan-2026/transcripts'
 import {
   meditation2StudyNotesMarkdown,
   meditation2StudyNotesSummary,
@@ -32,35 +30,14 @@ type CourseData = {
   sessions: CourseSession[]
 }
 
-type TranscriptParagraph = {
-  id: string
-  speaker: string
-  text: string
-}
-
-type TranscriptChapter = {
-  id: string
-  title: string
-  paragraphs: TranscriptParagraph[]
-}
-
 const courseData = rawCourseData as CourseData
-const meditation2Transcript = [
-  ...med2Part1.chapters,
-  ...med2Part2.chapters,
-  ...med2Part3.chapters,
-] as TranscriptChapter[]
-
-function transcriptForSession(sessionId: string) {
-  return sessionId === 'med2' ? meditation2Transcript : []
-}
 
 export default async function Course8TaiwanSessionPage({ params }: { params: Promise<{ sessionSlug: string }> }) {
   const { sessionSlug } = await params
   const session = courseData.sessions.find((item) => item.slug === sessionSlug)
   if (!session) notFound()
 
-  const transcriptChapters = transcriptForSession(session.id)
+  const transcriptChapters = course8TranscriptForSession(session.id)
   const transcriptRecovered = transcriptChapters.length > 0 || Boolean(session.transcriptSource)
   const studyNotesRecovered = Boolean(session.studyNotesSource)
   const isMeditation2 = session.id === 'med2'
