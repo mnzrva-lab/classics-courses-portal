@@ -1,100 +1,72 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import rawCatalog from '@/content/living-lam-rim/catalog.json'
 
-export const dynamic = 'force-dynamic'
-
-function formatRange(start: string | null, end: string | null) {
-  if (!start && !end) return null
-  const date = (value: string) => new Date(`${value}T12:00:00Z`)
-  const full = (value: string) => new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(date(value))
-  if (!start) return full(end!)
-  if (!end || start === end) return full(start)
-  const s = date(start)
-  const e = date(end)
-  if (s.getUTCFullYear() === e.getUTCFullYear()) {
-    const startLabel = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', timeZone: 'UTC' }).format(s)
-    const endLabel = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(e)
-    return `${startLabel} – ${endLabel}`
-  }
-  return `${full(start)} – ${full(end)}`
+type Session = {
+  id: string
+  transcriptSource: string | null
 }
 
-function termCode(slug: string) {
-  const match = slug.match(/term-(\d+)/i)
-  return match ? `T${match[1]}` : 'Term'
+type Term = {
+  term: number
+  slug: string
+  title: string | null
+  range: string
+  note: string | null
+  sessions: Session[]
 }
 
-export default async function LivingLamRimPage() {
-  const supabase = await createClient()
-
-  const { data: course } = await supabase
-    .from('courses')
-    .select('id, slug, title, subtitle, description')
-    .eq('kind', 'living_lam_rim')
-    .eq('status', 'published')
-    .maybeSingle()
-
-  const { data: offerings } = course
-    ? await supabase
-        .from('course_offerings')
-        .select('id, slug, label, starts_on, ends_on, sort_order')
-        .eq('course_id', course.id)
-        .eq('status', 'published')
-        .order('sort_order')
-    : { data: [] as any[] }
-
-  const offeringIds = (offerings ?? []).map((offering: any) => offering.id)
-  const { data: sessions } = offeringIds.length
-    ? await supabase
-        .from('sessions')
-        .select('id, offering_id')
-        .in('offering_id', offeringIds)
-        .eq('status', 'published')
-    : { data: [] as any[] }
-
-  const sessionCount = new Map<string, number>()
-  for (const session of sessions ?? []) {
-    if (!session.offering_id) continue
-    sessionCount.set(session.offering_id, (sessionCount.get(session.offering_id) ?? 0) + 1)
+type Catalog = {
+  program: {
+    title: string
+    playlistUrl: string
   }
+  terms: Term[]
+}
+
+const catalog = rawCatalog as Catalog
+
+export default function LivingLamRimPage() {
+  const totalSessions = catalog.terms.reduce((sum, term) => sum + term.sessions.length, 0)
+  const transcriptCount = catalog.terms.reduce((sum, term) => sum + term.sessions.filter((session) => Boolean(session.transcriptSource)).length, 0)
 
   return (
     <main className="container page living-lam-rim-page">
-      <div className="eyebrow">Ongoing program</div>
-      <h1>Living Lam Rim</h1>
-      <p className="lead">Six terms of teaching with Timothy Lowenhaupt. Open a term to study only the classes from that period.</p>
+      <section className="offering-hero no-artwork">
+        <div className="offering-hero-copy">
+          <div className="eyebrow">Long-running teaching archive</div>
+          <h1 className="offering-title">{catalog.program.title}</h1>
+          <p className="lead">Study the archive term by term, with each recording kept as its own class page.</p>
+          <div className="offering-meta">
+            <span className="pill">{catalog.terms.length} terms</span>
+            <span className="pill">{totalSessions} recordings</span>
+            <span className="pill">{transcriptCount} transcript migrated</span>
+          </div>
+          <div className="actions" style={{ marginTop: 20 }}>
+            <a className="button" href={catalog.program.playlistUrl} target="_blank" rel="noreferrer">Open full YouTube playlist ↗</a>
+          </div>
+        </div>
+      </section>
 
-      <section className="section living-terms-section">
-        <div className="living-terms-head">
+      <section className="section">
+        <div className="section-head">
           <div>
+            <div className="eyebrow">Archive</div>
             <h2>Terms</h2>
-            <p>Choose a term to open its classes and teaching archive.</p>
+            <p>Open a term to see its classes and recordings.</p>
           </div>
         </div>
 
-        {(offerings ?? []).length ? (
-          <div className="living-term-grid">
-            {(offerings ?? []).map((offering: any) => {
-              const count = sessionCount.get(offering.id) ?? 0
-              return (
-                <Link className="living-term-card" key={offering.id} href={`/living-lam-rim/${offering.slug}`}>
-                  <span className="living-term-code">{termCode(offering.slug)}</span>
-                  <span className="living-term-copy">
-                    <strong>{offering.label}</strong>
-                    <span>{formatRange(offering.starts_on, offering.ends_on)}</span>
-                    <small>{count} session{count === 1 ? '' : 's'}</small>
-                  </span>
-                  <span className="living-term-arrow" aria-hidden="true">→</span>
-                </Link>
-              )
-            })}
-          </div>
-        ) : (
-          <div className="card">
-            <h2>Living Lam Rim terms are being organized for the library.</h2>
-            <p className="meta">Published terms will appear here automatically.</p>
-          </div>
-        )}
+        <div className="home-explore-grid">
+          {catalog.terms.map((term) => (
+            <Link className="card home-library-card" href={`/living-lam-rim/${term.slug}`} key={term.slug}>
+              <div className="eyebrow">Term {term.term}</div>
+              <h3>{term.title ?? `Term ${term.term}`}</h3>
+              <p className="meta">{term.range} · {term.sessions.length} recordings</p>
+              {term.note ? <p className="meta">{term.note}</p> : null}
+              <div className="go">Open term →</div>
+            </Link>
+          ))}
+        </div>
       </section>
     </main>
   )
