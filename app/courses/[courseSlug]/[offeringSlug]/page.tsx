@@ -84,8 +84,9 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
           <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
             {sessions.map((session, index) => {
               const teacher = displayTeacher(session.teacher)
+              const anchor = `recording-${session.videoId ?? index + 1}`
               return (
-                <div className="program-session-row" key={`${session.videoId ?? session.url}-${index}`}>
+                <div className="program-session-row" id={anchor} style={{ scrollMarginTop: 96 }} key={`${session.videoId ?? session.url}-${index}`}>
                   <div className="program-session-code">{session.code}</div>
                   <div className="program-session-copy">
                     <strong>{session.name}</strong>
