@@ -117,9 +117,6 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
                         <strong>{paragraph.speaker}: </strong>
                         <span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.text}</span>
                       </div>
-                      <div className="meta" style={{ marginTop: 8 }}>
-                        <a href={`#${paragraph.id}`}>§ {paragraph.id}</a>
-                      </div>
                     </div>
                   ))}
                 </section>
