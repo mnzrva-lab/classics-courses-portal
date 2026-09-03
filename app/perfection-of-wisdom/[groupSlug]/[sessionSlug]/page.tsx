@@ -20,8 +20,7 @@ export default async function PerfectionSessionPage({ params }: { params: Promis
     <main className="container page">
       <div className="offering-breadcrumbs">
         <Link href="/perfection-of-wisdom">Perfection of Wisdom</Link><span>/</span>
-        <Link href={`/perfection-of-wisdom/${group.slug}`}>{group.title}</Link><span>/</span>
-        <span>{session.code}</span>
+        <span>{group.title} · {session.code}</span>
       </div>
 
       <section className="section">
@@ -54,7 +53,6 @@ export default async function PerfectionSessionPage({ params }: { params: Promis
                         {paragraph.speaker ? <div><strong>{paragraph.speaker}</strong></div> : null}
                         <MarkdownContent content={paragraph.text} />
                       </div>
-                      <div className="meta" style={{ marginTop: 8 }}><a href={`#${paragraph.id}`}>§ {paragraph.id}</a></div>
                     </div>
                   ))}
                 </section>

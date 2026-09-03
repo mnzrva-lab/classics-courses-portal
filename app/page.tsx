@@ -1,4 +1,8 @@
 import Link from 'next/link'
+import UpcomingCourses from '@/components/upcoming-courses'
+import rawCatalog from '@/content/classics/catalog.json'
+import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
+import rawCourse18Schedule from '@/content/classics/course-18-schedule.json'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 
 type CourseSession = {
@@ -15,8 +19,37 @@ type CourseData = {
   offering: { label: string; location: string; startsOn: string; endsOn: string; languages: string[]; teachers: string[] }
   sessions: CourseSession[]
 }
+type CatalogCourse = { canonicalNumber: number; slug: string; title: string }
+type ArchiveCourse = { canonicalNumber: number; schedule?: Array<{ label: string; date: string }> }
+type ArchiveCatalog = { courses: ArchiveCourse[] }
+type DetailedSchedule = { sessions: Array<{ id: string; label: string; startsAt: string; endsAt: string }> }
 
 const courseData = rawCourseData as CourseData
+const catalog = rawCatalog as CatalogCourse[]
+const archiveCatalog = rawArchiveCatalog as ArchiveCatalog
+const course18Schedule = rawCourse18Schedule as DetailedSchedule
+const courseByNumber = new Map(catalog.map((course) => [course.canonicalNumber, course]))
+
+const upcomingCourses = archiveCatalog.courses.flatMap((archive) => {
+  if (!archive.schedule?.length) return []
+  const course = courseByNumber.get(archive.canonicalNumber)
+  if (!course) return []
+
+  const detailed = archive.canonicalNumber === 18 ? course18Schedule.sessions : []
+  const detailedByLabel = new Map(detailed.map((session) => [session.label.replace(' & ', '–'), session]))
+  const sessions = archive.schedule.map((session, index) => {
+    const exact = detailed[index] ?? detailedByLabel.get(session.label)
+    return {
+      id: exact?.id ?? `course-${archive.canonicalNumber}-${index + 1}`,
+      label: exact?.label ?? session.label,
+      date: session.date,
+      startsAt: exact?.startsAt ?? null,
+      endsAt: exact?.endsAt ?? null,
+    }
+  })
+
+  return [{ courseNumber: course.canonicalNumber, title: course.title, href: `/courses/${course.slug}`, sessions }]
+})
 
 function archiveDateRange(startsOn: string, endsOn: string) {
   const start = new Date(`${startsOn}T12:00:00Z`)
@@ -34,6 +67,8 @@ export default function HomePage() {
   return (
     <main>
       <section className="hero home-v12-hero"><div className="container"><div className="eyebrow">Teaching library</div><h1>Study the teachings.</h1><p>Browse Classics Courses, recordings, Study Notes, Reference Transcripts, meditations, and course materials in one calm study space.</p><div className="actions" style={{ marginTop: 22 }}><Link className="button sage" href="/courses">Browse Classics Courses</Link><Link className="button" href="/search">Search the Library</Link></div></div></section>
+
+      <UpcomingCourses courses={upcomingCourses} />
 
       <section className="container section">
         <div className="section-head"><div><div className="eyebrow">Latest teaching archive</div><h2>Classics Course {course.canonicalNumber} · {offering.label}</h2><p>The first Course Offering being migrated into the GitHub-backed Library.</p></div></div>

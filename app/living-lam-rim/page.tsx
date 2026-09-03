@@ -26,11 +26,15 @@ export default function LivingLamRimPage() {
 
       <section className="section compact-section">
         <div className="section-head"><div><div className="eyebrow">Terms</div><h2>Choose a term</h2></div></div>
-        <div className="term-button-list">
+        <div className="term-list-cards">
           {catalog.terms.map((term) => (
-            <Link className="term-button" href={`/living-lam-rim/${term.slug}`} key={term.slug}>
-              <strong>Term {term.term}</strong>
-              <span>{term.title ?? term.range}</span>
+            <Link className="term-list-card" href={`/living-lam-rim/${term.slug}`} key={term.slug}>
+              <span className="term-list-badge">Term {term.term}</span>
+              <span className="term-list-copy">
+                <strong>{term.title ?? `Term ${term.term}`}</strong>
+                <small>{term.range} · {term.sessions.length} recording{term.sessions.length === 1 ? '' : 's'}</small>
+              </span>
+              <span className="term-list-arrow" aria-hidden="true">→</span>
             </Link>
           ))}
         </div>
