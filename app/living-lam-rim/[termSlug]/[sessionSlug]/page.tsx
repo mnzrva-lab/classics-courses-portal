@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import ContentDownloadLinks from '@/components/content-download-links'
 import RecordingPlayer from '@/components/recording-player'
 import TranscriptControls from '@/components/transcript-controls'
 import rawCatalog from '@/content/living-lam-rim/catalog.json'
@@ -66,9 +67,10 @@ export default async function LivingLamRimSessionPage({ params }: { params: Prom
 
         {transcriptChapters.length ? (
           <>
+            <ContentDownloadLinks collection="living-lam-rim" sessionId={session.id} content="transcript" />
             <div className="info-callout">
               <strong>About this transcript</strong><br />
-              This transcript was created by a student with AI and should be used for reference only. Please check them against the video and audio for accuracy of content.
+              This transcript was created by a student with AI and should be used for reference only. Please check it against the video and audio for accuracy of content.
             </div>
             <TranscriptControls chapters={transcriptChapters.map((chapter) => ({ id: chapter.id, label: chapter.title }))} />
             <article className="transcript-v12-card">
@@ -81,7 +83,6 @@ export default async function LivingLamRimSessionPage({ params }: { params: Prom
                         <strong>{paragraph.speaker}: </strong>
                         <span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.text}</span>
                       </div>
-                      <div className="meta" style={{ marginTop: 8 }}><a href={`#${paragraph.id}`}>§ {paragraph.id}</a></div>
                     </div>
                   ))}
                 </section>
