@@ -1,7 +1,7 @@
 import Link from 'next/link'
+import LibrarySessionList from '@/components/library-session-list'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 import rawMaterials from '@/content/classics/course-08/taiwan-2026/materials.json'
-import styles from './course-offering.module.css'
 
 type CourseSession = {
   id: string
@@ -126,18 +126,13 @@ export default function Course8TaiwanPage() {
           </div>
         </div>
 
-        <div className={styles.list}>
-          {sessions.map((session) => (
-            <Link className={styles.module} key={session.id} href={`/courses/course-8/taiwan-2026/${session.slug}`}>
-              <div className={styles.num}>{sessionMarker(session)}</div>
-              <div className={styles.copy}>
-                <b>{session.label}</b>
-                <small>{session.date}{session.teacher ? ` · ${session.teacher}` : ''}</small>
-              </div>
-              <span className={styles.status}>{availability(session)}</span>
-            </Link>
-          ))}
-        </div>
+        <LibrarySessionList rows={sessions.map((session) => ({
+          href: `/courses/course-8/taiwan-2026/${session.slug}`,
+          code: sessionMarker(session),
+          title: session.label,
+          meta: `${session.date}${session.teacher ? ` · ${session.teacher}` : ''}`,
+          status: availability(session),
+        }))} />
       </section>
     </main>
   )
