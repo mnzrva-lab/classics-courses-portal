@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import LibrarySessionList from '@/components/library-session-list'
 import rawCatalog from '@/content/living-lam-rim/catalog.json'
 
 type Session = {
@@ -43,16 +44,13 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
 
       <section className="section compact-section">
         <div className="section-head"><div><div className="eyebrow">Course content</div><h2>Classes &amp; review</h2></div></div>
-        <div className="compact-session-list">
-          {term.sessions.map((session) => (
-            <Link className="compact-session-row" href={`/living-lam-rim/${term.slug}/${session.slug}`} key={session.id}>
-              <span className="compact-session-code">{session.code}</span>
-              <span className="compact-session-copy"><strong>{session.label}</strong><small>{session.date} · {session.duration}</small></span>
-              {session.transcriptSource ? <span className="compact-session-note">Transcript</span> : null}
-              <span className="compact-row-arrow" aria-hidden="true">→</span>
-            </Link>
-          ))}
-        </div>
+        <LibrarySessionList rows={term.sessions.map((session) => ({
+          href: `/living-lam-rim/${term.slug}/${session.slug}`,
+          code: session.code,
+          title: session.label,
+          meta: `${session.date} · ${session.duration}`,
+          status: session.transcriptSource ? 'Recording · Transcript' : 'Recording',
+        }))} />
       </section>
     </main>
   )
