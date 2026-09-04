@@ -18,11 +18,7 @@ function displayTeacher(value?: string) {
   return value.replace(/\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\s+\d{1,2},\s+\d{4}$/, '').trim()
 }
 
-export default async function ClassicsArchiveSessionPage({
-  params,
-}: {
-  params: Promise<{ courseSlug: string; offeringSlug: string; sessionSlug: string }>
-}) {
+export default async function ClassicsArchiveSessionPage({ params }: { params: Promise<{ courseSlug: string; offeringSlug: string; sessionSlug: string }> }) {
   const { courseSlug, offeringSlug, sessionSlug } = await params
   const course = catalog.find((item) => item.slug === courseSlug)
   if (!course) notFound()
@@ -42,19 +38,14 @@ export default async function ClassicsArchiveSessionPage({
     <main className="container page">
       <div className="offering-breadcrumbs">
         <Link href="/courses">Classics Courses</Link><span>/</span>
-        <Link href={`/courses/${course.slug}`}>Course {course.canonicalNumber}</Link><span>/</span>
-        <Link href={`/courses/${course.slug}/${offering.slug}`}>{offering.label}</Link><span>/</span>
+        <Link href={`/courses/${course.slug}/${offering.slug}`}>Course {course.canonicalNumber} · {offering.label}</Link><span>/</span>
         <span>{session.code}</span>
       </div>
 
       <section className="section">
         <div className="eyebrow">Classics Course {course.canonicalNumber} · {offering.label}</div>
-        <h1 className="class-title">{session.code ? `${session.code} · ` : ''}{session.name}</h1>
-        <p className="lead">{[teacher, session.date].filter(Boolean).join(' · ') || offering.sourceLabel}</p>
-        <div className="actions">
-          {session.duration ? <span className="pill">{session.duration}</span> : null}
-          <a className="button" href={session.url} target="_blank" rel="noreferrer">Open source recording ↗</a>
-        </div>
+        <h1>{session.name}</h1>
+        <p className="lead">{[session.date, teacher, session.duration].filter(Boolean).join(' · ') || offering.sourceLabel}</p>
       </section>
 
       <section className="section" id="recording">
@@ -63,20 +54,17 @@ export default async function ClassicsArchiveSessionPage({
         <RecordingPlayer recordingUrl={session.url} title={`Classics Course ${course.canonicalNumber} · ${offering.label} · ${session.name}`} />
       </section>
 
-      <section className="section">
-        <div className="card cream">
-          <div className="eyebrow">Library content</div>
-          <h2>Transcript, Study Notes &amp; materials</h2>
-          <p>Only the verified recording metadata has been migrated for this session so far. Transcript text, Study Notes, timestamps, and materials will appear here only when their source files are available and reviewed.</p>
-          {session.sourceTitle ? <p className="meta" style={{ marginTop: 12 }}>Source title: {session.sourceTitle}</p> : null}
-          {offering.note ? <p className="meta" style={{ marginTop: 12 }}>{offering.note}</p> : null}
-        </div>
+      <section className="section transcript-section-v12" id="transcript">
+        <div className="eyebrow">Reference Transcript</div>
+        <h2>Transcript not added yet</h2>
+        <p className="meta">The verified recording is available, but a Reference Transcript has not been added to the Library for this class yet.</p>
+        {offering.note ? <p className="meta" style={{ marginTop: 12 }}>{offering.note}</p> : null}
       </section>
 
       <nav className="section" aria-label="Archive session navigation">
         <div className="actions" style={{ justifyContent: 'space-between' }}>
           <div>{previous ? <Link className="button" href={`/archive/classics/${course.slug}/${offering.slug}/${archiveSessionSlug(previous, index - 1)}`}>← {previous.code || 'Previous'}</Link> : null}</div>
-          <Link className="button" href={`/courses/${course.slug}/${offering.slug}`}>All recordings</Link>
+          <Link className="button" href={`/courses/${course.slug}/${offering.slug}`}>All classes</Link>
           <div>{next ? <Link className="button" href={`/archive/classics/${course.slug}/${offering.slug}/${archiveSessionSlug(next, index + 1)}`}>{next.code || 'Next'} →</Link> : null}</div>
         </div>
       </nav>
