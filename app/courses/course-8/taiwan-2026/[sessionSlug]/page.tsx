@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import ContentDownloadLinks from '@/components/content-download-links'
 import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
 import TranscriptControls from '@/components/transcript-controls'
@@ -20,9 +21,7 @@ type CourseSession = {
 }
 
 type CourseData = {
-  course: {
-    fullTitle: string
-  }
+  course: { fullTitle: string }
   sessions: CourseSession[]
 }
 
@@ -52,7 +51,7 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
         <p className="lead">{session.date}{session.teacher ? ` · ${session.teacher}` : ''}</p>
       </section>
 
-      <section className="section">
+      <section className="section" id="recording">
         <div className="eyebrow">Recording</div>
         <h2>{session.recordingUrl ? 'Class recording' : 'Recording not added yet'}</h2>
         <RecordingPlayer recordingUrl={session.recordingUrl} title={`${courseData.course.fullTitle} · ${session.label}`} />
@@ -63,6 +62,7 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
           <div className="study-notes-head">
             <div><div className="eyebrow">Study aid</div><h2>Study Notes</h2></div>
           </div>
+          <ContentDownloadLinks collection="course8" sessionId={session.id} content="notes" />
           <div className="info-callout">
             <strong>About these notes</strong><br />
             These study notes were created from the class with the assistance of AI and are provided as a study aid. They may simplify or omit parts of the teaching. Please refer to the recording and transcript for the complete class.
@@ -94,6 +94,7 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
 
         {transcriptChapters.length > 0 ? (
           <>
+            <ContentDownloadLinks collection="course8" sessionId={session.id} content="transcript" />
             <div className="info-callout">
               <strong>About this transcript</strong><br />
               This transcript was created by a student with AI and should be used for reference only. Please check it against the video and audio for accuracy of content.
@@ -106,13 +107,7 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
                 <section key={chapter.id} id={chapter.id} style={{ scrollMarginTop: 96, marginBottom: 34 }}>
                   <h3>{chapter.title}</h3>
                   {chapter.paragraphs.map((paragraph) => (
-                    <div
-                      className="transcript-paragraph-v12"
-                      data-transcript-paragraph
-                      id={paragraph.id}
-                      key={paragraph.id}
-                      style={{ scrollMarginTop: 96 }}
-                    >
+                    <div className="transcript-paragraph-v12" data-transcript-paragraph id={paragraph.id} key={paragraph.id} style={{ scrollMarginTop: 96 }}>
                       <div className="transcript-copy">
                         <strong>{paragraph.speaker}: </strong>
                         <span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.text}</span>
