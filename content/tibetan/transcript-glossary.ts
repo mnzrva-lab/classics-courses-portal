@@ -36,14 +36,16 @@ const editorialMarkers = new Set([
 
 function cleanInline(value: string) {
   return value
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/\[([^\]]+)\]/g, '$1')
-    .replace(/[*_`>#]/g, '')
+    .replace(/\\([*_`~>#\[\]])/g, '$1')
+    .replace(/[*_`~>#]/g, '')
     .replace(/\s+/g, ' ')
     .trim()
 }
 
 function isCandidate(value: string) {
-  const term = value.trim().replace(/\s+/g, ' ')
+  const term = cleanInline(value)
   if (term.length < 2 || term.length > 80) return false
   if (!/[A-Za-z]/.test(term)) return false
   if (term.split(/\s+/).length > 8) return false
@@ -112,15 +114,21 @@ export function transcriptGlossaryTerms(): GlossaryTerm[] {
     for (const chapter of source.chapters) {
       for (const paragraph of chapter.paragraphs) {
         for (const match of paragraph.text.matchAll(bracketPattern)) {
-          const rawTerm = match[1]?.trim().replace(/\s+/g, ' ')
-          if (!rawTerm || !isCandidate(rawTerm)) continue
-          const normalized = rawTerm.toLocaleLowerCase()
+          const start = match.index ?? 0
+          const end = start + match[0].length
+
+          // Markdown links also use square brackets. Do not treat [label](url) as a Tibetan term.
+          if (paragraph.text[end] === '(') continue
+
+          const cleanedTerm = cleanInline(match[1] ?? '')
+          if (!cleanedTerm || !isCandidate(cleanedTerm)) continue
+          const normalized = cleanedTerm.toLocaleLowerCase()
           if (seen.has(normalized)) continue
           seen.add(normalized)
-          const start = match.index ?? 0
+
           terms.push({
-            term: rawTerm,
-            context: contextAround(paragraph.text, start, start + match[0].length),
+            term: cleanedTerm,
+            context: contextAround(paragraph.text, start, end),
             source: source.label,
             href: `${source.hrefBase}#${paragraph.id}`,
           })

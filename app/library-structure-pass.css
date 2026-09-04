@@ -49,6 +49,9 @@
   background: var(--white);
   box-shadow: var(--shadow-sm);
 }
+.upcoming-course-card:only-child {
+  grid-column: 1 / -1;
+}
 .upcoming-course-card h3 { margin: 7px 0 14px; font-size: 25px; }
 .upcoming-course-card .next-class-countdown {
   margin: 0 0 14px;

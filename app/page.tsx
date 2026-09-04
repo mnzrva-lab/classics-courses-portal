@@ -5,19 +5,9 @@ import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import rawCourse18Schedule from '@/content/classics/course-18-schedule.json'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 
-type CourseSession = {
-  id: string
-  slug: string
-  label: string
-  kind: string
-  teacher: string
-  transcriptSource?: string | null
-  studyNotesSource?: string | null
-}
 type CourseData = {
   course: { canonicalNumber: number; title: string; fullTitle: string }
   offering: { label: string; location: string; startsOn: string; endsOn: string; languages: string[]; teachers: string[] }
-  sessions: CourseSession[]
 }
 type CatalogCourse = { canonicalNumber: number; slug: string; title: string }
 type ArchiveCourse = { canonicalNumber: number; schedule?: Array<{ label: string; date: string }> }
@@ -59,9 +49,7 @@ function archiveDateRange(startsOn: string, endsOn: string) {
 }
 
 export default function HomePage() {
-  const { course, offering, sessions } = courseData
-  const transcriptCount = sessions.filter((session) => Boolean(session.transcriptSource)).length
-  const studyNotesCount = sessions.filter((session) => Boolean(session.studyNotesSource)).length
+  const { course, offering } = courseData
   const archiveHref = '/courses/course-8/taiwan-2026'
 
   return (
@@ -71,9 +59,9 @@ export default function HomePage() {
       <UpcomingCourses courses={upcomingCourses} />
 
       <section className="container section">
-        <div className="section-head"><div><div className="eyebrow">Latest teaching archive</div><h2>Classics Course {course.canonicalNumber} · {offering.label}</h2><p>The first Course Offering being migrated into the GitHub-backed Library.</p></div></div>
+        <div className="section-head"><div><div className="eyebrow">Latest teaching</div><h2>Classics Course {course.canonicalNumber} · {offering.label}</h2><p>The first Course Offering being migrated into the GitHub-backed Library.</p></div></div>
         <div className="home-current-grid">
-          <Link className="home-active-course" href={archiveHref}><div className="home-active-artwork placeholder" aria-hidden="true" /><div className="home-active-copy"><div className="eyebrow">Classics Course {course.canonicalNumber}</div><h2>{course.title}</h2><p>{offering.teachers.join(' and ')} · {archiveDateRange(offering.startsOn, offering.endsOn)} · {offering.location}</p><div className="offering-meta" style={{ marginTop: 14 }}><span className="pill">{sessions.length} sessions</span><span className="pill">{transcriptCount} transcripts</span><span className="pill">{studyNotesCount} Study Notes</span><span className="pill">{offering.languages.join(' · ')}</span></div><span className="button sage home-active-button">Open Course 8</span></div></Link>
+          <Link className="home-active-course" href={archiveHref}><div className="home-active-artwork placeholder" aria-hidden="true" /><div className="home-active-copy"><div className="eyebrow">Classics Course {course.canonicalNumber}</div><h2>{course.title}</h2><p>{offering.teachers.join(' and ')} · {archiveDateRange(offering.startsOn, offering.endsOn)} · {offering.location}</p><span className="button sage home-active-button">Open Course 8</span></div></Link>
           <div className="card"><div className="eyebrow">Search the archive</div><h2>Find the exact passage.</h2><p className="meta">Search across the migrated transcripts and available Study Notes. Transcript results open directly at the matching paragraph.</p><div className="actions" style={{ marginTop: 18 }}><Link className="button sage" href="/search">Search teachings</Link></div></div>
         </div>
       </section>
