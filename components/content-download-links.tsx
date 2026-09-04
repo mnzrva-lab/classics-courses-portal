@@ -13,9 +13,11 @@ function href(collection: Props['collection'], sessionId: string, content: Downl
 
 export default function ContentDownloadLinks({ collection, sessionId, content }: Props) {
   return (
-    <div className="actions" style={{ marginTop: 10 }}>
-      <a className="button" href={href(collection, sessionId, content, 'txt')}>Download TXT</a>
-      <a className="button" href={href(collection, sessionId, content, 'docx')}>Download DOCX</a>
+    <div className="content-download-links" aria-label={`Download ${content}`}>
+      <span>Download:</span>
+      <a href={href(collection, sessionId, content, 'txt')}>TXT</a>
+      <span aria-hidden="true">·</span>
+      <a href={href(collection, sessionId, content, 'docx')}>DOCX</a>
     </div>
   )
 }

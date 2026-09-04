@@ -5,52 +5,52 @@
   gap: 14px;
 }
 .classics-card {
-  min-height: 178px;
+  min-height: 164px;
   display: flex;
   flex-direction: column;
   padding: 20px;
   border: 1px solid var(--line);
-  border-radius: 22px;
+  border-radius: 20px;
   background: var(--white);
   box-shadow: var(--shadow-sm);
 }
 .classics-card h2 {
   margin: 7px 0 8px;
-  font-size: clamp(21px, 2vw, 28px);
+  font-size: clamp(20px, 1.8vw, 25px);
+  font-weight: 500;
+  line-height: 1.16;
 }
 .classics-card-offerings {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 14px;
   margin-top: auto;
-  padding-top: 18px;
+  padding-top: 16px;
 }
 .classics-card-offerings a {
   color: var(--sage-900);
   font-size: 13px;
-  font-weight: 850;
+  font-weight: 650;
   text-decoration: underline;
   text-decoration-color: var(--sage-300);
   text-underline-offset: 3px;
 }
 .classics-card-offerings a:hover { text-decoration-color: var(--sage-700); }
-.classics-card-upcoming { margin-top: auto; padding-top: 18px; }
-.classics-card-upcoming a { font-weight: 850; color: var(--sage-900); }
+.classics-card-upcoming { margin-top: auto; padding-top: 16px; }
+.classics-card-upcoming a { font-weight: 650; color: var(--sage-900); }
 
 .upcoming-course-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
+.upcoming-course-grid > :only-child { grid-column: 1 / -1; }
 .upcoming-course-card {
   padding: 20px;
   border: 1px solid var(--line);
   border-radius: 22px;
   background: var(--white);
   box-shadow: var(--shadow-sm);
-}
-.upcoming-course-card:only-child {
-  grid-column: 1 / -1;
 }
 .upcoming-course-card h3 { margin: 7px 0 14px; font-size: 25px; }
 .upcoming-course-card .next-class-countdown {
@@ -118,6 +118,26 @@
 .tibetan-term-source { margin-top: auto; padding-top: 15px; color: var(--ink-soft); font-size: 11px; font-weight: 750; }
 .glossary-pagination { display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 24px; }
 .glossary-page-number { color: var(--ink-soft); font-size: 13px; }
+
+.content-download-links {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  margin-top: 10px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.content-download-links a {
+  color: var(--sage-900);
+  font-weight: 650;
+  text-decoration: underline;
+  text-decoration-color: var(--sage-300);
+  text-underline-offset: 3px;
+}
+.content-download-links a:hover { text-decoration-color: var(--sage-700); }
 
 @media (max-width: 1050px) {
   .classics-card-grid, .tibetan-term-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
