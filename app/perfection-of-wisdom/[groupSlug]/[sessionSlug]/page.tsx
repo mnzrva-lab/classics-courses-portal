@@ -1,12 +1,13 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import ContentDownloadLinks from '@/components/content-download-links'
 import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
 import TranscriptControls from '@/components/transcript-controls'
 import { perfectionProgram, perfectionSessionBySlug } from '@/content/perfection-of-wisdom/catalog'
 import { perfectionTranscriptForSession } from '@/content/perfection-of-wisdom/transcripts'
 
-const transcriptDisclaimer = 'This transcript was created by a student with AI and should be used for reference only. Please check them against the video and audio for accuracy of content.'
+const transcriptDisclaimer = 'This transcript was created by a student with AI and should be used for reference only. Please check it against the video and audio for accuracy of content.'
 
 export default async function PerfectionSessionPage({ params }: { params: Promise<{ groupSlug: string; sessionSlug: string }> }) {
   const { groupSlug, sessionSlug } = await params
@@ -20,7 +21,7 @@ export default async function PerfectionSessionPage({ params }: { params: Promis
     <main className="container page">
       <div className="offering-breadcrumbs">
         <Link href="/perfection-of-wisdom">Perfection of Wisdom</Link><span>/</span>
-        <span>{group.title} · {session.code}</span>
+        <span>{session.code}</span>
       </div>
 
       <section className="section">
@@ -41,6 +42,7 @@ export default async function PerfectionSessionPage({ params }: { params: Promis
 
         {transcriptChapters.length ? (
           <>
+            <ContentDownloadLinks collection="perfection" sessionId={session.id} content="transcript" />
             <div className="info-callout"><strong>About this transcript</strong><br />{transcriptDisclaimer}</div>
             <TranscriptControls chapters={transcriptChapters.map((chapter) => ({ id: chapter.id, label: chapter.title.replace(/[*_`]/g, '') }))} />
             <article className="transcript-v12-card">
