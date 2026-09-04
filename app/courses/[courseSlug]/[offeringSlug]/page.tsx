@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import LibrarySessionList from '@/components/library-session-list'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import { archiveSessionsFor } from '@/content/classics/archive-sessions'
@@ -61,23 +62,17 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
       {sessions.length ? (
         <section className="section compact-section">
           <div className="section-head"><div><div className="eyebrow">Course content</div><h2>Classes &amp; recordings</h2></div></div>
-          <div className="compact-session-list">
-            {sessions.map((session, index) => {
-              const teacher = displayTeacher(session.teacher)
-              const sessionSlug = archiveSessionSlug(session, index)
-              return (
-                <Link className="compact-session-row" href={`/archive/classics/${course.slug}/${offering.slug}/${sessionSlug}`} key={`${session.videoId ?? session.url}-${index}`}>
-                  <span className="compact-session-code">{session.code}</span>
-                  <span className="compact-session-copy">
-                    <strong>{session.name}</strong>
-                    <small>{[teacher, session.date].filter(Boolean).join(' · ') || 'Source date not included'}</small>
-                  </span>
-                  <span className="compact-session-duration">{session.duration}</span>
-                  <span className="compact-row-arrow" aria-hidden="true">→</span>
-                </Link>
-              )
-            })}
-          </div>
+          <LibrarySessionList rows={sessions.map((session, index) => {
+            const teacher = displayTeacher(session.teacher)
+            const sessionSlug = archiveSessionSlug(session, index)
+            return {
+              href: `/archive/classics/${course.slug}/${offering.slug}/${sessionSlug}`,
+              code: session.code || `C${index + 1}`,
+              title: session.name,
+              meta: [session.date, teacher].filter(Boolean).join(' · ') || 'Source date not included',
+              status: ['Recording', session.duration].filter(Boolean).join(' · '),
+            }
+          })} />
           {offering.note ? <p className="meta" style={{ marginTop: 12 }}>{offering.note}</p> : null}
         </section>
       ) : (
