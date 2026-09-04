@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import ClassSequenceNavigation from '@/components/class-sequence-navigation'
 import ContentDownloadLinks from '@/components/content-download-links'
 import RecordingPlayer from '@/components/recording-player'
 import TranscriptControls from '@/components/transcript-controls'
@@ -36,8 +37,11 @@ export default async function LivingLamRimSessionPage({ params }: { params: Prom
   const { termSlug, sessionSlug } = await params
   const term = catalog.terms.find((item) => item.slug === termSlug)
   if (!term) notFound()
-  const session = term.sessions.find((item) => item.slug === sessionSlug)
-  if (!session) notFound()
+  const sessionIndex = term.sessions.findIndex((item) => item.slug === sessionSlug)
+  if (sessionIndex < 0) notFound()
+  const session = term.sessions[sessionIndex]
+  const previous = sessionIndex > 0 ? term.sessions[sessionIndex - 1] : null
+  const next = sessionIndex < term.sessions.length - 1 ? term.sessions[sessionIndex + 1] : null
 
   const transcriptChapters = livingLamRimTranscriptForSession(session.id)
 
@@ -93,6 +97,12 @@ export default async function LivingLamRimSessionPage({ params }: { params: Prom
           <p className="meta">The recording is available, but a Reference Transcript has not been added to the Library for this session yet.</p>
         )}
       </section>
+
+      <ClassSequenceNavigation
+        previous={previous ? { href: `/living-lam-rim/${term.slug}/${previous.slug}`, label: previous.label } : null}
+        next={next ? { href: `/living-lam-rim/${term.slug}/${next.slug}`, label: next.label } : null}
+        allHref={`/living-lam-rim/${term.slug}`}
+      />
     </main>
   )
 }

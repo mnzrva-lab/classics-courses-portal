@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import ClassSequenceNavigation from '@/components/class-sequence-navigation'
 import ContentDownloadLinks from '@/components/content-download-links'
 import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
@@ -29,8 +30,11 @@ const courseData = rawCourseData as CourseData
 
 export default async function Course8TaiwanSessionPage({ params }: { params: Promise<{ sessionSlug: string }> }) {
   const { sessionSlug } = await params
-  const session = courseData.sessions.find((item) => item.slug === sessionSlug)
-  if (!session) notFound()
+  const sessionIndex = courseData.sessions.findIndex((item) => item.slug === sessionSlug)
+  if (sessionIndex < 0) notFound()
+  const session = courseData.sessions[sessionIndex]
+  const previous = sessionIndex > 0 ? courseData.sessions[sessionIndex - 1] : null
+  const next = sessionIndex < courseData.sessions.length - 1 ? courseData.sessions[sessionIndex + 1] : null
 
   const transcriptChapters = course8TranscriptForSession(session.id)
   const studyNotes = course8StudyNotesForSession(session.id)
@@ -124,6 +128,13 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
           <p>No transcript source is currently attached to this session. We will add it when the source material is provided.</p>
         )}
       </section>
+
+      <ClassSequenceNavigation
+        previous={previous ? { href: `/courses/course-8/taiwan-2026/${previous.slug}`, label: previous.label } : null}
+        next={next ? { href: `/courses/course-8/taiwan-2026/${next.slug}`, label: next.label } : null}
+        allHref="/courses/course-8/taiwan-2026"
+        allLabel="All sessions"
+      />
     </main>
   )
 }

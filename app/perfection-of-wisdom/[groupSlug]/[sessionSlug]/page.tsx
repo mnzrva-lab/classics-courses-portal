@@ -1,10 +1,11 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import ClassSequenceNavigation from '@/components/class-sequence-navigation'
 import ContentDownloadLinks from '@/components/content-download-links'
 import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
 import TranscriptControls from '@/components/transcript-controls'
-import { perfectionProgram, perfectionSessionBySlug } from '@/content/perfection-of-wisdom/catalog'
+import { perfectionGroups, perfectionProgram, perfectionSessionBySlug } from '@/content/perfection-of-wisdom/catalog'
 import { perfectionTranscriptForSession } from '@/content/perfection-of-wisdom/transcripts'
 
 const transcriptDisclaimer = 'This transcript was created by a student with AI and should be used for reference only. Please check it against the video and audio for accuracy of content.'
@@ -16,6 +17,10 @@ export default async function PerfectionSessionPage({ params }: { params: Promis
 
   const { group, session } = entry
   const transcriptChapters = perfectionTranscriptForSession(session.id)
+  const orderedSessions = perfectionGroups.flatMap((period) => period.sessions.map((item) => ({ period, session: item })))
+  const sessionIndex = orderedSessions.findIndex((item) => item.period.slug === groupSlug && item.session.slug === sessionSlug)
+  const previous = sessionIndex > 0 ? orderedSessions[sessionIndex - 1] : null
+  const next = sessionIndex >= 0 && sessionIndex < orderedSessions.length - 1 ? orderedSessions[sessionIndex + 1] : null
 
   return (
     <main className="container page">
@@ -65,6 +70,13 @@ export default async function PerfectionSessionPage({ params }: { params: Promis
           <p className="meta">The recording is available, but a Reference Transcript has not been added to the Library for this session yet.</p>
         )}
       </section>
+
+      <ClassSequenceNavigation
+        previous={previous ? { href: `/perfection-of-wisdom/${previous.period.slug}/${previous.session.slug}`, label: previous.session.name } : null}
+        next={next ? { href: `/perfection-of-wisdom/${next.period.slug}/${next.session.slug}`, label: next.session.name } : null}
+        allHref="/perfection-of-wisdom"
+        allLabel="All sessions"
+      />
     </main>
   )
 }
