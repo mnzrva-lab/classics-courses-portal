@@ -1,85 +1,44 @@
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import rawCatalog from '@/content/living-lam-rim/catalog.json'
 
-export const dynamic = 'force-dynamic'
+type Session = { id: string; transcriptSource: string | null }
+type Term = {
+  term: number
+  slug: string
+  title: string | null
+  range: string
+  note: string | null
+  sessions: Session[]
+}
+type Catalog = { program: { title: string; playlistUrl: string }; terms: Term[] }
 
-export default async function LivingLamRimPage() {
-  const supabase = await createClient()
+const catalog = rawCatalog as Catalog
 
-  const { data: course } = await supabase
-    .from('courses')
-    .select('id, slug, title, subtitle, description')
-    .eq('kind', 'living_lam_rim')
-    .eq('status', 'published')
-    .maybeSingle()
-
-  const { data: groups } = course
-    ? await supabase
-        .from('content_groups')
-        .select('id, slug, title, kind, sort_order')
-        .eq('course_id', course.id)
-        .eq('status', 'published')
-        .order('sort_order')
-    : { data: [] as any[] }
-
-  const groupIds = (groups ?? []).map((group: any) => group.id)
-  const { data: sessions } = groupIds.length
-    ? await supabase
-        .from('sessions')
-        .select('id, slug, code, title, group_id, status, course_offerings(slug, label)')
-        .in('group_id', groupIds)
-        .eq('status', 'published')
-        .order('sort_order')
-    : { data: [] as any[] }
-
-  const sessionsByGroup = new Map<string, any[]>()
-  for (const session of sessions ?? []) {
-    const list = sessionsByGroup.get((session as any).group_id) ?? []
-    list.push(session)
-    sessionsByGroup.set((session as any).group_id, list)
-  }
-
+export default function LivingLamRimPage() {
   return (
-    <main className="container page">
-      <div className="eyebrow">Ongoing program</div>
-      <h1 style={{ fontSize: 'clamp(38px, 6vw, 64px)' }}>Living Lam Rim</h1>
-      <p className="lead">Browse by term, then open the individual class you want to study.</p>
+    <main className="container page living-lam-rim-page">
+      <header className="compact-page-head">
+        <div className="eyebrow">Living Lam Rim</div>
+        <h1>{catalog.program.title}</h1>
+        <p className="lead">Choose a term, then open the class you want to study.</p>
+        <a className="inline-library-link" href={catalog.program.playlistUrl} target="_blank" rel="noreferrer">Open playlist on YouTube ↗</a>
+      </header>
 
-      {(groups ?? []).length ? (
-        <section className="section">
-          {(groups ?? []).map((group: any) => {
-            const groupSessions = sessionsByGroup.get(group.id) ?? []
-            return (
-              <div className="card" key={group.id} style={{ marginBottom: 20 }}>
-                <div className="eyebrow">{group.kind || 'Term'}</div>
-                <h2>{group.title}</h2>
-                {groupSessions.length ? (
-                  <div className="list">
-                    {groupSessions.map((session: any) => {
-                      const offering = session.course_offerings
-                      const href = offering?.slug && course?.slug
-                        ? `/courses/${course.slug}/${offering.slug}/${session.slug}`
-                        : null
-                      return (
-                        <div className="row" key={session.id}>
-                          <div className="session-code">{session.code || '•'}</div>
-                          <div><strong>{session.title}</strong></div>
-                          {href ? <Link className="button" href={href}>Open class</Link> : null}
-                        </div>
-                      )
-                    })}
-                  </div>
-                ) : <p className="meta">Classes for this term have not been published yet.</p>}
-              </div>
-            )
-          })}
-        </section>
-      ) : (
-        <section className="section card">
-          <h2>Living Lam Rim terms are being organized for the library.</h2>
-          <p className="meta">The production structure is ready for term → class navigation. Published terms will appear here automatically.</p>
-        </section>
-      )}
+      <section className="section compact-section">
+        <div className="section-head"><div><div className="eyebrow">Terms</div><h2>Choose a term</h2></div></div>
+        <div className="term-list-cards">
+          {catalog.terms.map((term) => (
+            <Link className="term-list-card" href={`/living-lam-rim/${term.slug}`} key={term.slug}>
+              <span className="term-list-badge">Term {term.term}</span>
+              <span className="term-list-copy">
+                <strong>{term.title ?? `Term ${term.term}`}</strong>
+                <small>{term.range} · {term.sessions.length} recording{term.sessions.length === 1 ? '' : 's'}</small>
+              </span>
+              <span className="term-list-arrow" aria-hidden="true">→</span>
+            </Link>
+          ))}
+        </div>
+      </section>
     </main>
   )
 }

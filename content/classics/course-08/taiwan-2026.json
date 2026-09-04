@@ -1,0 +1,196 @@
+{
+  "schemaVersion": 2,
+  "course": {
+    "canonicalNumber": 8,
+    "slug": "course-8",
+    "title": "Death and the Realms of Existence",
+    "fullTitle": "Classics Course 8: Death and the Realms of Existence"
+  },
+  "offering": {
+    "slug": "taiwan-2026",
+    "label": "Taiwan 2026",
+    "location": "Online from Taiwan",
+    "year": 2026,
+    "startsOn": "2026-08-18",
+    "endsOn": "2026-08-22",
+    "languages": ["English", "Chinese"],
+    "teachers": ["Timothy Lowenhaupt", "Brian Mendoza"],
+    "sourceTimezone": "Asia/Taipei"
+  },
+  "sessions": [
+    {
+      "id": "class1",
+      "slug": "class-1",
+      "label": "Class 1",
+      "kind": "Class",
+      "date": "August 18, 2026",
+      "teacher": "Timothy Lowenhaupt",
+      "startsAt": "2026-08-18T11:00:00Z",
+      "endsAt": "2026-08-18T13:00:00Z",
+      "recordingUrl": "https://drive.google.com/file/d/1FvlgNzA9bVKcCOCPtP1eOwECwDrfXz_T/view?usp=sharing",
+      "transcriptSource": "prototype-recovered"
+    },
+    {
+      "id": "med1",
+      "slug": "meditation-1",
+      "label": "Meditation 1",
+      "kind": "Meditation",
+      "date": "August 19, 2026",
+      "teacher": "Brian Mendoza",
+      "startsAt": "2026-08-19T06:30:00Z",
+      "endsAt": "2026-08-19T07:30:00Z",
+      "recordingUrl": "https://drive.google.com/file/d/1ptDBpT_d6prx9ty1gn_j0vG9SciF6-IB/view?usp=sharing",
+      "transcriptSource": "prototype-recovered"
+    },
+    {
+      "id": "class2",
+      "slug": "class-2",
+      "label": "Class 2",
+      "kind": "Class",
+      "date": "August 19, 2026",
+      "teacher": "Timothy Lowenhaupt",
+      "startsAt": "2026-08-19T08:00:00Z",
+      "endsAt": "2026-08-19T09:30:00Z",
+      "recordingUrl": "https://drive.google.com/file/d/1ZdMpxkdJgS2mfwC57YjA3lELddhWIczC/view?usp=sharing",
+      "transcriptSource": "prototype-recovered"
+    },
+    {
+      "id": "class3",
+      "slug": "class-3",
+      "label": "Class 3",
+      "kind": "Class",
+      "date": "August 19, 2026",
+      "teacher": "Timothy Lowenhaupt",
+      "startsAt": "2026-08-19T11:00:00Z",
+      "endsAt": "2026-08-19T12:30:00Z",
+      "recordingUrl": "https://drive.google.com/file/d/1Q-9aCyxwDPGoWL69fBGR_nuSC79UYO8L/view?usp=sharing",
+      "transcriptSource": "prototype-recovered",
+      "studyNotesSource": "prototype-recovered"
+    },
+    {
+      "id": "med2",
+      "slug": "meditation-2",
+      "label": "Meditation 2",
+      "kind": "Meditation",
+      "date": "August 20, 2026",
+      "teacher": "Timothy Lowenhaupt",
+      "startsAt": "2026-08-20T06:30:00Z",
+      "endsAt": "2026-08-20T07:30:00Z",
+      "recordingUrl": null,
+      "transcriptSource": "prototype-recovered",
+      "studyNotesSource": "prototype-recovered"
+    },
+    {
+      "id": "class4",
+      "slug": "class-4",
+      "label": "Class 4",
+      "kind": "Class",
+      "date": "August 20, 2026",
+      "teacher": "Brian Mendoza",
+      "startsAt": "2026-08-20T08:00:00Z",
+      "endsAt": "2026-08-20T09:30:00Z",
+      "recordingUrl": null,
+      "transcriptSource": null
+    },
+    {
+      "id": "class5",
+      "slug": "class-5",
+      "label": "Class 5",
+      "kind": "Class",
+      "date": "August 20, 2026",
+      "teacher": "Timothy Lowenhaupt",
+      "startsAt": "2026-08-20T11:00:00Z",
+      "endsAt": "2026-08-20T12:30:00Z",
+      "recordingUrl": null,
+      "transcriptSource": null
+    },
+    {
+      "id": "med3",
+      "slug": "meditation-3",
+      "label": "Meditation 3",
+      "kind": "Meditation",
+      "date": "August 21, 2026",
+      "teacher": "Timothy Lowenhaupt",
+      "startsAt": "2026-08-21T06:30:00Z",
+      "endsAt": "2026-08-21T07:30:00Z",
+      "recordingUrl": null,
+      "transcriptSource": null
+    },
+    {
+      "id": "class6",
+      "slug": "class-6",
+      "label": "Class 6",
+      "kind": "Class",
+      "date": "August 21, 2026",
+      "teacher": "Brian Mendoza",
+      "startsAt": "2026-08-21T08:00:00Z",
+      "endsAt": "2026-08-21T09:30:00Z",
+      "recordingUrl": null,
+      "transcriptSource": null
+    },
+    {
+      "id": "class7",
+      "slug": "class-7",
+      "label": "Class 7",
+      "kind": "Class",
+      "date": "August 21, 2026",
+      "teacher": "Timothy Lowenhaupt",
+      "startsAt": "2026-08-21T11:00:00Z",
+      "endsAt": "2026-08-21T12:30:00Z",
+      "recordingUrl": null,
+      "transcriptSource": null
+    },
+    {
+      "id": "med4",
+      "slug": "meditation-4",
+      "label": "Meditation 4",
+      "kind": "Meditation",
+      "date": "August 22, 2026",
+      "teacher": "Brian Mendoza",
+      "startsAt": "2026-08-22T05:00:00Z",
+      "endsAt": "2026-08-22T06:15:00Z",
+      "recordingUrl": null,
+      "transcriptSource": null
+    },
+    {
+      "id": "class8",
+      "slug": "class-8",
+      "label": "Class 8",
+      "kind": "Class",
+      "date": "August 22, 2026",
+      "teacher": "Timothy Lowenhaupt",
+      "startsAt": "2026-08-22T06:30:00Z",
+      "endsAt": "2026-08-22T07:30:00Z",
+      "recordingUrl": null,
+      "transcriptSource": null
+    },
+    {
+      "id": "class9",
+      "slug": "class-9",
+      "label": "Class 9",
+      "kind": "Class",
+      "date": "August 22, 2026",
+      "teacher": "Brian Mendoza",
+      "startsAt": "2026-08-22T08:00:00Z",
+      "endsAt": "2026-08-22T09:30:00Z",
+      "recordingUrl": null,
+      "transcriptSource": null
+    },
+    {
+      "id": "class10",
+      "slug": "class-10",
+      "label": "Class 10",
+      "kind": "Class",
+      "date": "August 22, 2026",
+      "teacher": "Timothy Lowenhaupt",
+      "startsAt": "2026-08-22T11:00:00Z",
+      "endsAt": "2026-08-22T12:30:00Z",
+      "recordingUrl": null,
+      "transcriptSource": null
+    }
+  ],
+  "migrationNotes": {
+    "source": "Recovered from the supplied Course 8 portal prototype and project handoff.",
+    "status": "Public Taiwan course schedule migrated. Recording links and transcript availability are represented only where source material is actually available."
+  }
+}

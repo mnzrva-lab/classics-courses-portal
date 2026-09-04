@@ -1,0 +1,330 @@
+/* Compact-by-default refinement: expand only when the student/admin asks for more. */
+
+/* Course Offering hero keeps the V12 full-bleed identity without taking a whole viewport. */
+.offering-hero.offering-hero-artwork {
+  min-height: 360px !important;
+  max-height: none;
+  padding: clamp(28px, 3.8vw, 46px) !important;
+  background-position: center 52%;
+}
+.offering-hero.offering-hero-artwork .offering-hero-copy {
+  width: min(860px, 70%) !important;
+  min-height: 300px !important;
+}
+.offering-hero.offering-hero-artwork .offering-title {
+  max-width: 820px !important;
+  margin: 8px 0 14px !important;
+  font-size: clamp(46px, 5.7vw, 76px) !important;
+  line-height: .98 !important;
+}
+.offering-hero.offering-hero-artwork .lead {
+  margin: 0 !important;
+  font-size: clamp(17px, 1.7vw, 22px) !important;
+}
+.offering-hero.offering-hero-artwork .offering-description { margin-top: 10px !important; }
+.offering-hero.offering-hero-artwork .offering-meta { margin-top: 20px !important; }
+.offering-hero.offering-hero-artwork .offering-meta .pill {
+  min-height: 38px !important;
+  padding: 0 13px !important;
+  font-size: 11px !important;
+}
+
+/* Course resources are a utility row, never another large content block. */
+.course-resources-row {
+  padding: 10px 0 0 !important;
+  margin-top: 10px !important;
+}
+.course-resources-heading .eyebrow { font-size: 9px; }
+.course-resources-heading > strong { font-size: 14px !important; }
+.course-resource-button {
+  min-height: 34px !important;
+  padding: 0 11px !important;
+  font-size: 10.5px !important;
+}
+
+/* Class content defaults to the transcript. Study Notes remains one click away. */
+.class-study-tabs-mount {
+  margin: 30px 0 14px;
+}
+.class-study-tabs {
+  display: inline-flex;
+  gap: 3px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--cream);
+}
+.class-study-tab {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+.class-study-tab.active {
+  background: var(--ink);
+  color: var(--cream);
+}
+.class-study-tab-panel[hidden] { display: none !important; }
+.class-study-tabs-mount + #study-notes,
+.class-study-tabs-mount + .class-study-tab-panel { margin-top: 0 !important; }
+
+/* Actual sync controls are compact and only appear when video + timestamped transcript both work. */
+.transcript-sync-floating {
+  max-width: 390px;
+  padding: 10px 12px !important;
+  gap: 10px !important;
+}
+.transcript-sync-floating strong { font-size: 12px; }
+.transcript-sync-floating .meta { font-size: 10px; line-height: 1.35; }
+.transcript-sync-floating .button { min-height: 34px; padding: 0 10px; font-size: 10.5px; }
+
+/* Living Lam Rim: six term cards follow the approved V12-style overview. */
+.living-terms-section { margin-top: 58px; }
+.living-terms-heading { margin-bottom: 28px; }
+.living-terms-heading h2 {
+  margin: 0 0 8px;
+  font-size: clamp(36px, 4.2vw, 52px);
+  line-height: 1;
+  letter-spacing: -.035em;
+}
+.living-terms-heading p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: clamp(17px, 1.7vw, 22px);
+}
+.living-term-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+}
+.living-term-card {
+  min-height: 188px;
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 42px;
+  gap: 28px;
+  align-items: center;
+  padding: 30px 34px;
+  border: 1px solid var(--line);
+  border-radius: 34px;
+  background: #fff;
+  color: var(--ink);
+  text-decoration: none;
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+.living-term-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(31,27,24,.24);
+  box-shadow: 0 14px 36px rgba(31,27,24,.07);
+}
+.living-term-badge {
+  width: 92px;
+  height: 92px;
+  display: grid;
+  place-items: center;
+  border-radius: 28px;
+  background: rgba(157,189,184,.34);
+  color: #173f3b;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -.03em;
+}
+.living-term-copy { min-width: 0; }
+.living-term-copy h3 {
+  margin: 0;
+  font-size: clamp(25px, 2.25vw, 34px);
+  line-height: 1.08;
+  letter-spacing: -.035em;
+}
+.living-term-dates,
+.living-term-count {
+  margin: 14px 0 0;
+  color: var(--ink-soft);
+  font-size: 17px;
+  line-height: 1.25;
+}
+.living-term-count { margin-top: 8px; font-size: 15px; }
+.living-term-arrow {
+  justify-self: end;
+  color: #173f3b;
+  font-size: 38px;
+  font-weight: 500;
+  line-height: 1;
+}
+.living-term-class-row { align-items: center; }
+
+/* Admin Offering quick tools stay useful without turning into a second Admin page. */
+.admin-offering-tools-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px !important;
+  align-items: start !important;
+}
+.admin-offering-tool {
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+}
+.admin-offering-tool > div:first-child > strong { font-size: 15px; }
+.admin-offering-tool .meta { margin: 4px 0 8px; font-size: 10.5px; }
+.admin-playlist-import > summary {
+  width: fit-content;
+  list-style: none;
+  cursor: pointer;
+}
+.admin-playlist-import > summary::-webkit-details-marker { display: none; }
+.admin-playlist-import-panel {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+.playlist-import-rows {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.playlist-import-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, .8fr);
+  gap: 10px;
+  align-items: center;
+  padding: 9px 0;
+  border-top: 1px solid rgba(31,27,24,.09);
+}
+.playlist-import-row strong { font-size: 12px; line-height: 1.3; }
+.playlist-import-row .input { min-height: 38px; font-size: 11px; }
+.playlist-import-playlist {
+  display: flex;
+  gap: 8px 14px;
+  flex-wrap: wrap;
+  align-items: baseline;
+  padding: 9px 0;
+  border-top: 1px solid rgba(31,27,24,.09);
+}
+
+/* Session Admin: text editors become short status cards and open as focused modals. */
+.admin-session-top-actions {
+  margin: 12px 0 4px !important;
+}
+.admin-editor-cards-mount { margin-top: 20px; }
+.admin-editor-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.admin-editor-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+}
+.admin-editor-card strong {
+  display: block;
+  margin-top: 3px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  text-transform: capitalize;
+}
+.admin-editor-card .button { min-height: 36px; padding: 0 12px; font-size: 11px; }
+.admin-editor-source { display: none !important; }
+.admin-editor-source.is-open {
+  display: block !important;
+  position: fixed;
+  z-index: 1202;
+  top: 6vh;
+  left: 50%;
+  width: min(980px, calc(100vw - 40px));
+  max-height: 88vh;
+  margin: 0 !important;
+  overflow: auto;
+  transform: translateX(-50%);
+  box-shadow: 0 30px 100px rgba(31,27,24,.34);
+}
+.admin-editor-backdrop {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  border: 0;
+  background: rgba(31,27,24,.48);
+  backdrop-filter: blur(4px);
+  cursor: default;
+}
+.admin-editor-closebar {
+  position: fixed;
+  z-index: 1203;
+  top: calc(6vh + 14px);
+  left: 50%;
+  width: min(940px, calc(100vw - 72px));
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+  pointer-events: none;
+  transform: translateX(-50%);
+}
+.admin-editor-closebar > * { pointer-events: auto; }
+.admin-editor-closebar > strong { margin-right: auto; padding-left: 8px; font-size: 12px; }
+.admin-editor-closebar .button { min-height: 34px; font-size: 10.5px; }
+body.admin-modal-open { overflow: hidden; }
+.admin-editor-source.is-open > .eyebrow:first-child { padding-right: 120px; }
+
+@media (max-width: 900px) {
+  .offering-hero.offering-hero-artwork {
+    min-height: 340px !important;
+    background-position: 58% center;
+  }
+  .offering-hero.offering-hero-artwork .offering-hero-copy {
+    width: min(100%, 720px) !important;
+    min-height: 280px !important;
+  }
+  .living-term-grid { grid-template-columns: 1fr; }
+  .admin-offering-tools-grid,
+  .admin-editor-cards { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 680px) {
+  .offering-hero.offering-hero-artwork {
+    min-height: 320px !important;
+    padding: 24px 22px !important;
+  }
+  .offering-hero.offering-hero-artwork .offering-hero-copy { min-height: 272px !important; }
+  .offering-hero.offering-hero-artwork .offering-title { font-size: clamp(40px, 12vw, 58px) !important; }
+  .class-study-tabs { width: 100%; }
+  .class-study-tab { flex: 1 1 0; padding: 0 10px; }
+  .living-terms-section { margin-top: 42px; }
+  .living-term-grid { gap: 14px; }
+  .living-term-card {
+    min-height: 136px;
+    grid-template-columns: 64px minmax(0, 1fr) 26px;
+    gap: 16px;
+    padding: 20px;
+    border-radius: 24px;
+  }
+  .living-term-badge {
+    width: 64px;
+    height: 64px;
+    border-radius: 20px;
+    font-size: 20px;
+  }
+  .living-term-copy h3 { font-size: 23px; }
+  .living-term-dates { margin-top: 10px; font-size: 15px; }
+  .living-term-count { font-size: 13px; }
+  .living-term-arrow { font-size: 28px; }
+  .playlist-import-row { grid-template-columns: 1fr; }
+  .admin-editor-source.is-open { top: 3vh; width: calc(100vw - 22px); max-height: 94vh; }
+  .admin-editor-closebar { top: calc(3vh + 10px); width: calc(100vw - 46px); }
+}

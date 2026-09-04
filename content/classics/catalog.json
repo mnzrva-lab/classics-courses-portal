@@ -1,0 +1,20 @@
+[
+  {"canonicalNumber":1,"slug":"course-1","title":"The Three Principal Paths"},
+  {"canonicalNumber":2,"slug":"course-2","title":"Buddhist Refuge"},
+  {"canonicalNumber":3,"slug":"course-3","title":"Applied Meditation"},
+  {"canonicalNumber":4,"slug":"course-4","title":"The Proof of Future Lives"},
+  {"canonicalNumber":5,"slug":"course-5","title":"How Karma Works"},
+  {"canonicalNumber":6,"slug":"course-6","title":"The Diamond Cutter Sutra"},
+  {"canonicalNumber":7,"slug":"course-7","title":"The Bodhisattva Vows"},
+  {"canonicalNumber":8,"slug":"course-8","title":"Death and the Realms of Existence","offerings":[{"slug":"taiwan-2026","label":"Taiwan 2026","location":"Online from Taiwan","year":2026}]},
+  {"canonicalNumber":9,"slug":"course-9","title":"The Ethical Life"},
+  {"canonicalNumber":10,"slug":"course-10","title":"A Guide to the Bodhisattva’s Way of Life, Part I"},
+  {"canonicalNumber":11,"slug":"course-11","title":"A Guide to the Bodhisattva’s Way of Life, Part II"},
+  {"canonicalNumber":12,"slug":"course-12","title":"A Guide to the Bodhisattva’s Way of Life, Part III"},
+  {"canonicalNumber":13,"slug":"course-13","title":"The Art of Reasoning"},
+  {"canonicalNumber":14,"slug":"course-14","title":"Lojong, Developing the Good Heart"},
+  {"canonicalNumber":15,"slug":"course-15","title":"What the Buddha Really Meant"},
+  {"canonicalNumber":16,"slug":"course-16","title":"The Great Ideas of Buddhism, Part I"},
+  {"canonicalNumber":17,"slug":"course-17","title":"The Great Ideas of Buddhism, Part II"},
+  {"canonicalNumber":18,"slug":"course-18","title":"The Great Ideas of Buddhism, Part III"}
+]

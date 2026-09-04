@@ -1,0 +1,161 @@
+/* Calm design + Tibetan admin review pass, August 2026. */
+
+/* Homepage: calm surfaces, color is used as a signal rather than a card taxonomy. */
+.home-today-card {
+  background: var(--cream);
+  color: var(--ink);
+}
+.home-today-card .eyebrow { color: var(--sage-900); }
+.home-today-card .home-event-copy > div { color: var(--ink-soft); }
+.home-today-card .home-event-row { border-top-color: rgba(31, 27, 24, .13); }
+
+.home-explore-grid .home-library-card,
+.home-explore-grid .home-library-card.cream,
+.home-explore-grid .home-library-card.sage {
+  background: var(--white);
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+.home-explore-grid .home-library-card .eyebrow,
+.home-explore-grid .home-library-card.sage .eyebrow {
+  color: var(--signal-700);
+}
+.home-explore-grid .home-library-card:hover {
+  border-color: var(--sage-300);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Class contents: navigation, not a competing card. */
+nav[aria-label="Class contents"] {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+nav[aria-label="Class contents"] .actions {
+  gap: 8px;
+}
+nav[aria-label="Class contents"] .button,
+.class-content-coming-soon {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 750;
+}
+nav[aria-label="Class contents"] .button:hover {
+  border-color: var(--sage-500);
+  background: rgba(255,255,255,.42);
+}
+.class-content-coming-soon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--ink-soft);
+  border-style: dashed;
+  cursor: default;
+}
+
+/* Tibetan admin: dense review grid instead of one full-width row per term. */
+.admin-tibetan-review-toolbar {
+  position: sticky;
+  top: 72px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 14px 0 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: rgba(251,247,239,.95);
+  backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-sm);
+}
+.admin-tibetan-review-toolbar .meta { margin-right: auto; }
+.admin-tibetan-review-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.admin-tibetan-term-card {
+  position: relative;
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 15px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--white);
+  box-shadow: 0 1px 4px rgba(53,43,35,.04);
+}
+.admin-tibetan-term-card.is-selected {
+  border-color: var(--sage-500);
+  box-shadow: 0 0 0 2px var(--sage-100);
+}
+.admin-tibetan-term-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+.admin-tibetan-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.admin-tibetan-select input { width: 16px; height: 16px; accent-color: var(--sage-700); }
+.admin-tibetan-term-card strong { font-size: 17px; line-height: 1.25; }
+.admin-tibetan-term-card .meta { line-height: 1.4; }
+.admin-tibetan-term-card .button { margin-top: auto; width: fit-content; min-height: 34px; padding: 0 11px; font-size: 11px; }
+.admin-tibetan-status {
+  width: fit-content;
+  padding: 3px 7px;
+  border-radius: var(--r-pill);
+  background: var(--cream);
+  color: var(--ink-soft);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.admin-tibetan-status.published { background: var(--sage-100); color: var(--sage-900); }
+.admin-tibetan-status.archived { background: #EEEAE4; color: var(--ink-soft); }
+.admin-tibetan-needs-review { color: var(--signal-700); font-size: 11px; font-weight: 750; }
+.admin-tibetan-extractor {
+  margin-top: 22px;
+  padding: 20px;
+  border: 1px solid var(--sage-300);
+  border-radius: var(--r-lg);
+  background: var(--sage-050);
+}
+.admin-tibetan-extractor form {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 10px;
+  align-items: end;
+  margin-top: 14px;
+}
+.admin-tibetan-extractor label { display: grid; gap: 6px; }
+
+@media (max-width: 1180px) {
+  .admin-tibetan-review-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 960px) {
+  .admin-tibetan-review-toolbar { top: 66px; }
+  .admin-tibetan-review-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 680px) {
+  .admin-tibetan-extractor form { grid-template-columns: 1fr; }
+}
+@media (max-width: 520px) {
+  .admin-tibetan-review-grid { grid-template-columns: 1fr; }
+}

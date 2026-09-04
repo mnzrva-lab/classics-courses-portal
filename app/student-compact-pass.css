@@ -1,0 +1,255 @@
+/* Student library compaction for Living Lam Rim and the 18 Classics Courses. */
+
+.living-lam-rim-page > h1,
+.classics-library-page > h1 {
+  margin-bottom: 8px;
+}
+
+.living-lam-rim-page > .lead,
+.classics-library-page > .lead {
+  max-width: 760px;
+  margin-top: 0;
+}
+
+.living-terms-section {
+  margin-top: 34px !important;
+}
+
+.living-terms-head {
+  margin-bottom: 16px;
+}
+
+.living-terms-head h2 {
+  margin: 0 0 3px;
+  font-size: clamp(28px, 3vw, 38px);
+}
+
+.living-terms-head p {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.living-term-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.living-term-card {
+  min-height: 116px;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) 28px;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: var(--white);
+  transition: border-color .16s ease, transform .16s ease, box-shadow .16s ease;
+}
+
+.living-term-card:hover {
+  border-color: var(--sage-500);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.living-term-code {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 17px;
+  background: var(--sage-100);
+  color: var(--sage-900);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.living-term-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.living-term-copy strong {
+  font-size: clamp(18px, 1.7vw, 24px);
+  line-height: 1.12;
+  letter-spacing: -.025em;
+}
+
+.living-term-copy > span,
+.living-term-copy small {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.living-term-arrow {
+  color: var(--sage-900);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.living-lam-rim-term-page {
+  padding-top: 30px !important;
+}
+
+.living-term-back {
+  display: inline-block;
+  margin-bottom: 18px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.living-term-back:hover {
+  color: var(--ink);
+}
+
+.living-term-course-head {
+  max-width: 920px;
+}
+
+.living-term-course-head .eyebrow {
+  color: var(--signal-700);
+}
+
+.living-term-course-head h1 {
+  margin: 6px 0 10px;
+  font-size: clamp(36px, 5vw, 58px);
+  line-height: 1;
+}
+
+.living-term-course-meta {
+  display: flex;
+  gap: 8px 16px;
+  flex-wrap: wrap;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.living-term-progress {
+  display: grid;
+  grid-template-columns: minmax(200px, auto) minmax(160px, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  margin: 24px 0 0;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.living-term-progress > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.living-term-progress > div:first-child strong {
+  font-size: 12px;
+}
+
+.living-term-study-section {
+  margin-top: 28px !important;
+}
+
+.living-term-study-head {
+  margin-bottom: 12px;
+}
+
+.living-term-study-head h2 {
+  margin: 2px 0 0;
+  font-size: clamp(26px, 3vw, 34px);
+}
+
+.classics-library-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.classics-course-card {
+  min-height: 154px;
+  padding: 18px 19px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: var(--white);
+}
+
+.classics-course-eyebrow {
+  color: var(--signal-700) !important;
+}
+
+.classics-course-card h2 {
+  margin: 6px 0 4px;
+  font-size: clamp(20px, 1.9vw, 27px);
+  line-height: 1.08;
+  letter-spacing: -.025em;
+}
+
+.classics-course-card > p {
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.classics-offering-line,
+.classics-offering-empty {
+  display: block;
+  margin-top: 16px;
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.classics-offering-line a {
+  color: var(--sage-900);
+  font-weight: 800;
+  text-decoration: underline;
+  text-decoration-color: var(--sage-300);
+  text-underline-offset: 3px;
+}
+
+.classics-offering-line a:hover {
+  text-decoration-color: var(--sage-700);
+}
+
+.classics-offering-separator {
+  color: var(--line);
+}
+
+@media (max-width: 1120px) {
+  .classics-library-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 820px) {
+  .living-term-grid { grid-template-columns: 1fr; }
+  .living-term-progress { grid-template-columns: 1fr auto; }
+  .living-term-progress .offering-progress-line { grid-column: 1 / -1; grid-row: 2; }
+}
+
+@media (max-width: 680px) {
+  .living-lam-rim-page,
+  .living-lam-rim-term-page,
+  .classics-library-page { padding-top: 24px !important; }
+
+  .living-term-card {
+    min-height: 102px;
+    grid-template-columns: 50px minmax(0, 1fr) 22px;
+    gap: 12px;
+    padding: 14px 15px;
+    border-radius: 18px;
+  }
+
+  .living-term-code {
+    width: 50px;
+    height: 50px;
+    border-radius: 15px;
+    font-size: 16px;
+  }
+
+  .living-term-copy strong { font-size: 18px; }
+  .living-term-arrow { font-size: 23px; }
+  .classics-library-grid { grid-template-columns: 1fr; }
+  .classics-course-card { min-height: 0; }
+}

@@ -1,51 +1,64 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import SiteNavigation from '@/components/site-navigation'
+import TranscriptSync from '@/components/transcript-sync'
+import ClassStudyTabs from '@/components/class-study-tabs'
+import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
+import { TELEGRAM_UPDATES_URL } from '@/lib/site-links'
 import './globals.css'
+import './learning-surfaces.css'
+import './portal-shell-home.css'
+import './v12-content-pass.css'
+import './v12-fixes.css'
+import './course-offering-followup.css'
+import './compact-refinement.css'
+import './admin-compact-pass.css'
+import './admin-compact.css'
+import './admin-archive-pass.css'
+import './admin-bulk-edit.css'
+import './admin-collections.css'
+import './admin-offering-compact.css'
+import './admin-material-compact.css'
+import './admin-program-artwork.css'
+import './program-archive-pass.css'
+import './program-artwork.css'
+import './student-compact-pass.css'
+import './design-tibetan-pass.css'
+import './library-list-refinement.css'
+import './library-structure-pass.css'
+import './reader-consistency.css'
 
 export const metadata: Metadata = {
   title: 'Classics Courses with Timothy Lowenhaupt',
-  description: 'Classics Courses, Living Lam Rim, meditations, and study materials.',
+  description: 'Classics Courses, Living Lam Rim, meditations, transcripts, Study Notes, and study materials.',
 }
 
-export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  let isAdmin = false
+type CourseData = {
+  course: { canonicalNumber: number; title: string }
+  offering: { label: string }
+}
 
-  try {
-    const supabase = await createClient()
-    const { data: claimsData } = await supabase.auth.getClaims()
-    const userId = claimsData?.claims?.sub as string | undefined
-    if (userId) {
-      const { data: profile } = await supabase.from('profiles').select('role').eq('id', userId).single()
-      isAdmin = profile?.role === 'admin'
-    }
-  } catch {
-    isAdmin = false
-  }
+const courseData = rawCourseData as CourseData
+const currentCourse = {
+  href: '/courses/course-8/taiwan-2026',
+  label: `Classics Course ${courseData.course.canonicalNumber} · ${courseData.offering.label}`,
+  title: courseData.course.title,
+}
 
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body>
-        <div className="site-shell">
-          <header className="topbar">
-            <Link className="brand" href="/">Classics Courses</Link>
-            <nav className="nav" aria-label="Primary navigation">
-              <Link href="/">Home</Link>
-              <Link href="/courses">Courses</Link>
-              <Link href="/living-lam-rim">Living Lam Rim</Link>
-              <Link href="/meditations">Meditations</Link>
-              <Link href="/search">Search</Link>
-              <Link href="/my-learning">My Learning</Link>
-              <Link href="/my-notes">My Notes</Link>
-              {isAdmin ? <Link href="/admin">Admin</Link> : null}
-            </nav>
-          </header>
-          {children}
-          <footer className="footer">
-            <div className="container">Classics Courses with Timothy Lowenhaupt</div>
-          </footer>
-        </div>
-      </body>
-    </html>
+    <html lang="en"><body><div className="portal-shell">
+      <SiteNavigation isAdmin={false} currentCourse={currentCourse} perfectionHref="/perfection-of-wisdom" personalStudyEnabled={false} />
+      <div className="portal-main">
+        <header className="portal-topbar">
+          <Link className="portal-mobile-brand" href="/"><span className="sidebar-mark" aria-hidden="true">C</span><strong>Classics Courses</strong></Link>
+          <form className="portal-search-form" action="/search" method="get" role="search"><span aria-hidden="true">⌕</span><input name="q" type="search" aria-label="Search courses, Study Notes and transcripts" placeholder="Search the teaching library" /></form>
+        </header>
+        {children}
+        <ClassStudyTabs />
+        <TranscriptSync />
+        <footer className="footer portal-footer"><div className="container portal-footer-inner"><span>Classics Courses with Timothy Lowenhaupt</span><a href={TELEGRAM_UPDATES_URL} target="_blank" rel="noreferrer">Telegram updates ↗</a></div></footer>
+      </div>
+    </div></body></html>
   )
 }
