@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import Link from 'next/link'
 import LibrarySessionList from '@/components/library-session-list'
 import { eyeOfCourageProgram, eyeOfCourageSessions } from '@/content/eye-of-courage'
@@ -28,7 +29,14 @@ export default function EyeOfCourageProgramPage() {
 
       <header className="eoc-program-intro">
         <div className="eoc-program-cover-wrap">
-          <img className="eoc-program-cover" src={eyeOfCourageProgram.coverPath} alt="Tigers overlooking Guadalajara at sunset" />
+          <Image
+            className="eoc-program-cover"
+            src={eyeOfCourageProgram.coverPath}
+            alt="Tigers overlooking Guadalajara at sunset"
+            fill
+            sizes="(max-width: 820px) 100vw, (max-width: 1120px) 40vw, 42vw"
+            preload
+          />
         </div>
         <div className="eoc-program-copy">
           <div className="eyebrow">Special teaching · Casa Tartuk</div>
