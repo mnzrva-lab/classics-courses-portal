@@ -14,7 +14,7 @@ export default function EyeOfCourageProgramPage() {
   const rows = [
     ...classRows,
     {
-      href: '/other-programs/eye-of-courage/class-2/workshop',
+      href: '/other-programs/eye-of-courage/class-2#workshop',
       code: 'W',
       title: 'Workshop',
       meta: 'Class 2 practice',

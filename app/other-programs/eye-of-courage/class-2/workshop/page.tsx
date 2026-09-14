@@ -1,13 +1,5 @@
-import Link from 'next/link'
-import EyeOfCourageWorkshop from '@/components/eye-of-courage-workshop'
-import EyeOfCourageToolbarCollapse from '@/components/eye-of-courage-toolbar-collapse'
-import { eyeOfCourageProgram } from '@/content/eye-of-courage/program'
+import { redirect } from 'next/navigation'
 
-export default function Page(){
-  return <main className="container page eoc-workshop-page">
-    <div className="offering-breadcrumbs"><Link href="/other-programs">Other Programs</Link><span>/</span><Link href="/other-programs/eye-of-courage">The Eye of Courage</Link><span>/</span><Link href="/other-programs/eye-of-courage/class-2">Class 2</Link><span>/</span><span>Workshop</span></div>
-    <header className="eoc-class-header"><div><div className="eyebrow">{eyeOfCourageProgram.subtitle} · Class 2</div><h1>Workshop</h1><p className="lead">Use the teaching as a practice. Your answers stay in this browser unless you choose to download them.</p></div><nav className="eoc-class-tabs"><Link href="/other-programs/eye-of-courage/class-2">Class 2</Link><Link className="active" href="/other-programs/eye-of-courage/class-2/workshop">Workshop</Link></nav></header>
-    <EyeOfCourageWorkshop/>
-    <EyeOfCourageToolbarCollapse/>
-  </main>
+export default function WorkshopRedirectPage() {
+  redirect('/other-programs/eye-of-courage/class-2#workshop')
 }

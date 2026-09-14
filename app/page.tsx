@@ -3,18 +3,21 @@ import UpcomingCourses from '@/components/upcoming-courses'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import rawCourse18Schedule from '@/content/classics/course-18-schedule.json'
-import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 
-type CourseData = {
-  course: { canonicalNumber: number; title: string; fullTitle: string }
-  offering: { label: string; location: string; startsOn: string; endsOn: string; languages: string[]; teachers: string[] }
-}
 type CatalogCourse = { canonicalNumber: number; slug: string; title: string }
 type ArchiveCourse = { canonicalNumber: number; schedule?: Array<{ label: string; date: string }> }
 type ArchiveCatalog = { courses: ArchiveCourse[] }
 type DetailedSchedule = { sessions: Array<{ id: string; label: string; startsAt: string; endsAt: string }> }
 
-const courseData = rawCourseData as CourseData
+type LatestCourse = {
+  sortDate: string
+  dates: string
+  eyebrow: string
+  title: string
+  detail: string
+  href: string
+}
+
 const catalog = rawCatalog as CatalogCourse[]
 const archiveCatalog = rawArchiveCatalog as ArchiveCatalog
 const course18Schedule = rawCourse18Schedule as DetailedSchedule
@@ -41,17 +44,50 @@ const upcomingCourses = archiveCatalog.courses.flatMap((archive) => {
   return [{ courseNumber: course.canonicalNumber, title: course.title, href: `/courses/${course.slug}`, sessions }]
 })
 
-function archiveDateRange(startsOn: string, endsOn: string) {
-  const start = new Date(`${startsOn}T12:00:00Z`)
-  const end = new Date(`${endsOn}T12:00:00Z`)
-  const month = new Intl.DateTimeFormat('en', { month: 'short', timeZone: 'UTC' }).format(start)
-  return `${month} ${start.getUTCDate()}–${end.getUTCDate()}, ${end.getUTCFullYear()}`
-}
+const latestCourses: LatestCourse[] = [
+  {
+    sortDate: '2026-09-12',
+    dates: 'Sep 11–12, 2026',
+    eyebrow: 'Other Program · Casa Tartuk',
+    title: 'The Eye of Courage: Blindspots & Leadership',
+    detail: 'Timothy Lowenhaupt · Guadalajara',
+    href: '/other-programs/eye-of-courage',
+  },
+  {
+    sortDate: '2026-08-22',
+    dates: 'Aug 18–22, 2026',
+    eyebrow: 'Classics Course 8 · Taiwan 2026',
+    title: 'Death and the Realms of Existence',
+    detail: 'Timothy Lowenhaupt & Brian Mendoza · Online from Taiwan',
+    href: '/courses/course-8/taiwan-2026',
+  },
+  {
+    sortDate: '2026-07-26',
+    dates: 'Apr 26–Jul 26, 2026',
+    eyebrow: 'Classics Course 17 · Arizona 2026',
+    title: 'The Great Ideas of Buddhism, Part II',
+    detail: 'Timothy Lowenhaupt',
+    href: '/courses/course-17',
+  },
+  {
+    sortDate: '2026-04-05',
+    dates: 'Mar 31–Apr 5, 2026',
+    eyebrow: 'Classics Course 7 · Taiwan 2026',
+    title: 'The Bodhisattva Vows',
+    detail: 'Timothy Lowenhaupt',
+    href: '/courses/course-7',
+  },
+  {
+    sortDate: '2026-03-22',
+    dates: 'Nov 9, 2025–Mar 22, 2026',
+    eyebrow: 'Classics Course 16 · Arizona 2025–2026',
+    title: 'The Great Ideas of Buddhism, Part I',
+    detail: 'Timothy Lowenhaupt',
+    href: '/courses/course-16',
+  },
+].sort((a, b) => b.sortDate.localeCompare(a.sortDate)).slice(0, 5)
 
 export default function HomePage() {
-  const { course, offering } = courseData
-  const archiveHref = '/courses/course-8/taiwan-2026'
-
   return (
     <main>
       <section className="hero home-v12-hero"><div className="container"><div className="eyebrow">Teaching library</div><h1>Study the teachings.</h1><p>Browse Classics Courses, recordings, Study Notes, Reference Transcripts, meditations, and course materials in one calm study space.</p><div className="actions" style={{ marginTop: 22 }}><Link className="button sage" href="/courses">Browse Classics Courses</Link><Link className="button" href="/search">Search the Library</Link></div></div></section>
@@ -59,10 +95,19 @@ export default function HomePage() {
       <UpcomingCourses courses={upcomingCourses} />
 
       <section className="container section">
-        <div className="section-head"><div><div className="eyebrow">Latest teaching</div><h2>Classics Course {course.canonicalNumber} · {offering.label}</h2><p>The first Course Offering being migrated into the GitHub-backed Library.</p></div></div>
-        <div className="home-current-grid">
-          <Link className="home-active-course" href={archiveHref}><div className="home-active-artwork placeholder" aria-hidden="true" /><div className="home-active-copy"><div className="eyebrow">Classics Course {course.canonicalNumber}</div><h2>{course.title}</h2><p>{offering.teachers.join(' and ')} · {archiveDateRange(offering.startsOn, offering.endsOn)} · {offering.location}</p><span className="button sage home-active-button">Open Course 8</span></div></Link>
-          <div className="card"><div className="eyebrow">Search the archive</div><h2>Find the exact passage.</h2><p className="meta">Search across the migrated transcripts and available Study Notes. Transcript results open directly at the matching paragraph.</p><div className="actions" style={{ marginTop: 18 }}><Link className="button sage" href="/search">Search teachings</Link></div></div>
+        <div className="section-head"><div><div className="eyebrow">Recently taught</div><h2>Latest courses</h2><p>Newest first, based on the final teaching date.</p></div></div>
+        <div className="home-milestones">
+          {latestCourses.map((course) => (
+            <Link className="home-milestone-row" href={course.href} key={`${course.sortDate}-${course.title}`}>
+              <div className="home-milestone-date">{course.dates}</div>
+              <div>
+                <div className="eyebrow">{course.eyebrow}</div>
+                <h3>{course.title}</h3>
+                <p>{course.detail}</p>
+              </div>
+              <span className="home-open-pill">Open</span>
+            </Link>
+          ))}
         </div>
       </section>
 

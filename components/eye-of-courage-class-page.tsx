@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import ClassSequenceNavigation from '@/components/class-sequence-navigation'
 import EyeOfCourageTabs from '@/components/eye-of-courage-tabs'
-import EyeOfCourageWorkshop from '@/components/eye-of-courage-workshop'
+import EyeOfCourageWorkshopShell from '@/components/eye-of-courage-workshop-shell'
 import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
 import TranscriptControls from '@/components/transcript-controls'
@@ -69,7 +69,7 @@ export default function EyeOfCourageClassPage({ sessionSlug }: { sessionSlug: 'c
 
   const workshopPanel = session.hasWorkshop ? (
     <div id="workshop" style={{ scrollMarginTop: 96 }}>
-      <EyeOfCourageWorkshop />
+      <EyeOfCourageWorkshopShell />
     </div>
   ) : undefined
 
