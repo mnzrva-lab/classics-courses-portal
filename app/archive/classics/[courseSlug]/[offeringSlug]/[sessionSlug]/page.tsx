@@ -1,9 +1,11 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import RecordingPlayer from '@/components/recording-player'
+import TimedArchiveTranscript from '@/components/timed-archive-transcript'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import { archiveSessionBySlug, archiveSessionSlug } from '@/content/classics/archive-route'
+import { timedTranscriptFor } from '@/content/classics/timed-transcripts'
 
 type CanonicalCourse = { canonicalNumber: number; slug: string; title: string }
 type ArchiveOffering = { slug: string; label: string; sourceLabel: string; note?: string }
@@ -33,6 +35,7 @@ export default async function ClassicsArchiveSessionPage({ params }: { params: P
   const teacher = displayTeacher(session.teacher)
   const previous = index > 0 ? sessions[index - 1] : null
   const next = index < sessions.length - 1 ? sessions[index + 1] : null
+  const timedTranscript = timedTranscriptFor(course.canonicalNumber, offeringSlug, session.code)
 
   return (
     <main className="container page">
@@ -48,17 +51,23 @@ export default async function ClassicsArchiveSessionPage({ params }: { params: P
         <p className="lead">{[session.date, teacher, session.duration].filter(Boolean).join(' · ') || offering.sourceLabel}</p>
       </section>
 
-      <section className="section" id="recording">
+      <section className="section" id="recording" style={{ scrollMarginTop: 96 }}>
         <div className="eyebrow">Recording</div>
         <h2>Class recording</h2>
         <RecordingPlayer recordingUrl={session.url} title={`Classics Course ${course.canonicalNumber} · ${offering.label} · ${session.name}`} />
       </section>
 
-      <section className="section transcript-section-v12" id="transcript">
+      <section className="section transcript-section-v12" id="transcript" style={{ scrollMarginTop: 96 }}>
         <div className="eyebrow">Reference Transcript</div>
-        <h2>Transcript not added yet</h2>
-        <p className="meta">The verified recording is available, but a Reference Transcript has not been added to the Library for this class yet.</p>
-        {offering.note ? <p className="meta" style={{ marginTop: 12 }}>{offering.note}</p> : null}
+        <h2>{timedTranscript ? 'Reference Transcript' : 'Transcript not added yet'}</h2>
+        {timedTranscript ? (
+          <TimedArchiveTranscript transcript={timedTranscript} />
+        ) : (
+          <>
+            <p className="meta">The verified recording is available, but a Reference Transcript has not been added to the Library for this class yet.</p>
+            {offering.note ? <p className="meta" style={{ marginTop: 12 }}>{offering.note}</p> : null}
+          </>
+        )}
       </section>
 
       <nav className="section" aria-label="Archive session navigation">
