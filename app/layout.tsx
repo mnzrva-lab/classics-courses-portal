@@ -27,38 +27,17 @@ import './design-tibetan-pass.css'
 import './library-list-refinement.css'
 import './library-structure-pass.css'
 import './reader-consistency.css'
+import './eye-of-courage.css'
 
 export const metadata: Metadata = {
   title: 'Classics Courses with Timothy Lowenhaupt',
   description: 'Classics Courses, Living Lam Rim, meditations, transcripts, Study Notes, and study materials.',
 }
 
-type CourseData = {
-  course: { canonicalNumber: number; title: string }
-  offering: { label: string }
-}
-
+type CourseData = { course: { canonicalNumber: number; title: string }; offering: { label: string } }
 const courseData = rawCourseData as CourseData
-const currentCourse = {
-  href: '/courses/course-8/taiwan-2026',
-  label: `Classics Course ${courseData.course.canonicalNumber} · ${courseData.offering.label}`,
-  title: courseData.course.title,
-}
+const currentCourse = { href: '/courses/course-8/taiwan-2026', label: `Classics Course ${courseData.course.canonicalNumber} · ${courseData.offering.label}`, title: courseData.course.title }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <html lang="en"><body><div className="portal-shell">
-      <SiteNavigation isAdmin={false} currentCourse={currentCourse} perfectionHref="/perfection-of-wisdom" personalStudyEnabled={false} />
-      <div className="portal-main">
-        <header className="portal-topbar">
-          <Link className="portal-mobile-brand" href="/"><span className="sidebar-mark" aria-hidden="true">C</span><strong>Classics Courses</strong></Link>
-          <form className="portal-search-form" action="/search" method="get" role="search"><span aria-hidden="true">⌕</span><input name="q" type="search" aria-label="Search courses, Study Notes and transcripts" placeholder="Search the teaching library" /></form>
-        </header>
-        {children}
-        <ClassStudyTabs />
-        <TranscriptSync />
-        <footer className="footer portal-footer"><div className="container portal-footer-inner"><span>Classics Courses with Timothy Lowenhaupt</span><a href={TELEGRAM_UPDATES_URL} target="_blank" rel="noreferrer">Telegram updates ↗</a></div></footer>
-      </div>
-    </div></body></html>
-  )
+  return <html lang="en"><body><div className="portal-shell"><SiteNavigation isAdmin={false} currentCourse={currentCourse} perfectionHref="/perfection-of-wisdom" personalStudyEnabled={false} /><div className="portal-main"><header className="portal-topbar"><Link className="portal-mobile-brand" href="/"><span className="sidebar-mark" aria-hidden="true">C</span><strong>Classics Courses</strong></Link><form className="portal-search-form" action="/search" method="get" role="search"><span aria-hidden="true">⌕</span><input name="q" type="search" aria-label="Search courses, Study Notes and transcripts" placeholder="Search the teaching library" /></form></header>{children}<ClassStudyTabs/><TranscriptSync/><footer className="footer portal-footer"><div className="container portal-footer-inner"><span>Classics Courses with Timothy Lowenhaupt</span><a href={TELEGRAM_UPDATES_URL} target="_blank" rel="noreferrer">Telegram updates ↗</a></div></footer></div></div></body></html>
 }
