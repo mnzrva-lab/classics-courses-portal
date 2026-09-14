@@ -5,6 +5,7 @@ import EyeOfCourageWorkshopShell from '@/components/eye-of-courage-workshop-shel
 import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
 import TranscriptControls from '@/components/transcript-controls'
+import TranscriptQuickNav from '@/components/transcript-quick-nav'
 import {
   eyeOfCourageProgram,
   eyeOfCourageSession,
@@ -45,6 +46,7 @@ export default function EyeOfCourageClassPage({ sessionSlug }: { sessionSlug: 'c
             </section>
           ))}
         </article>
+        <TranscriptQuickNav />
       </> : <p className="meta">Transcript not added yet.</p>}
     </div>
   )
