@@ -34,9 +34,12 @@ export default function EyeOfCourageProgramPage() {
           <div className="eyebrow">Special teaching · Casa Tartuk</div>
           <h1>{eyeOfCourageProgram.title}</h1>
           <p className="eoc-program-subtitle">{eyeOfCourageProgram.subtitle}</p>
-          <p className="lead">{eyeOfCourageProgram.location}<br />{eyeOfCourageProgram.dates}</p>
-          <p>{eyeOfCourageProgram.description}</p>
-          <p className="meta">Teacher · {eyeOfCourageProgram.teacher}</p>
+          <div className="eoc-program-facts" aria-label="Course details">
+            <span>{eyeOfCourageProgram.location}</span>
+            <span>{eyeOfCourageProgram.dates}</span>
+            <span>{eyeOfCourageProgram.teacher}</span>
+          </div>
+          <p className="eoc-program-description">{eyeOfCourageProgram.description}</p>
         </div>
       </header>
 
