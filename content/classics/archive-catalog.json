@@ -18,7 +18,7 @@
     {"canonicalNumber":14,"offerings":[{"slug":"archive-2025","label":"Arizona 2025","sourceLabel":"Arizona · 2025","playlistUrl":"https://www.youtube.com/playlist?list=PLTqjBtjd9j8dMpsorcUT4AguQGk8fZdQU","recordingCount":11}]},
     {"canonicalNumber":15,"offerings":[{"slug":"archive-2025","label":"Arizona 2025","sourceLabel":"Arizona · 2025","playlistUrl":"https://www.youtube.com/playlist?list=PLTqjBtjd9j8cCqLi6rTbbGED0cd7pUhfX","recordingCount":11}]},
     {"canonicalNumber":16,"offerings":[{"slug":"archive-2025-2026","label":"Arizona 2025–2026","sourceLabel":"Arizona · 2025–2026","playlistUrl":"https://www.youtube.com/playlist?list=PLTqjBtjd9j8fTk5NAXQfH5ZYkLqa40kf2","recordingCount":10}]},
-    {"canonicalNumber":17,"offerings":[{"slug":"current-2026","label":"Arizona 2026","sourceLabel":"Arizona · 2026","playlistUrl":"https://www.youtube.com/playlist?list=PLTqjBtjd9j8eoKAvtmWAVOGvv8_iwgNu6","recordingCount":8}]},
+    {"canonicalNumber":17,"offerings":[{"slug":"current-2026","label":"Arizona 2026","sourceLabel":"Arizona · 2026","playlistUrl":"https://www.youtube.com/playlist?list=PLTqjBtjd9j8eoKAvtmWAVOGvv8_iwgNu6","recordingCount":9}]},
     {"canonicalNumber":18,"status":"scheduled","sourceTimezone":"America/Phoenix","schedule":[{"label":"Classes 1–2","date":"2026-09-20"},{"label":"Classes 3–4","date":"2026-10-18"},{"label":"Classes 5–6","date":"2026-11-22"},{"label":"Classes 7–8","date":"2026-12-20"},{"label":"Classes 9–10","date":"2027-01-24"}]}
   ]
 }
