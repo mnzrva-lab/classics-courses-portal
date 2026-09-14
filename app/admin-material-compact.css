@@ -1,0 +1,21 @@
+.admin-material-details {
+  margin-top: 7px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  background: rgba(255,255,255,.68);
+  overflow: hidden;
+}
+.admin-material-details > summary {
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  padding: 8px 11px;
+  cursor: pointer;
+  color: var(--ink);
+  font-size: 10.5px;
+  font-weight: 800;
+}
+.admin-material-details[open] > summary { border-bottom: 1px solid var(--line); background: var(--sage-050); }
+.admin-material-details > div { padding: 12px !important; border-top: 0 !important; }
+.admin-material-details .form-stack { gap: 9px; }
+.admin-material-details .input { min-height: 38px; font-size: 10.5px; }

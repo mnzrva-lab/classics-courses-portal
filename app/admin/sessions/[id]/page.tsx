@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { isoToZonedParts, isValidTimeZone } from '@/lib/timezone'
 import { addMaterial, deleteMaterial, saveStudyNotes, saveTranscript, updateMaterial, updateSession } from './actions'
+import TextImportField from './text-import-field'
+import UploadMaterialForm from './upload-material-form'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,6 +27,13 @@ type TranscriptParagraph = {
   sort_order: number
 }
 
+type TranscriptAsset = {
+  after_paragraph_sort_order: number
+  storage_path: string
+  mime_type: string | null
+  sort_order: number
+}
+
 function formatTimestamp(seconds: number | null) {
   if (seconds == null) return ''
   const hours = Math.floor(seconds / 3600)
@@ -35,10 +44,24 @@ function formatTimestamp(seconds: number | null) {
     : `[${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}] `
 }
 
-function rebuildTranscript(sections: TranscriptSection[], paragraphs: TranscriptParagraph[]) {
+function transcriptAssetMarker(asset: TranscriptAsset) {
+  return `[[TRANSCRIPT_IMAGE|${asset.storage_path}|${asset.mime_type ?? ''}]]`
+}
+
+function rebuildTranscript(sections: TranscriptSection[], paragraphs: TranscriptParagraph[], assets: TranscriptAsset[]) {
   const sectionMap = new Map(sections.map((section) => [section.id, section]))
   const emitted = new Set<string>()
   const blocks: string[] = []
+  const assetsByPosition = new Map<number, TranscriptAsset[]>()
+
+  for (const asset of assets) {
+    const position = asset.after_paragraph_sort_order
+    if (!assetsByPosition.has(position)) assetsByPosition.set(position, [])
+    assetsByPosition.get(position)!.push(asset)
+  }
+  for (const groupedAssets of assetsByPosition.values()) groupedAssets.sort((a, b) => a.sort_order - b.sort_order)
+
+  for (const asset of assetsByPosition.get(-1) ?? []) blocks.push(transcriptAssetMarker(asset))
 
   for (const paragraph of paragraphs) {
     if (paragraph.section_id && !emitted.has(paragraph.section_id)) {
@@ -51,6 +74,7 @@ function rebuildTranscript(sections: TranscriptSection[], paragraphs: Transcript
 
     const speaker = paragraph.speaker ? `${paragraph.speaker}: ` : ''
     blocks.push(`${formatTimestamp(paragraph.start_seconds)}${speaker}${paragraph.body}`)
+    for (const asset of assetsByPosition.get(paragraph.sort_order) ?? []) blocks.push(transcriptAssetMarker(asset))
   }
 
   for (const section of sections) {
@@ -70,15 +94,22 @@ const materialTypeOptions = [
   ['other', 'Other'],
 ]
 
+function storageFileName(path: string | null) {
+  if (!path) return null
+  const value = path.split('/').pop() ?? path
+  const firstDash = value.indexOf('-')
+  return firstDash >= 0 ? value.slice(firstDash + 1) : value
+}
+
 export default async function AdminSessionPage({
   params,
   searchParams,
 }: {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ saved?: string; created?: string }>
+  searchParams: Promise<{ saved?: string; created?: string; preserved?: string; new?: string }>
 }) {
   const { id } = await params
-  const { saved, created } = await searchParams
+  const { saved, created, preserved, new: newParagraphs } = await searchParams
   const supabase = await createClient()
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = claimsData?.claims?.sub as string | undefined
@@ -112,7 +143,7 @@ export default async function AdminSessionPage({
     supabase.from('transcripts').select('id, title, source_file_name, status').eq('session_id', id).eq('language_code', 'en').maybeSingle(),
     supabase.from('teachers').select('id, full_name').eq('active', true).order('full_name'),
     supabase.from('session_teachers').select('teacher_id').eq('session_id', id),
-    supabase.from('materials').select('id, material_type, title, url, mime_type, status, sort_order').eq('session_id', id).order('sort_order'),
+    supabase.from('materials').select('id, material_type, title, url, mime_type, status, sort_order, storage_bucket, storage_path').eq('session_id', id).order('sort_order'),
   ])
 
   const teachers = (teacherRows ?? []) as Teacher[]
@@ -120,12 +151,20 @@ export default async function AdminSessionPage({
   const materials = materialRows ?? []
 
   let transcriptText = ''
+  let revisionCount = 0
   if (transcript?.id) {
-    const [{ data: sections }, { data: paragraphs }] = await Promise.all([
+    const [{ data: sections }, { data: paragraphs }, { data: assets }, { count }] = await Promise.all([
       supabase.from('transcript_sections').select('id, title, start_seconds, sort_order').eq('transcript_id', transcript.id).order('sort_order'),
-      supabase.from('transcript_paragraphs').select('section_id, speaker, body, start_seconds, sort_order').eq('transcript_id', transcript.id).order('sort_order'),
+      supabase.from('transcript_paragraphs').select('section_id, speaker, body, start_seconds, sort_order').eq('transcript_id', transcript.id).eq('is_active', true).order('sort_order'),
+      supabase.from('transcript_assets').select('after_paragraph_sort_order, storage_path, mime_type, sort_order').eq('transcript_id', transcript.id).order('sort_order'),
+      supabase.from('transcript_revisions').select('id', { count: 'exact', head: true }).eq('transcript_id', transcript.id),
     ])
-    transcriptText = rebuildTranscript((sections ?? []) as TranscriptSection[], (paragraphs ?? []) as TranscriptParagraph[])
+    revisionCount = count ?? 0
+    transcriptText = rebuildTranscript(
+      (sections ?? []) as TranscriptSection[],
+      (paragraphs ?? []) as TranscriptParagraph[],
+      (assets ?? []) as TranscriptAsset[]
+    )
   }
 
   const savedMessage = created === '1'
@@ -137,7 +176,7 @@ export default async function AdminSessionPage({
         : saved === 'material'
           ? 'Class materials saved.'
           : saved === 'transcript'
-            ? 'Reference Transcript saved.'
+            ? `Reference Transcript saved.${preserved ? ` ${preserved} paragraph IDs preserved.` : ''}${newParagraphs ? ` ${newParagraphs} new paragraph${newParagraphs === '1' ? '' : 's'}.` : ''}`
             : null
 
   return (
@@ -210,11 +249,18 @@ export default async function AdminSessionPage({
       <section className="section card">
         <div className="eyebrow">2 · Study Notes</div>
         <h2>Study aid</h2>
-        <p className="meta">Paste the cleaned Study Notes here. The standard Study Notes disclaimer is added automatically.</p>
+        <p className="meta">Paste cleaned Study Notes or import a DOCX, Markdown, or text file. The standard Study Notes disclaimer is added automatically.</p>
         <form className="form-stack" action={saveStudyNotes.bind(null, session.id)}>
           <label>Title<input className="input" name="study_notes_title" defaultValue={studyNotes?.title ?? 'Study Notes'} /></label>
           <label>Short summary<textarea className="input" name="study_notes_summary" rows={3} defaultValue={studyNotes?.summary ?? ''} /></label>
-          <label>Study Notes<textarea className="input" name="study_notes_content" rows={18} defaultValue={studyNotes?.content_markdown ?? ''} placeholder="Paste Study Notes in Markdown or plain text" required /></label>
+          <TextImportField
+            name="study_notes_content"
+            label="Study Notes"
+            rows={18}
+            defaultValue={studyNotes?.content_markdown ?? ''}
+            placeholder="Paste Study Notes in Markdown or plain text"
+            help="DOCX imports as editable text in your browser. Review the content before saving or publishing."
+          />
           <label>Status
             <select className="input" name="study_notes_status" defaultValue={studyNotes?.status ?? 'draft'}>
               <option value="draft">Draft</option>
@@ -229,12 +275,13 @@ export default async function AdminSessionPage({
       <section className="section card">
         <div className="eyebrow">3 · Class materials</div>
         <h2>Readings, slides, and resources</h2>
-        <p className="meta">Add stable links to PDFs, slide decks, readings, audio, video, or other class resources. Draft resources stay hidden from students.</p>
+        <p className="meta">Upload smaller files directly to the private teaching-materials bucket, or add a stable external link. Draft uploads stay private. Published uploads receive temporary student access links when the class page loads.</p>
 
         {materials.length ? (
           <div style={{ marginBottom: 28 }}>
             {materials.map((material: any) => (
               <div key={material.id} style={{ padding: '18px 0', borderTop: '1px solid var(--line)' }}>
+                {material.storage_path ? <p className="meta">Uploaded file: {storageFileName(material.storage_path)} · private storage</p> : null}
                 <form className="form-stack" action={updateMaterial.bind(null, session.id, material.id)}>
                   <div className="grid two">
                     <label>Type
@@ -251,7 +298,7 @@ export default async function AdminSessionPage({
                     </label>
                   </div>
                   <label>Title<input className="input" name="material_title" defaultValue={material.title} required /></label>
-                  <label>Resource URL<input className="input" type="url" name="material_url" defaultValue={material.url} required /></label>
+                  <label>External resource URL<input className="input" type="url" name="material_url" defaultValue={material.url ?? ''} required={!material.storage_path} placeholder={material.storage_path ? 'Optional for uploaded files' : 'Google Drive, PDF, slides, YouTube, etc.'} /></label>
                   <label>MIME type<input className="input" name="material_mime_type" defaultValue={material.mime_type ?? ''} placeholder="Optional, e.g. application/pdf" /></label>
                   <div className="actions"><button className="button" type="submit">Save resource</button></div>
                 </form>
@@ -263,39 +310,63 @@ export default async function AdminSessionPage({
           </div>
         ) : <p className="meta">No class materials have been added yet.</p>}
 
-        <div style={{ paddingTop: 20, borderTop: '1px solid var(--line)' }}>
-          <h3>Add resource</h3>
-          <form className="form-stack" action={addMaterial.bind(null, session.id)}>
-            <div className="grid two">
-              <label>Type
-                <select className="input" name="material_type" defaultValue="reading">
-                  {materialTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                </select>
-              </label>
-              <label>Status
-                <select className="input" name="material_status" defaultValue="draft">
-                  <option value="draft">Draft</option>
-                  <option value="published">Published</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </label>
-            </div>
-            <label>Title<input className="input" name="material_title" placeholder="Class reading" required /></label>
-            <label>Resource URL<input className="input" type="url" name="material_url" placeholder="Google Drive, PDF, slides, YouTube, etc." required /></label>
-            <label>MIME type<input className="input" name="material_mime_type" placeholder="Optional, e.g. application/pdf" /></label>
-            <div className="actions"><button className="button sage" type="submit">Add resource</button></div>
-          </form>
+        <div className="grid two" style={{ paddingTop: 20, borderTop: '1px solid var(--line)' }}>
+          <div>
+            <div className="eyebrow">Upload</div>
+            <h3>Upload a file</h3>
+            <UploadMaterialForm sessionId={session.id} />
+          </div>
+          <div>
+            <div className="eyebrow">External link</div>
+            <h3>Add linked resource</h3>
+            <form className="form-stack" action={addMaterial.bind(null, session.id)}>
+              <div className="grid two">
+                <label>Type
+                  <select className="input" name="material_type" defaultValue="reading">
+                    {materialTypeOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                  </select>
+                </label>
+                <label>Status
+                  <select className="input" name="material_status" defaultValue="draft">
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                    <option value="archived">Archived</option>
+                  </select>
+                </label>
+              </div>
+              <label>Title<input className="input" name="material_title" placeholder="Class reading" required /></label>
+              <label>Resource URL<input className="input" type="url" name="material_url" placeholder="Google Drive, PDF, slides, YouTube, etc." required /></label>
+              <label>MIME type<input className="input" name="material_mime_type" placeholder="Optional, e.g. application/pdf" /></label>
+              <div className="actions"><button className="button sage" type="submit">Add resource link</button></div>
+            </form>
+          </div>
         </div>
       </section>
 
       <section className="section card">
         <div className="eyebrow">4 · Reference Transcript</div>
         <h2>Transcript importer</h2>
-        <p className="meta">Paste the cleaned transcript. Use <strong>### Chapter title</strong> for chapter headings. Speaker labels such as <strong>Speaker 1:</strong>, <strong>Timothy Lowenhaupt:</strong>, and <strong>Brian Mendoza:</strong> are recognized. Optional timestamps like <strong>[12:34]</strong> or <strong>[01:12:34]</strong> are also recognized.</p>
+        <p className="meta">Paste a cleaned transcript or import DOCX, Markdown, or text. DOCX imports preserve embedded images in their source position. Use <strong>### Chapter title</strong> for chapter headings. Labels such as <strong>Audience:</strong>, <strong>Host:</strong>, <strong>Speaker 1:</strong>, and speaker names are recognized. Optional timestamps like <strong>[12:34]</strong> or <strong>[01:12:34]</strong> are also recognized.</p>
+        {transcript ? (
+          <div className="card sage" style={{ margin: '16px 0' }}>
+            <strong>Stable revision protection is on.</strong>
+            <div className="meta">Each save snapshots the previous version. Paragraph IDs are preserved when text still matches, so existing transcript bookmarks stay attached through normal corrections. Removed paragraphs are archived instead of deleted.</div>
+            <div className="meta" style={{ marginTop: 6 }}>{revisionCount} previous saved revision{revisionCount === 1 ? '' : 's'} stored.</div>
+          </div>
+        ) : null}
         <form className="form-stack" action={saveTranscript.bind(null, session.id)}>
           <label>Title<input className="input" name="transcript_title" defaultValue={transcript?.title ?? 'Reference Transcript'} /></label>
           <label>Source file name<input className="input" name="transcript_source_file_name" defaultValue={transcript?.source_file_name ?? ''} placeholder="Optional, for internal reference" /></label>
-          <label>Transcript<textarea className="input" name="transcript_content" rows={24} defaultValue={transcriptText} placeholder={'### Opening\n\nSpeaker 1: Transcript paragraph...'} required /></label>
+          <TextImportField
+            name="transcript_content"
+            label="Transcript"
+            rows={24}
+            defaultValue={transcriptText}
+            placeholder={'### Opening\n\nSpeaker 1: Transcript paragraph...'}
+            sessionId={session.id}
+            preserveTranscriptImages
+            help="DOCX imports as editable text and keeps embedded images as protected image anchors. Keep those image-anchor lines in place while editing so the student transcript preserves the source order."
+          />
           <label>Status
             <select className="input" name="transcript_status" defaultValue={transcript?.status ?? 'draft'}>
               <option value="draft">Draft</option>
@@ -303,8 +374,7 @@ export default async function AdminSessionPage({
               <option value="archived">Archived</option>
             </select>
           </label>
-          {transcript ? <p className="meta">Saving replaces the current paragraph records for this transcript. During this initial production phase, avoid replacing a published transcript after students have begun bookmarking passages.</p> : null}
-          <div className="actions"><button className="button red" type="submit">Import transcript</button></div>
+          <div className="actions"><button className="button red" type="submit">Save transcript</button></div>
         </form>
       </section>
 

@@ -1,0 +1,194 @@
+/* Compact Admin surfaces: status first, detail on demand. */
+
+/* Class study toggle contrast. */
+.recording-study-tools .recording-tool-button.sage,
+.recording-study-tools .recording-tool-button.sage.is-active,
+.recording-study-tools button[aria-pressed="true"] {
+  color: var(--ink) !important;
+}
+
+/* DOCX / MD / TXT import should look like a normal compact action, not a form field. */
+.admin-editor-source label.button,
+.admin-import-trigger {
+  width: fit-content !important;
+  max-width: 100%;
+  min-height: 40px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 14px !important;
+  margin: 0 !important;
+  border-radius: var(--r-pill) !important;
+  color: var(--ink) !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  line-height: 1.15 !important;
+  white-space: nowrap;
+  vertical-align: top;
+}
+.admin-editor-source .form-stack > div:has(> label.button) {
+  width: fit-content;
+  margin: 0;
+  padding: 0;
+}
+.admin-editor-source .form-stack > div:has(> label.button) + .meta {
+  margin-top: -2px;
+}
+
+/* Courses & Programs page */
+.admin-course-notice { margin-top: 18px; padding: 14px 16px; }
+.admin-course-create-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 26px;
+  padding: 16px 18px;
+  border: 1px solid var(--sage-300);
+  border-radius: 18px;
+  background: var(--sage-050);
+}
+.admin-course-create-card strong {
+  display: block;
+  margin: 4px 0 2px;
+  font-size: 16px;
+}
+.admin-course-create-card .meta { max-width: 720px; margin: 0; font-size: 11px; }
+.admin-course-create-card .button { flex: 0 0 auto; min-height: 38px; padding: 0 13px; font-size: 11px; }
+.admin-course-catalog-section { margin-top: 34px; }
+.admin-course-catalog-section > h2 { margin: 7px 0 14px; font-size: 30px; }
+.admin-course-list { display: grid; gap: 7px; }
+.admin-course-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+  min-height: 68px;
+  padding: 11px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255,255,255,.72);
+}
+.admin-course-row-copy { min-width: 0; }
+.admin-course-row-copy > strong {
+  display: block;
+  margin: 3px 0 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 15px;
+}
+.admin-course-row-copy .eyebrow { font-size: 9px; }
+.admin-course-row-copy .meta { font-size: 10.5px; }
+.admin-course-row > .button { min-height: 35px; padding: 0 12px; font-size: 10.5px; }
+
+.admin-catalog-modal-root { position: fixed; z-index: 1250; inset: 0; }
+.admin-catalog-modal-root .admin-editor-backdrop { z-index: 1250; }
+.admin-catalog-modal {
+  position: fixed;
+  z-index: 1252;
+  top: 5vh;
+  left: 50%;
+  width: min(820px, calc(100vw - 34px));
+  max-height: 90vh;
+  overflow: auto;
+  transform: translateX(-50%);
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--paper);
+  box-shadow: 0 30px 100px rgba(31,27,24,.34);
+}
+.admin-catalog-modal-head {
+  position: sticky;
+  z-index: 2;
+  top: -22px;
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  margin: -22px -22px 18px;
+  padding: 20px 22px 14px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(251,247,239,.97);
+  backdrop-filter: blur(10px);
+}
+.admin-catalog-modal-head h2 { margin: 6px 0 0; font-size: 28px; }
+.admin-dialog-close {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--white);
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+}
+.admin-course-modal-body { display: grid; gap: 22px; }
+.admin-course-offerings-list {
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.admin-course-offerings-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.admin-course-offerings-head .button { min-height: 36px; padding: 0 11px; font-size: 10.5px; }
+.admin-course-offering-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: center;
+  padding: 9px 0;
+  border-top: 1px solid rgba(31,27,24,.09);
+}
+.admin-course-offering-row span { font-size: 12px; font-weight: 750; }
+.admin-course-offering-row small { margin-left: 5px; color: var(--ink-soft); font-size: 10px; font-weight: 600; }
+.admin-course-offering-row .button { min-height: 34px; padding: 0 10px; font-size: 10px; }
+
+/* Recording import: use the same tool for populated and archive offerings. */
+.recording-import-source-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+.recording-import-source {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(31,27,24,.10);
+  border-radius: 14px;
+  background: rgba(255,255,255,.45);
+}
+.recording-import-source > strong { display: block; font-size: 12px; }
+.recording-import-source > .meta { margin: 4px 0 8px; font-size: 10px; line-height: 1.4; }
+.recording-import-source .button { min-height: 36px; padding: 0 11px; font-size: 10.5px; }
+.recording-import-source textarea { min-height: 88px; margin-bottom: 8px; resize: vertical; font-size: 11px; }
+.recording-import-source code { padding: 1px 4px; border-radius: 5px; background: var(--paper-2); font-size: 9.5px; }
+.playlist-proposed-session {
+  margin-top: 4px;
+  color: var(--sage-900);
+  font-size: 10px;
+  font-weight: 750;
+}
+.admin-playlist-import-panel > .meta[aria-live="polite"] { margin-bottom: 0; }
+
+@media (max-width: 760px) {
+  .recording-import-source-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 680px) {
+  .admin-course-create-card { align-items: stretch; flex-direction: column; }
+  .admin-course-create-card .button { width: 100%; }
+  .admin-course-row { grid-template-columns: 1fr auto; }
+  .admin-catalog-modal { top: 2vh; width: calc(100vw - 18px); max-height: 96vh; padding: 18px; }
+  .admin-catalog-modal-head { top: -18px; margin: -18px -18px 16px; padding: 16px 18px 12px; }
+  .admin-course-offerings-head { align-items: stretch; flex-direction: column; }
+}

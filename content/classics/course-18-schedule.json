@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "course": 18,
+  "sourceTimezone": "America/Phoenix",
+  "sourceLabel": "Arizona time",
+  "sessions": [
+    {"id":"c18-12","label":"Classes 1 & 2","startsAt":"2026-09-20T12:30:00Z","endsAt":"2026-09-20T16:00:00Z","rebroadcastAt":"2026-09-20T23:00:00Z"},
+    {"id":"c18-34","label":"Classes 3 & 4","startsAt":"2026-10-18T12:30:00Z","endsAt":"2026-10-18T16:00:00Z","rebroadcastAt":"2026-10-18T23:00:00Z"},
+    {"id":"c18-56","label":"Classes 5 & 6","startsAt":"2026-11-22T12:30:00Z","endsAt":"2026-11-22T16:00:00Z","rebroadcastAt":"2026-11-22T23:00:00Z"},
+    {"id":"c18-78","label":"Classes 7 & 8","startsAt":"2026-12-20T12:30:00Z","endsAt":"2026-12-20T16:00:00Z","rebroadcastAt":"2026-12-20T23:00:00Z"},
+    {"id":"c18-910","label":"Classes 9 & 10","startsAt":"2027-01-24T12:30:00Z","endsAt":"2027-01-24T16:00:00Z","rebroadcastAt":"2027-01-24T23:00:00Z"}
+  ]
+}

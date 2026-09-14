@@ -1,0 +1,18 @@
+{
+  "schemaVersion": 1,
+  "courseNumber": 8,
+  "offeringSlug": "taiwan-2026",
+  "materials": [
+    {
+      "id": "course-8-reading",
+      "title": "Course VIII: Death and the Realms of Existence - Course Reading",
+      "kind": "Reading",
+      "format": "PDF",
+      "sourceFileName": "C8Reading.pdf",
+      "sourceStatus": "recovered",
+      "url": null,
+      "hostingStatus": "awaiting-external-link",
+      "note": "Complete Course 8 reading PDF supplied in the project File Library. Intended as the primary reading material for this Course Offering. External material URL will be attached after the agreed pCloud shared-link test."
+    }
+  ]
+}

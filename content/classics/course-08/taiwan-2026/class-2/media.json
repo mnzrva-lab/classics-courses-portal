@@ -1,0 +1,30 @@
+{
+  "sessionId": "class2",
+  "schemaVersion": 1,
+  "chapterMedia": {
+    "class2-ch4": {
+      "src": "/classics/course-08/taiwan-2026/class-2/slide-04.jpg",
+      "alt": "Related visual from the source transcript for Review — The Form Realm and Its Seventeen Levels"
+    },
+    "class2-ch9": {
+      "src": "/classics/course-08/taiwan-2026/class-2/slide-03.jpg",
+      "alt": "Related visual from the source transcript for Craving Spirits (Hungry Ghosts)"
+    },
+    "class2-ch10": {
+      "src": "/classics/course-08/taiwan-2026/class-2/slide-02.jpg",
+      "alt": "Related visual from the source transcript for Animals"
+    },
+    "class2-ch11": {
+      "src": "/classics/course-08/taiwan-2026/class-2/slide-01.jpg",
+      "alt": "Related visual from the source transcript for Humans"
+    },
+    "class2-ch12": {
+      "src": "/classics/course-08/taiwan-2026/class-2/slide-05.jpg",
+      "alt": "Related visual from the source transcript for Pleasure Beings"
+    },
+    "class2-ch13": {
+      "src": "/classics/course-08/taiwan-2026/class-2/slide-06.jpg",
+      "alt": "Related visual from the source transcript for Bardo Beings — Between Death and Birth"
+    }
+  }
+}
