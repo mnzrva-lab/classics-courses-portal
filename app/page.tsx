@@ -62,12 +62,12 @@ const latestCourses: LatestCourse[] = [
     href: '/courses/course-8/taiwan-2026',
   },
   {
-    sortDate: '2026-07-26',
-    dates: 'Apr 26–Jul 26, 2026',
+    sortDate: '2026-08-23',
+    dates: 'Apr 26–Aug 23, 2026',
     eyebrow: 'Classics Course 17 · Arizona 2026',
     title: 'The Great Ideas of Buddhism, Part II',
     detail: 'Timothy Lowenhaupt',
-    href: '/courses/course-17',
+    href: '/courses/course-17/current-2026',
   },
   {
     sortDate: '2026-04-05',
