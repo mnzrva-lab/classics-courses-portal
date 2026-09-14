@@ -37,7 +37,7 @@ export default function EyeOfCourageProgramPage() {
           <div className="eoc-program-facts" aria-label="Course details">
             <span>{eyeOfCourageProgram.location}</span>
             <span>{eyeOfCourageProgram.dates}</span>
-            <span>{eyeOfCourageProgram.teacher}</span>
+            <span>Teacher · {eyeOfCourageProgram.teacher}</span>
           </div>
           <p className="eoc-program-description">{eyeOfCourageProgram.description}</p>
         </div>
