@@ -18,7 +18,7 @@ export const eyeOfCourageProgram = {
   description:
     'A two-evening teaching on automatic scripts, limiting beliefs, the conditions that let good seeds ripen, and the way leadership becomes more natural as old patterns weaken.',
   coverPath: '/eye-of-courage/cover.jpg',
-  workbookPdfPath: null as string | null,
+  workbookPdfPath: 'https://drive.google.com/file/d/1jopJ4M44cvZokJ3E1815sl5PAinVOqaX/view?usp=sharing',
 }
 
 export const eyeOfCourageSessions: EyeOfCourageSession[] = [

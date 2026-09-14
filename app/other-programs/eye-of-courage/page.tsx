@@ -1,3 +1,36 @@
 import Link from 'next/link'
+import LibrarySessionList from '@/components/library-session-list'
 import { eyeOfCourageProgram, eyeOfCourageSessions } from '@/content/eye-of-courage'
-export default function Page(){ return <main className="container page eoc-program-page"><div className="offering-breadcrumbs"><Link href="/other-programs">Other Programs</Link><span>/</span><span>The Eye of Courage</span></div><header className="eoc-program-hero"><div className="eoc-hero-image-wrap"><img src={eyeOfCourageProgram.coverPath} alt="Tigers overlooking Guadalajara at sunset"/><div className="eoc-hero-image-shade"/><div className="eoc-hero-overlay"><div className="eyebrow">Special teaching · Casa Tartuk</div><h1>{eyeOfCourageProgram.title}</h1><p>{eyeOfCourageProgram.subtitle}</p></div></div><div className="eoc-program-meta"><div><strong>{eyeOfCourageProgram.teacher}</strong><span>{eyeOfCourageProgram.location}</span><span>{eyeOfCourageProgram.dates}</span></div><p>{eyeOfCourageProgram.description}</p></div></header><section className="section"><div className="section-head"><div><div className="eyebrow">Teaching archive</div><h2>Two classes, one practice</h2></div></div><div className="grid two">{eyeOfCourageSessions.map((s,i)=><article className={`card eoc-session-card ${s.hasWorkshop?'cream':''}`} key={s.id}><div className="eoc-session-number">0{i+1}</div><div><div className="eyebrow">{s.date}</div><h3>{s.label}</h3><p className="meta">Recording · Study Notes · Reference Transcript{s.hasWorkshop?' · Interactive Workshop':''}</p><p>{s.id==='class-1'?'Automatic scripts, identity, rejoicing, the Four Steps, and the Four Powers.':'Safety, limiting beliefs, choosing one pattern, and the actions that make leadership more natural.'}</p><div className="actions"><Link className="button sage" href={`/other-programs/eye-of-courage/${s.slug}`}>Open {s.label}</Link>{s.hasWorkshop?<Link className="button" href="/other-programs/eye-of-courage/class-2/workshop">Open Workshop</Link>:null}</div></div></article>)}</div></section><section className="section eoc-path-card card sage"><div><div className="eyebrow">Suggested path</div><h2>Watch → understand → practice → continue for seven days</h2><p>Start with Class 1, continue with Class 2, then use the interactive workbook to work with one pattern instead of trying to change everything at once.</p></div><div className="actions"><Link className="button sage" href="/other-programs/eye-of-courage/class-1">Begin with Class 1</Link></div></section></main> }
+
+export default function EyeOfCourageProgramPage() {
+  return (
+    <main className="container page eoc-program-page">
+      <div className="offering-breadcrumbs"><Link href="/other-programs">Other Programs</Link><span>/</span><span>{eyeOfCourageProgram.title}</span></div>
+
+      <header className="eoc-program-intro">
+        <div className="eoc-program-cover-wrap">
+          <img className="eoc-program-cover" src={eyeOfCourageProgram.coverPath} alt="Tigers overlooking Guadalajara at sunset" />
+        </div>
+        <div className="eoc-program-copy">
+          <div className="eyebrow">Special teaching · Casa Tartuk</div>
+          <h1>{eyeOfCourageProgram.title}</h1>
+          <p className="eoc-program-subtitle">{eyeOfCourageProgram.subtitle}</p>
+          <p className="lead">{eyeOfCourageProgram.location}<br />{eyeOfCourageProgram.dates}</p>
+          <p>{eyeOfCourageProgram.description}</p>
+          <p className="meta">Teacher · {eyeOfCourageProgram.teacher}</p>
+        </div>
+      </header>
+
+      <section className="section compact-section">
+        <div className="section-head"><div><div className="eyebrow">Course content</div><h2>Classes &amp; recordings</h2></div></div>
+        <LibrarySessionList rows={eyeOfCourageSessions.map((session, index) => ({
+          href: `/other-programs/eye-of-courage/${session.slug}`,
+          code: `C${index + 1}`,
+          title: session.label,
+          meta: session.date,
+          status: session.hasWorkshop ? 'Recording · Transcript · Study Notes · Workshop' : 'Recording · Transcript · Study Notes',
+        }))} />
+      </section>
+    </main>
+  )
+}

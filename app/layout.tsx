@@ -28,6 +28,7 @@ import './library-list-refinement.css'
 import './library-structure-pass.css'
 import './reader-consistency.css'
 import './eye-of-courage.css'
+import './eye-of-courage-refinement.css'
 
 export const metadata: Metadata = {
   title: 'Classics Courses with Timothy Lowenhaupt',
