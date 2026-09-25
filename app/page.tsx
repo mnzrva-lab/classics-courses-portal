@@ -4,7 +4,7 @@ import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import rawCourse18Schedule from '@/content/classics/course-18-schedule.json'
 
-type CatalogCourse = { canonicalNumber: number; slug: string; title: string }
+type CatalogCourse = { canonicalNumber: number; slug: string; title: string; artwork?: string | null }
 type ArchiveCourse = { canonicalNumber: number; schedule?: Array<{ label: string; date: string }> }
 type ArchiveCatalog = { courses: ArchiveCourse[] }
 type DetailedSchedule = { sessions: Array<{ id: string; label: string; startsAt: string; endsAt: string }> }
@@ -41,7 +41,7 @@ const upcomingCourses = archiveCatalog.courses.flatMap((archive) => {
     }
   })
 
-  return [{ courseNumber: course.canonicalNumber, title: course.title, href: `/courses/${course.slug}`, sessions }]
+  return [{ courseNumber: course.canonicalNumber, title: course.title, href: `/courses/${course.slug}`, artwork: course.artwork ?? null, sessions }]
 })
 
 const latestCourses: LatestCourse[] = [
