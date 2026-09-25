@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useRef } from 'react'
 import { usePathname } from 'next/navigation'
 
 type CurrentCourse = { href: string; label: string; title: string } | null
@@ -28,6 +29,65 @@ function SidebarLink({ pathname, href, icon, children }: { pathname: string; hre
 
 export default function SiteNavigation({ isAdmin, currentCourse, perfectionHref, personalStudyEnabled = true }: Props) {
   const pathname = usePathname()
+  const moreRef = useRef<HTMLDetailsElement | null>(null)
+
+  useEffect(() => {
+    moreRef.current?.removeAttribute('open')
+  }, [pathname])
+
+  useEffect(() => {
+    function closeMore(event: PointerEvent) {
+      const details = moreRef.current
+      if (!details?.open) return
+      if (event.target instanceof Node && !details.contains(event.target)) details.removeAttribute('open')
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === 'Escape') moreRef.current?.removeAttribute('open')
+    }
+
+    document.addEventListener('pointerdown', closeMore)
+    document.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.removeEventListener('pointerdown', closeMore)
+      document.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [])
+
+  useEffect(() => {
+    let lastY = window.scrollY
+
+    function updateTopbar() {
+      if (window.innerWidth > 960) {
+        document.body.classList.remove('portal-topbar-hidden')
+        lastY = window.scrollY
+        return
+      }
+
+      const currentY = window.scrollY
+      if (currentY < 48) {
+        document.body.classList.remove('portal-topbar-hidden')
+      } else if (currentY > lastY + 6 && currentY > 96) {
+        document.body.classList.add('portal-topbar-hidden')
+      } else if (currentY < lastY - 6) {
+        document.body.classList.remove('portal-topbar-hidden')
+      }
+      lastY = currentY
+    }
+
+    updateTopbar()
+    window.addEventListener('scroll', updateTopbar, { passive: true })
+    window.addEventListener('resize', updateTopbar)
+    return () => {
+      window.removeEventListener('scroll', updateTopbar)
+      window.removeEventListener('resize', updateTopbar)
+      document.body.classList.remove('portal-topbar-hidden')
+    }
+  }, [])
+
+  function closeMore() {
+    moreRef.current?.removeAttribute('open')
+  }
 
   return (
     <>
@@ -52,21 +112,21 @@ export default function SiteNavigation({ isAdmin, currentCourse, perfectionHref,
         </nav>
       </aside>
 
-      <nav className="portal-mobile-nav" aria-label="Mobile navigation">
+      <nav className={personalStudyEnabled ? 'portal-mobile-nav' : 'portal-mobile-nav compact'} aria-label="Mobile navigation">
         <Link className={pathname === '/' ? 'active' : ''} href="/"><span aria-hidden="true">⌂</span><small>Home</small></Link>
         <Link className={isActivePath(pathname, '/courses') ? 'active' : ''} href="/courses"><span aria-hidden="true">▤</span><small>Courses</small></Link>
         <Link className={isActivePath(pathname, '/search') ? 'active' : ''} href="/search"><span aria-hidden="true">⌕</span><small>Search</small></Link>
         {personalStudyEnabled ? <Link className={isActivePath(pathname, '/my-notes') ? 'active' : ''} href="/my-notes"><span aria-hidden="true">✎</span><small>Notes</small></Link> : null}
-        <details className="portal-mobile-more">
+        <details ref={moreRef} className="portal-mobile-more">
           <summary><span aria-hidden="true">•••</span><small>More</small></summary>
           <div className="portal-mobile-more-panel">
-            <Link href="/living-lam-rim">Living Lam Rim</Link>
-            <Link href={perfectionHref}>Perfection of Wisdom</Link>
-            <Link href="/other-programs">Other Programs</Link>
-            <Link href="/meditations">Meditations</Link>
-            <Link href="/tibetan">Tibetan</Link>
-            {personalStudyEnabled ? <Link href="/my-learning">My Learning</Link> : null}
-            {isAdmin ? <Link href="/admin">Admin</Link> : null}
+            <Link href="/living-lam-rim" onClick={closeMore}>Living Lam Rim</Link>
+            <Link href={perfectionHref} onClick={closeMore}>Perfection of Wisdom</Link>
+            <Link href="/other-programs" onClick={closeMore}>Other Programs</Link>
+            <Link href="/meditations" onClick={closeMore}>Meditations</Link>
+            <Link href="/tibetan" onClick={closeMore}>Tibetan</Link>
+            {personalStudyEnabled ? <Link href="/my-learning" onClick={closeMore}>My Learning</Link> : null}
+            {isAdmin ? <Link href="/admin" onClick={closeMore}>Admin</Link> : null}
           </div>
         </details>
       </nav>
