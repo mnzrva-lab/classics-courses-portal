@@ -161,21 +161,31 @@ export default function TranscriptSync() {
     }
   }, [])
 
+  function jumpTo(id: 'recording' | 'transcript') {
+    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   if (!available || pointsRef.current.length === 0) return null
 
   return (
-    <div className="transcript-sync-floating" aria-label="Transcript playback controls">
-      <div>
+    <div className="transcript-sync-floating" aria-label="Video and transcript controls">
+      <div className="transcript-sync-copy">
         <strong>Video + transcript sync</strong>
         <div className="meta">Click a timestamp to seek. Follow playback highlights the current passage.</div>
       </div>
+
+      <div className="transcript-sync-mobile-nav" aria-label="Quick navigation">
+        <button type="button" onClick={() => jumpTo('recording')}>↑ Video</button>
+        <button type="button" onClick={() => jumpTo('transcript')}>↑ Transcript</button>
+      </div>
+
       <button
-        className={follow ? 'button sage' : 'button'}
+        className={follow ? 'button sage transcript-sync-follow' : 'button transcript-sync-follow'}
         type="button"
         onClick={() => setFollow((value) => !value)}
         aria-pressed={follow}
       >
-        {follow ? 'Following' : 'Follow playback'}
+        {follow ? 'Following' : 'Follow'}
       </button>
     </div>
   )
