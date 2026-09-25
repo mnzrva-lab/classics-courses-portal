@@ -68,10 +68,37 @@ export default function TranscriptSync() {
   const recordingAvailableRef = useRef(false)
   const [available, setAvailable] = useState(false)
   const [follow, setFollow] = useState(false)
+  const [inTranscript, setInTranscript] = useState(false)
 
   useEffect(() => {
     followRef.current = follow
   }, [follow])
+
+  useEffect(() => {
+    function updateTranscriptPresence() {
+      const transcript = document.getElementById('transcript')
+      if (!transcript) {
+        setInTranscript(false)
+        return
+      }
+      const rect = transcript.getBoundingClientRect()
+      setInTranscript(rect.top < window.innerHeight - 120 && rect.bottom > 120)
+    }
+
+    updateTranscriptPresence()
+    window.addEventListener('scroll', updateTranscriptPresence, { passive: true })
+    window.addEventListener('resize', updateTranscriptPresence)
+    return () => {
+      window.removeEventListener('scroll', updateTranscriptPresence)
+      window.removeEventListener('resize', updateTranscriptPresence)
+    }
+  }, [])
+
+  useEffect(() => {
+    const active = available && inTranscript
+    document.body.classList.toggle('transcript-sync-active', active)
+    return () => document.body.classList.remove('transcript-sync-active')
+  }, [available, inTranscript])
 
   useEffect(() => {
     function refreshPoints() {
@@ -168,7 +195,7 @@ export default function TranscriptSync() {
   if (!available || pointsRef.current.length === 0) return null
 
   return (
-    <div className="transcript-sync-floating" aria-label="Video and transcript controls">
+    <div className={inTranscript ? "transcript-sync-floating is-in-transcript" : "transcript-sync-floating"} aria-label="Video and transcript controls">
       <div className="transcript-sync-copy">
         <strong>Video + transcript sync</strong>
         <div className="meta">Click a timestamp to seek. Follow playback highlights the current passage.</div>
