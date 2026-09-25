@@ -39,28 +39,110 @@
 .classics-card-upcoming { margin-top: auto; padding-top: 16px; }
 .classics-card-upcoming a { font-weight: 650; color: var(--sage-900); }
 
-.upcoming-course-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
-}
-.upcoming-course-grid > :only-child { grid-column: 1 / -1; }
-.upcoming-course-card {
-  padding: 20px;
+.upcoming-feature-heading { margin-bottom: 20px; }
+.upcoming-feature-card {
+  overflow: hidden;
   border: 1px solid var(--line);
-  border-radius: 22px;
+  border-radius: 28px;
   background: var(--white);
   box-shadow: var(--shadow-sm);
 }
-.upcoming-course-card h3 { margin: 7px 0 14px; font-size: 25px; }
-.upcoming-course-card .next-class-countdown {
-  margin: 0 0 14px;
-  padding: 13px 14px;
-  border-radius: 16px;
-  background: var(--sage-050);
+.upcoming-feature-artwork {
+  position: relative;
+  min-height: 190px;
+  display: flex;
+  align-items: center;
+  padding: 34px 40px;
+  background-position: center;
+  background-size: cover;
+  color: var(--white);
 }
-.upcoming-course-next { display: grid; gap: 2px; margin: 0 0 14px; }
-.upcoming-course-next span { color: var(--ink-soft); font-size: 13px; }
+.upcoming-feature-artwork.placeholder {
+  background:
+    radial-gradient(circle at 76% 34%, rgba(255,255,255,.24), transparent 17%),
+    linear-gradient(120deg, var(--sage-900), var(--sage-700) 52%, #a89b7f);
+}
+.upcoming-feature-artwork::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(20,29,26,.28), transparent 64%);
+  pointer-events: none;
+}
+.upcoming-feature-artwork-copy {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+}
+.upcoming-feature-course-label {
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+}
+.upcoming-feature-artwork-copy h3 {
+  max-width: 900px;
+  margin: 0;
+  color: inherit;
+  font-size: clamp(30px, 3.1vw, 44px);
+  line-height: 1.02;
+  letter-spacing: -.045em;
+}
+.upcoming-feature-artwork-copy > span {
+  display: block;
+  margin-top: 13px;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .12em;
+  opacity: .82;
+  text-transform: uppercase;
+}
+.upcoming-feature-mobile-title { display: none; }
+.upcoming-feature-details {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  padding: 20px 24px;
+}
+.upcoming-feature-calendar {
+  width: 50px;
+  height: 50px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--signal-050);
+  color: var(--signal-700);
+  font-size: 20px;
+  font-weight: 850;
+}
+.upcoming-feature-next { min-width: 0; }
+.upcoming-feature-card .next-class-countdown {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.upcoming-feature-card .next-class-countdown > div:first-child {
+  min-width: 170px;
+}
+.upcoming-feature-card .next-class-countdown strong { font-size: 18px; }
+.upcoming-feature-card .next-class-countdown-time b {
+  color: var(--sage-900);
+  font-size: 15px;
+}
+.upcoming-feature-card .next-class-countdown-time span {
+  margin-top: 2px;
+  font-size: 12px;
+}
+.upcoming-feature-cta {
+  min-width: 210px;
+  justify-content: center;
+  white-space: nowrap;
+}
 
 .term-list-cards { display: grid; gap: 10px; }
 .term-list-card {
@@ -143,7 +225,56 @@
   .classics-card-grid, .tibetan-term-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 760px) {
-  .classics-card-grid, .upcoming-course-grid, .tibetan-term-grid { grid-template-columns: 1fr; }
+  .classics-card-grid, .tibetan-term-grid { grid-template-columns: 1fr; }
+  .upcoming-feature-heading { margin-bottom: 14px; }
+  .upcoming-feature-heading p { font-size: 13px; }
+  .upcoming-feature-card { border-radius: 22px; }
+  .upcoming-feature-artwork {
+    min-height: 150px;
+    padding: 0;
+  }
+  .upcoming-feature-artwork-copy { display: none; }
+  .upcoming-feature-mobile-title {
+    display: block;
+    padding: 18px 18px 2px;
+  }
+  .upcoming-feature-mobile-title h3 {
+    margin: 5px 0 0;
+    font-size: 24px;
+    line-height: 1.08;
+    letter-spacing: -.035em;
+  }
+  .upcoming-feature-details {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 10px 12px;
+    align-items: start;
+    padding: 14px 18px 18px;
+  }
+  .upcoming-feature-calendar {
+    width: 38px;
+    height: 38px;
+    font-size: 16px;
+  }
+  .upcoming-feature-card .next-class-countdown {
+    gap: 8px;
+  }
+  .upcoming-feature-card .next-class-countdown > div:first-child { min-width: 0; }
+  .upcoming-feature-card .next-class-countdown strong { font-size: 17px; }
+  .upcoming-feature-card .next-class-countdown-time {
+    width: 100%;
+    justify-items: start;
+    padding: 9px 11px;
+    border-radius: 12px;
+    background: var(--sage-050);
+  }
+  .upcoming-feature-card .next-class-countdown-time b { font-size: 13px; }
+  .upcoming-feature-card .next-class-countdown-time span { font-size: 11px; }
+  .upcoming-feature-cta {
+    grid-column: 1 / -1;
+    width: 100%;
+    min-width: 0;
+    margin-top: 2px;
+  }
   .term-list-card { grid-template-columns: 64px minmax(0, 1fr) auto; padding: 14px; }
   .classics-card { min-height: 0; }
 }
