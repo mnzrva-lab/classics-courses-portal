@@ -1,0 +1,256 @@
+.eoc-program-intro {
+  display: grid;
+  grid-template-columns: minmax(300px, 42%) minmax(0, 58%);
+  gap: 0;
+  align-items: stretch;
+  margin-top: 24px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 30px;
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+}
+.eoc-program-cover-wrap {
+  position: relative;
+  width: auto;
+  max-width: 100%;
+  min-width: 0;
+  min-height: 0;
+  aspect-ratio: auto;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  background: #2a1d14;
+  box-shadow: none;
+}
+.eoc-program-cover-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 1px;
+  background: rgba(255,255,255,.28);
+  pointer-events: none;
+}
+.eoc-program-cover {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 38% center;
+}
+.eoc-program-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(28px, 3vw, 46px);
+}
+.eoc-program-copy h1 {
+  max-width: 10ch;
+  margin: 8px 0 4px;
+  font-size: clamp(40px, 3.8vw, 60px);
+  line-height: .98;
+  letter-spacing: -.05em;
+}
+.eoc-program-subtitle {
+  max-width: 22ch;
+  margin: 7px 0 18px;
+  color: var(--ink-soft);
+  font-size: clamp(22px, 2vw, 30px);
+  font-weight: 760;
+  line-height: 1.08;
+  letter-spacing: -.03em;
+}
+.eoc-program-facts {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 720;
+}
+.eoc-program-facts span {
+  display: inline-flex;
+  align-items: center;
+}
+.eoc-program-facts span + span::before {
+  content: '•';
+  margin: 0 10px;
+  color: var(--signal-700);
+}
+.eoc-program-description {
+  max-width: 58ch;
+  margin: 20px 0 0;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1.58;
+}
+.eoc-other-program-list { max-width: 920px; }
+.eoc-other-program-card { display: grid; grid-template-columns: 300px minmax(0, 1fr); gap: 24px; align-items: center; overflow: hidden; }
+.eoc-other-program-card .eoc-other-program-image { height: auto; margin: 0; overflow: hidden; border: 0; border-radius: 16px; background: transparent; }
+.eoc-other-program-card .eoc-other-program-image img { display: block; width: 100%; height: auto; aspect-ratio: 16/9; object-fit: cover; }
+.eoc-other-program-card h2 { margin: 7px 0 5px; font-size: 30px; }
+.eoc-other-program-card .lead { margin-bottom: 8px; }
+.eoc-class-study { margin-top: 40px; }
+.eoc-class-tabs { margin-bottom: 18px; }
+.eoc-class-tabs .class-study-tab { border: 0; }
+.eoc-tab-panel { min-width: 0; }
+.eoc-tab-panel > div > h2 { margin-top: 7px; }
+.eoc-tab-panel .eoc-workshop { margin-top: 0; }
+
+/* Keep the full privacy/download notice in the document flow. */
+.eoc-workshop-toolbar {
+  position: static;
+  top: auto;
+  z-index: auto;
+  scroll-margin-top: 96px;
+}
+
+/* Once the full notice has scrolled away, show only a compact save reminder. */
+.eoc-workshop-sticky-mini {
+  position: fixed;
+  top: 82px;
+  right: 28px;
+  z-index: 70;
+  width: max-content;
+  max-width: calc(100vw - 40px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  background: rgba(251,247,239,.97);
+  box-shadow: var(--shadow-sm);
+  backdrop-filter: blur(12px);
+}
+.eoc-workshop-sticky-mini > span {
+  color: var(--sage-700);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.eoc-workshop-sticky-mini .button {
+  min-height: 34px;
+  padding: 0 11px;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.transcript-quick-nav {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 55;
+  display: flex;
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(251,247,239,.96);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(12px);
+}
+.transcript-quick-nav button {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.transcript-quick-nav button:hover {
+  background: var(--white);
+  color: var(--ink);
+}
+.transcript-quick-nav button:last-child {
+  background: var(--sage-700);
+  color: var(--white);
+}
+
+@media (max-width: 1120px) {
+  .eoc-program-intro { grid-template-columns: minmax(280px, 40%) minmax(0, 60%); }
+  .eoc-program-copy { padding: 30px; }
+  .eoc-program-copy h1 { font-size: clamp(38px, 4.5vw, 54px); }
+  .eoc-program-subtitle { font-size: clamp(21px, 2.3vw, 27px); }
+}
+
+@media (max-width: 960px) {
+  .transcript-quick-nav {
+    right: 12px;
+    bottom: 82px;
+  }
+}
+
+@media (max-width: 820px) {
+  .eoc-program-intro {
+    grid-template-columns: 1fr;
+    border-radius: 24px;
+  }
+  .eoc-program-cover-wrap {
+    min-height: 0;
+    aspect-ratio: 16 / 9;
+  }
+  .eoc-program-cover {
+    position: absolute;
+    object-position: 34% center;
+  }
+  .eoc-program-cover-wrap::after { display: none; }
+  .eoc-program-copy { padding: 30px; }
+  .eoc-program-copy h1 { max-width: none; }
+  .eoc-program-subtitle { max-width: none; }
+  .eoc-other-program-card { grid-template-columns: 1fr; }
+  .eoc-other-program-image { max-width: 620px; }
+}
+
+@media (max-width: 540px) {
+  .eoc-program-intro {
+    margin-top: 18px;
+    border-radius: 20px;
+  }
+  .eoc-program-cover-wrap { aspect-ratio: 4 / 3; }
+  .eoc-program-cover { object-position: 34% center; }
+  .eoc-program-copy { padding: 24px 22px 27px; }
+  .eoc-program-copy h1 {
+    margin-top: 8px;
+    font-size: clamp(38px, 12vw, 50px);
+    line-height: .98;
+  }
+  .eoc-program-subtitle {
+    margin-bottom: 18px;
+    font-size: clamp(22px, 7vw, 29px);
+  }
+  .eoc-program-facts {
+    display: grid;
+    gap: 6px;
+    font-size: 13px;
+  }
+  .eoc-program-facts span + span::before { display: none; }
+  .eoc-program-description {
+    margin-top: 20px;
+    font-size: 15px;
+  }
+  .eoc-workshop-sticky-mini {
+    top: 72px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-width: none;
+    justify-content: space-between;
+  }
+  .eoc-workshop-sticky-mini > span { white-space: normal; }
+  .transcript-quick-nav {
+    left: 12px;
+    right: auto;
+    bottom: 78px;
+  }
+  .transcript-quick-nav button { padding: 0 10px; }
+}

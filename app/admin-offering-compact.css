@@ -1,0 +1,42 @@
+.admin-offering-section-cards-mount { margin-top: 12px; }
+.admin-offering-section-cards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.admin-offering-section-card {
+  min-height: 82px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255,255,255,.72);
+}
+.admin-offering-section-card > div { min-width: 0; }
+.admin-offering-section-card strong { display: block; margin: 4px 0 1px; font-size: 11.5px; line-height: 1.3; }
+.admin-offering-section-card .meta { display: block; font-size: 9px; }
+.admin-offering-section-card .button { flex: 0 0 auto; min-height: 34px; padding: 0 10px; font-size: 9.5px; }
+.admin-offering-section-source { display: none !important; }
+.admin-offering-section-source.is-open {
+  display: block !important;
+  position: fixed;
+  z-index: 1202;
+  top: 5vh;
+  left: 50%;
+  width: min(1040px, calc(100vw - 36px));
+  max-height: 90vh;
+  margin: 0 !important;
+  overflow: auto;
+  transform: translateX(-50%);
+  box-shadow: 0 30px 100px rgba(31,27,24,.34);
+}
+.admin-offering-closebar { width: min(1000px, calc(100vw - 68px)); top: calc(5vh + 12px); }
+@media (max-width: 1000px) { .admin-offering-section-cards { grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (max-width: 680px) {
+  .admin-offering-section-cards { grid-template-columns: 1fr; }
+  .admin-offering-section-source.is-open { top: 2vh; width: calc(100vw - 18px); max-height: 96vh; }
+  .admin-offering-closebar { top: calc(2vh + 8px); width: calc(100vw - 42px); }
+}

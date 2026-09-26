@@ -1,8 +1,31 @@
-import { type NextRequest } from 'next/server'
-import { updateSession } from '@/lib/supabase/proxy'
+import { NextResponse, type NextRequest } from 'next/server'
 
-export async function proxy(request: NextRequest) {
-  return updateSession(request)
+const disabledPrivatePrefixes = [
+  '/account',
+  '/login',
+  '/auth',
+  '/my-learning',
+  '/my-notes',
+  '/admin',
+]
+
+export function proxy(request: NextRequest) {
+  const termMatch = request.nextUrl.pathname.match(/^\/courses\/living-lam-rim\/(term-\d+)\/?$/i)
+  if (termMatch) {
+    const url = request.nextUrl.clone()
+    url.pathname = `/living-lam-rim/${termMatch[1].toLowerCase()}`
+    return NextResponse.redirect(url)
+  }
+
+  const pathname = request.nextUrl.pathname.toLowerCase()
+  if (disabledPrivatePrefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/'
+    url.search = ''
+    return NextResponse.redirect(url)
+  }
+
+  return NextResponse.next()
 }
 
 export const config = {

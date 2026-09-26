@@ -1,0 +1,82 @@
+/* Compact admin refinement and class study contrast fixes. */
+
+/* The completion action uses a pale sage surface, so it must keep dark text. */
+.recording-study-tools .recording-tool-button.sage {
+  color: var(--ink) !important;
+}
+.recording-study-tools .recording-tool-button.sage.is-active,
+.recording-study-tools .recording-tool-button.sage[aria-pressed="true"] {
+  color: var(--sage-900) !important;
+}
+
+/* Course Offering artwork/playlist tools now live below the Sessions section. */
+.admin-offering-quick-tools-mount {
+  margin: 12px 0 22px;
+}
+.admin-offering-quick-tools-mount .admin-offering-quick-tools {
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+}
+.admin-offering-quick-tools-mount .admin-offering-tool {
+  padding: 12px 14px;
+}
+
+/* Session Admin is a dashboard first: four compact cards, full forms on demand. */
+.admin-editor-cards-mount {
+  margin: 16px 0 20px !important;
+}
+.admin-editor-cards {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+}
+.admin-editor-card {
+  min-height: 84px;
+  padding: 11px 12px !important;
+  border-radius: 16px !important;
+}
+.admin-editor-card .eyebrow {
+  font-size: 8.5px;
+  line-height: 1.3;
+}
+.admin-editor-card strong {
+  font-size: 11px !important;
+  line-height: 1.3;
+}
+.admin-editor-card .button {
+  min-height: 34px !important;
+  padding: 0 10px !important;
+  font-size: 10.5px !important;
+}
+
+/* All four editors use the same focused modal surface. */
+.admin-editor-source.is-open {
+  padding-top: 58px !important;
+}
+.admin-editor-closebar {
+  padding: 0 4px;
+}
+
+@media (max-width: 1120px) {
+  .admin-editor-cards {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin-offering-quick-tools-mount .admin-offering-tools-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 620px) {
+  .admin-editor-cards {
+    grid-template-columns: 1fr !important;
+  }
+  .admin-editor-card {
+    min-height: 0;
+  }
+}
