@@ -16,6 +16,8 @@ type LatestCourse = {
   title: string
   detail: string
   href: string
+  courseNumber?: number
+  artwork?: string | null
 }
 
 const catalog = rawCatalog as CatalogCourse[]
@@ -52,6 +54,7 @@ const latestCourses: LatestCourse[] = [
     title: 'The Eye of Courage: Blindspots & Leadership',
     detail: 'Timothy Lowenhaupt · Guadalajara',
     href: '/other-programs/eye-of-courage',
+    artwork: '/eye-of-courage/cover.jpg',
   },
   {
     sortDate: '2026-08-22',
@@ -60,6 +63,7 @@ const latestCourses: LatestCourse[] = [
     title: 'Death and the Realms of Existence',
     detail: 'Timothy Lowenhaupt & Brian Mendoza · Online from Taiwan',
     href: '/courses/course-8/taiwan-2026',
+    courseNumber: 8,
   },
   {
     sortDate: '2026-08-23',
@@ -68,6 +72,7 @@ const latestCourses: LatestCourse[] = [
     title: 'The Great Ideas of Buddhism, Part II',
     detail: 'Timothy Lowenhaupt',
     href: '/courses/course-17/current-2026',
+    courseNumber: 17,
   },
   {
     sortDate: '2026-04-05',
@@ -76,6 +81,7 @@ const latestCourses: LatestCourse[] = [
     title: 'The Bodhisattva Vows',
     detail: 'Timothy Lowenhaupt',
     href: '/courses/course-7',
+    courseNumber: 7,
   },
   {
     sortDate: '2026-03-22',
@@ -84,6 +90,7 @@ const latestCourses: LatestCourse[] = [
     title: 'The Great Ideas of Buddhism, Part I',
     detail: 'Timothy Lowenhaupt',
     href: '/courses/course-16',
+    courseNumber: 16,
   },
 ].sort((a, b) => b.sortDate.localeCompare(a.sortDate)).slice(0, 5)
 
@@ -97,17 +104,27 @@ export default function HomePage() {
       <section className="container section">
         <div className="section-head"><div><div className="eyebrow">Recently taught</div><h2>Latest courses</h2><p>Newest first, based on the final teaching date.</p></div></div>
         <div className="home-milestones">
-          {latestCourses.map((course) => (
-            <Link className="home-milestone-row" href={course.href} key={`${course.sortDate}-${course.title}`}>
-              <div className="home-milestone-date">{course.dates}</div>
-              <div>
-                <div className="eyebrow">{course.eyebrow}</div>
-                <h3>{course.title}</h3>
-                <p>{course.detail}</p>
-              </div>
-              <span className="home-open-pill">Open</span>
-            </Link>
-          ))}
+          {latestCourses.map((course) => {
+            const artwork = course.artwork ?? (course.courseNumber ? courseByNumber.get(course.courseNumber)?.artwork : null)
+            return (
+              <Link className="home-milestone-row" href={course.href} key={`${course.sortDate}-${course.title}`}>
+                <div
+                  className={artwork ? 'home-milestone-artwork has-artwork' : 'home-milestone-artwork placeholder'}
+                  style={artwork ? { backgroundImage: `url("${artwork}")` } : undefined}
+                  aria-hidden="true"
+                >
+                  {!artwork ? <span>{course.courseNumber ? `C${course.courseNumber}` : 'Library'}</span> : null}
+                </div>
+                <div className="home-milestone-date">{course.dates}</div>
+                <div className="home-milestone-copy">
+                  <div className="eyebrow">{course.eyebrow}</div>
+                  <h3>{course.title}</h3>
+                  <p>{course.detail}</p>
+                </div>
+                <span className="home-open-pill">Open</span>
+              </Link>
+            )
+          })}
         </div>
       </section>
 
