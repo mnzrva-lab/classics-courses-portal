@@ -4,7 +4,7 @@ import { course8TranscriptForSession } from '@/content/classics/course-08/taiwan
 import rawLivingLamRim from '@/content/living-lam-rim/catalog.json'
 import { livingLamRimTranscriptForSession } from '@/content/living-lam-rim/transcripts'
 import { perfectionGroups, perfectionProgram } from '@/content/perfection-of-wisdom/catalog'
-import { perfectionTranscriptForSession } from '@/content/perfection-of-wisdom/transcripts'
+import { getPerfectionTranscriptChapters } from '@/lib/perfection-transcript-source'
 import { buildStudyDocxResponse, docxHeading, docxMeta, docxParagraph, docxTitle, docxTextBlocks } from '@/lib/study-docx'
 
 type TranscriptParagraph = { speaker?: string; text: string }
@@ -52,7 +52,7 @@ function safeFilename(value: string) {
     .slice(0, 80) || 'study-file'
 }
 
-function transcriptBundle(collection: string, sessionId: string): TranscriptBundle | null {
+async function transcriptBundle(collection: string, sessionId: string): Promise<TranscriptBundle | null> {
   if (collection === 'course8') {
     const session = course8.sessions.find((item) => item.id === sessionId)
     const chapters = course8TranscriptForSession(sessionId)
@@ -84,7 +84,7 @@ function transcriptBundle(collection: string, sessionId: string): TranscriptBund
     for (const group of perfectionGroups) {
       const session = group.sessions.find((item) => item.id === sessionId)
       if (!session) continue
-      const chapters = perfectionTranscriptForSession(sessionId)
+      const chapters = await getPerfectionTranscriptChapters(sessionId)
       if (!chapters.length) return null
       return {
         title: `${perfectionProgram.title} · ${session.name} · Reference Transcript`,
@@ -164,7 +164,7 @@ export async function GET(request: Request) {
   }
 
   if (content === 'transcript') {
-    const bundle = transcriptBundle(collection, sessionId)
+    const bundle = await transcriptBundle(collection, sessionId)
     if (!bundle) return new Response('Transcript not found.', { status: 404 })
     if (format === 'txt') return txtResponse(transcriptTxt(bundle), bundle.filename)
 
