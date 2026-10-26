@@ -1,14 +1,24 @@
 import Link from 'next/link'
+import MarkdownContent from '@/components/markdown-content'
+import { readPublicMarkdown } from '@/lib/public-content'
 import { perfectionGroups, perfectionProgram } from '@/content/perfection-of-wisdom/catalog'
 
-export default function PerfectionOfWisdomPage() {
+export const dynamic = 'force-dynamic'
+
+export default async function PerfectionOfWisdomPage() {
+  const externalIntro = await readPublicMarkdown('perfection-of-wisdom/overview.md')
+  const intro = externalIntro ?? perfectionProgram.intro
+
   return (
     <main className="container page perfection-page">
       <header className="compact-page-head">
         <div className="eyebrow">{perfectionProgram.eyebrow}</div>
         <h1>{perfectionProgram.title}</h1>
         <p className="lead">{perfectionProgram.subtitle}</p>
-        <p>{perfectionProgram.intro}</p>
+        <div className="perfection-intro-markdown"><MarkdownContent content={intro} /></div>
+        <p className="meta" data-content-origin={externalIntro ? 'github' : 'local'} style={{ fontSize: 11, marginTop: 3 }}>
+          {externalIntro ? 'GitHub Markdown preview · independent content source' : 'Local text fallback · GitHub source unavailable'}
+        </p>
         <a className="inline-library-link" href={perfectionProgram.playlistUrl} target="_blank" rel="noreferrer">Open playlist on YouTube ↗</a>
       </header>
 
