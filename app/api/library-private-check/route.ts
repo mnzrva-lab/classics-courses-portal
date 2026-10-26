@@ -7,8 +7,9 @@ export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
 export async function GET(request: Request) {
-  const host = new URL(request.url).hostname.toLowerCase()
-  if (host !== 'deploy-preview-2--thunderous-clafoutis-c6db2e.netlify.app') {
+  // Netlify may rewrite the request host before passing it to Next.js.
+  // This diagnostic is staged in the draft PR only and must be deleted before merge.
+  if (process.env.CONTEXT === 'production') {
     return new Response(null, { status: 404 })
   }
 
