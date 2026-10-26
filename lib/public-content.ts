@@ -9,10 +9,11 @@ const CONTENT_REPO = 'mnzrva-lab/classics-library-content'
 const PUBLISHED_FILES = {
   'perfection-of-wisdom/overview.md': { kind: 'markdown', maxBytes: 20000 },
   'classics/course-18/schedule.json': { kind: 'json', maxBytes: 60000 },
+  'home/latest-courses.json': { kind: 'json', maxBytes: 100000 },
 } as const
 
 export type PublishedMarkdownPath = 'perfection-of-wisdom/overview.md'
-export type PublishedJsonPath = 'classics/course-18/schedule.json'
+export type PublishedJsonPath = 'classics/course-18/schedule.json' | 'home/latest-courses.json'
 
 async function readApprovedSource(path: keyof typeof PUBLISHED_FILES): Promise<string | null> {
   if (!Object.prototype.hasOwnProperty.call(PUBLISHED_FILES, path)) return null
