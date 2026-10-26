@@ -15,10 +15,9 @@ export default async function PerfectionOfWisdomPage() {
         <div className="eyebrow">{perfectionProgram.eyebrow}</div>
         <h1>{perfectionProgram.title}</h1>
         <p className="lead">{perfectionProgram.subtitle}</p>
-        <div className="perfection-intro-markdown"><MarkdownContent content={intro} /></div>
-        <p className="meta" data-content-origin={externalIntro ? 'private-github' : 'local'} style={{ fontSize: 11, marginTop: 3 }}>
-          {externalIntro ? 'Private GitHub Markdown preview' : 'Preview fallback: private content not connected yet'}
-        </p>
+        <div className="perfection-intro-markdown" data-content-origin={externalIntro ? 'private-github' : 'local'}>
+          <MarkdownContent content={intro} />
+        </div>
         <a className="inline-library-link" href={perfectionProgram.playlistUrl} target="_blank" rel="noreferrer">Open playlist on YouTube ↗</a>
       </header>
 
