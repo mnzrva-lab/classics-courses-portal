@@ -28,6 +28,49 @@ type LatestCourse = {
   artwork?: string | null
 }
 
+type LatestCoursesFile = {
+  schemaVersion: number
+  items: LatestCourse[]
+}
+
+function isLatestCoursesFile(candidate: unknown): candidate is LatestCoursesFile {
+  if (!candidate || typeof candidate !== 'object') return false
+  const data = candidate as Partial<LatestCoursesFile>
+  if (data.schemaVersion !== 1 || !Array.isArray(data.items) ||
+      data.items.length < 1 || data.items.length > 100) return false
+
+  const seenHrefs = new Set<string>()
+  for (const item of data.items as unknown[]) {
+    if (!item || typeof item !== 'object') return false
+    const course = item as Partial<LatestCourse>
+
+    for (const field of ['dates', 'eyebrow', 'title', 'detail'] as const) {
+      if (typeof course[field] !== 'string' || !course[field]?.trim() ||
+          course[field]!.length > 400) return false
+    }
+
+    const date = course.sortDate
+    if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+        !Number.isFinite(Date.parse(date)) ||
+        new Date(date).toISOString().slice(0, 10) !== date) return false
+
+    const href = course.href
+    if (typeof href !== 'string' || !/^\/(?!\/)[a-z0-9/_-]+$/i.test(href) ||
+        href.includes('..') || seenHrefs.has(href)) return false
+    seenHrefs.add(href)
+
+    if (course.courseNumber !== undefined &&
+        (!Number.isInteger(course.courseNumber) || course.courseNumber < 1 ||
+         course.courseNumber > 100)) return false
+
+    if (course.artwork !== undefined && course.artwork !== null &&
+        (typeof course.artwork !== 'string' ||
+         !/^\/(?!\/)[a-z0-9/_-]+\.(?:jpg|jpeg|png|webp|svg)$/i.test(course.artwork) ||
+         course.artwork.includes('..'))) return false
+  }
+  return true
+}
+
 const catalog = rawCatalog as CatalogCourse[]
 const archiveCatalog = rawArchiveCatalog as ArchiveCatalog
 const fallbackCourse18Schedule = rawCourse18Schedule as DetailedSchedule
@@ -123,7 +166,7 @@ function getUpcomingCourses(course18Schedule: DetailedSchedule): FeaturedUpcomin
   })
 }
 
-const latestCourses: LatestCourse[] = [
+const fallbackLatestCourses: LatestCourse[] = [
   {
     sortDate: '2026-09-12',
     dates: 'Sep 11–12, 2026',
@@ -174,8 +217,15 @@ const latestCourses: LatestCourse[] = [
 export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
-  const remoteSchedule = await readPublishedJSON('classics/course-18/schedule.json', isCourse18Schedule)
+  const [remoteSchedule, remoteLatest] = await Promise.all([
+    readPublishedJSON('classics/course-18/schedule.json', isCourse18Schedule),
+    readPublishedJSON('home/latest-courses.json', isLatestCoursesFile),
+  ])
   const upcomingCourses = getUpcomingCourses(remoteSchedule ?? fallbackCourse18Schedule)
+  const latestCourses = (remoteLatest?.items ?? fallbackLatestCourses)
+    .slice()
+    .sort((a, b) => b.sortDate.localeCompare(a.sortDate))
+    .slice(0, 5)
 
   return (
     <main>
