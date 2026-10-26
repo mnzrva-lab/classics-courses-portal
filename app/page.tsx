@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import UpcomingCourses from '@/components/upcoming-courses'
+import { readPublishedJSON } from '@/lib/public-content'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import rawCourse18Schedule from '@/content/classics/course-18-schedule.json'
@@ -7,7 +8,14 @@ import rawCourse18Schedule from '@/content/classics/course-18-schedule.json'
 type CatalogCourse = { canonicalNumber: number; slug: string; title: string; artwork?: string | null }
 type ArchiveCourse = { canonicalNumber: number; schedule?: Array<{ label: string; date: string }> }
 type ArchiveCatalog = { courses: ArchiveCourse[] }
-type DetailedSchedule = { sessions: Array<{ id: string; label: string; startsAt: string; endsAt: string }> }
+type DetailedSession = { id: string; label: string; startsAt: string; endsAt: string; rebroadcastAt?: string }
+type DetailedSchedule = {
+  schemaVersion: number
+  course: number
+  sourceTimezone: string
+  sourceLabel: string
+  sessions: DetailedSession[]
+}
 
 type LatestCourse = {
   sortDate: string
@@ -22,29 +30,83 @@ type LatestCourse = {
 
 const catalog = rawCatalog as CatalogCourse[]
 const archiveCatalog = rawArchiveCatalog as ArchiveCatalog
-const course18Schedule = rawCourse18Schedule as DetailedSchedule
+const fallbackCourse18Schedule = rawCourse18Schedule as DetailedSchedule
 const courseByNumber = new Map(catalog.map((course) => [course.canonicalNumber, course]))
 
-const upcomingCourses = archiveCatalog.courses.flatMap((archive) => {
-  if (!archive.schedule?.length) return []
-  const course = courseByNumber.get(archive.canonicalNumber)
-  if (!course) return []
+function isCourse18Schedule(candidate: unknown): candidate is DetailedSchedule {
+  if (!candidate || typeof candidate !== 'object') return false
+  const schedule = candidate as Partial<DetailedSchedule>
+  if (schedule.schemaVersion !== 1 || schedule.course !== 18) return false
+  if (schedule.sourceTimezone !== 'America/Phoenix' || typeof schedule.sourceLabel !== 'string') return false
+  if (!Array.isArray(schedule.sessions) || schedule.sessions.length === 0 || schedule.sessions.length > 30) return false
 
-  const detailed = archive.canonicalNumber === 18 ? course18Schedule.sessions : []
-  const detailedByLabel = new Map(detailed.map((session) => [session.label.replace(' & ', '–'), session]))
-  const sessions = archive.schedule.map((session, index) => {
-    const exact = detailed[index] ?? detailedByLabel.get(session.label)
-    return {
-      id: exact?.id ?? `course-${archive.canonicalNumber}-${index + 1}`,
-      label: exact?.label ?? session.label,
-      date: session.date,
-      startsAt: exact?.startsAt ?? null,
-      endsAt: exact?.endsAt ?? null,
+  const ids = new Set<string>()
+  for (const value of schedule.sessions as unknown[]) {
+    if (!value || typeof value !== 'object') return false
+    const session = value as Partial<DetailedSession>
+    if (typeof session.id !== 'string' || !session.id.trim() || ids.has(session.id)) return false
+    if (typeof session.label !== 'string' || !session.label.trim()) return false
+    if (typeof session.startsAt !== 'string' || !session.startsAt.endsWith('Z')) return false
+    if (typeof session.endsAt !== 'string' || !session.endsAt.endsWith('Z')) return false
+    const start = Date.parse(session.startsAt)
+    const end = Date.parse(session.endsAt)
+    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return false
+    if (session.rebroadcastAt !== undefined &&
+        (typeof session.rebroadcastAt !== 'string' || !Number.isFinite(Date.parse(session.rebroadcastAt)))) return false
+    ids.add(session.id)
+  }
+  return true
+}
+
+function arizonaDate(iso: string) {
+  const formatted = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Phoenix', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date(iso))
+  const get = (part: string) => formatted.find((item) => item.type === part)?.value ?? ''
+  return `${get('year')}-${get('month')}-${get('day')}`
+}
+
+function getUpcomingCourses(course18Schedule: DetailedSchedule) {
+  return archiveCatalog.courses.flatMap((archive) => {
+    const course = courseByNumber.get(archive.canonicalNumber)
+    if (!course) return []
+
+    // Exact Arizona schedule is read from the private content repository.
+    // New sessions added there are included automatically.
+    if (archive.canonicalNumber === 18) {
+      const sessions = course18Schedule.sessions.map((session) => ({
+        id: session.id,
+        label: session.label,
+        date: arizonaDate(session.startsAt),
+        startsAt: session.startsAt,
+        endsAt: session.endsAt,
+      }))
+      return [{
+        courseNumber: course.canonicalNumber,
+        title: course.title,
+        href: `/courses/${course.slug}`,
+        artwork: course.artwork ?? null,
+        sessions,
+      }]
     }
-  })
 
-  return [{ courseNumber: course.canonicalNumber, title: course.title, href: `/courses/${course.slug}`, artwork: course.artwork ?? null, sessions }]
-})
+    if (!archive.schedule?.length) return []
+    const sessions = archive.schedule.map((session, index) => ({
+      id: `course-${archive.canonicalNumber}-${index + 1}`,
+      label: session.label,
+      date: session.date,
+      startsAt: null,
+      endsAt: null,
+    }))
+    return [{
+      courseNumber: course.canonicalNumber,
+      title: course.title,
+      href: `/courses/${course.slug}`,
+      artwork: course.artwork ?? null,
+      sessions,
+    }]
+  })
+}
 
 const latestCourses: LatestCourse[] = [
   {
@@ -94,7 +156,12 @@ const latestCourses: LatestCourse[] = [
   },
 ].sort((a, b) => b.sortDate.localeCompare(a.sortDate)).slice(0, 5)
 
-export default function HomePage() {
+export const dynamic = 'force-dynamic'
+
+export default async function HomePage() {
+  const remoteSchedule = await readPublishedJSON('classics/course-18/schedule.json', isCourse18Schedule)
+  const upcomingCourses = getUpcomingCourses(remoteSchedule ?? fallbackCourse18Schedule)
+
   return (
     <main>
       <section className="hero home-v12-hero"><div className="container"><div className="eyebrow">Teaching library</div><h1>Study the teachings.</h1><p>Browse Classics Courses, recordings, Study Notes, Reference Transcripts, meditations, and course materials in one calm study space.</p><div className="actions" style={{ marginTop: 22 }}><Link className="button sage" href="/courses">Browse Classics Courses</Link><Link className="button" href="/search">Search the Library</Link></div></div></section>
