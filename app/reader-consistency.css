@@ -78,3 +78,11 @@
     justify-self: center;
   }
 }
+
+
+/* A speaker label starts the speech inline and is not repeated on
+   continuation paragraphs. The source text and paragraph IDs stay intact. */
+.transcript-inline-speaker {
+  color: var(--sage-900);
+  font-weight: 750;
+}
