@@ -23,19 +23,3 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build
-      - name: Preview private-content connectivity check (temporary)
-        if: always()
-        run: |
-          node -e '
-            (async () => {
-              const url = "https://deploy-preview-2--thunderous-clafoutis-c6db2e.netlify.app/api/library-private-check";
-              try {
-                const response = await fetch(url, { signal: AbortSignal.timeout(20000) });
-                const body = await response.text();
-                console.log("Preview diagnostic HTTP status:", response.status);
-                console.log("Preview diagnostic response:", body.slice(0,500));
-              } catch (error) {
-                console.log("Preview diagnostic transport error:", error instanceof Error ? error.name : "unknown");
-              }
-            })()
-          '
