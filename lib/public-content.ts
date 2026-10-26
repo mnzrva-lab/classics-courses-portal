@@ -1,33 +1,51 @@
-/**
- * Preview-only content source pilot.
- *
- * This deliberately reads from an independent Git branch so a Markdown change
- * does not require a new Netlify deploy. The base URL will move to the separate
- * public Library content repository after the no-redeploy test is verified.
- */
-const PILOT_CONTENT_BASE =
-  'https://raw.githubusercontent.com/mnzrva-lab/classics-courses-portal/library-content-pilot/public-content'
+import 'server-only'
 
-const CONTENT_FILES = {
+/**
+ * Server-side published-content reader for the private Library repository.
+ *
+ * Only files explicitly listed below may be read by this website. Never
+ * expose LIBRARY_CONTENT_GITHUB_TOKEN to client components or responses.
+ */
+const CONTENT_REPO = 'mnzrva-lab/classics-library-content'
+
+const ALLOWED_PUBLISHED_MARKDOWN = {
   'perfection-of-wisdom/overview.md': true,
 } as const
 
-export type PublicContentPath = keyof typeof CONTENT_FILES
+export type PublishedMarkdownPath = keyof typeof ALLOWED_PUBLISHED_MARKDOWN
 
-export async function readPublicMarkdown(path: PublicContentPath): Promise<string | null> {
+export async function readPublishedMarkdown(path: PublishedMarkdownPath): Promise<string | null> {
+  const token = process.env.LIBRARY_CONTENT_GITHUB_TOKEN?.trim()
+  if (!token) return null
+
+  const url = `https://api.github.com/repos/${CONTENT_REPO}/contents/published/${path}?ref=main`
+
   try {
-    const response = await fetch(`${PILOT_CONTENT_BASE}/${path}`, {
+    const response = await fetch(url, {
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${token}`,
+        'X-GitHub-Api-Version': '2022-11-28',
+        'User-Agent': 'classics-courses-portal',
+      },
       cache: 'no-store',
-      headers: { Accept: 'text/plain' },
       signal: AbortSignal.timeout(5000),
     })
+
     if (!response.ok) return null
 
-    const content = await response.text()
-    if (!content.trim() || content.length > 20000) return null
+    const payload: unknown = await response.json()
+    if (!payload || typeof payload !== 'object') return null
+
+    const file = payload as { type?: unknown; encoding?: unknown; content?: unknown }
+    if (file.type !== 'file' || file.encoding !== 'base64' || typeof file.content !== 'string') return null
+
+    const content = Buffer.from(file.content.replace(/\s/g, ''), 'base64').toString('utf8')
+    if (!content.trim() || Buffer.byteLength(content, 'utf8') > 20000) return null
+
     return content
   } catch {
-    // A temporary GitHub outage must not hide the teaching page.
+    // Keep the page available if GitHub is temporarily unreachable.
     return null
   }
 }
