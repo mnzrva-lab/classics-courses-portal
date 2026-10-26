@@ -1,12 +1,12 @@
 import Link from 'next/link'
 import MarkdownContent from '@/components/markdown-content'
-import { readPublicMarkdown } from '@/lib/public-content'
+import { readPublishedMarkdown } from '@/lib/public-content'
 import { perfectionGroups, perfectionProgram } from '@/content/perfection-of-wisdom/catalog'
 
 export const dynamic = 'force-dynamic'
 
 export default async function PerfectionOfWisdomPage() {
-  const externalIntro = await readPublicMarkdown('perfection-of-wisdom/overview.md')
+  const externalIntro = await readPublishedMarkdown('perfection-of-wisdom/overview.md')
   const intro = externalIntro ?? perfectionProgram.intro
 
   return (
@@ -16,8 +16,8 @@ export default async function PerfectionOfWisdomPage() {
         <h1>{perfectionProgram.title}</h1>
         <p className="lead">{perfectionProgram.subtitle}</p>
         <div className="perfection-intro-markdown"><MarkdownContent content={intro} /></div>
-        <p className="meta" data-content-origin={externalIntro ? 'github' : 'local'} style={{ fontSize: 11, marginTop: 3 }}>
-          {externalIntro ? 'GitHub Markdown preview · independent content source' : 'Local text fallback · GitHub source unavailable'}
+        <p className="meta" data-content-origin={externalIntro ? 'private-github' : 'local'} style={{ fontSize: 11, marginTop: 3 }}>
+          {externalIntro ? 'Private GitHub Markdown preview' : 'Preview fallback: private content not connected yet'}
         </p>
         <a className="inline-library-link" href={perfectionProgram.playlistUrl} target="_blank" rel="noreferrer">Open playlist on YouTube ↗</a>
       </header>
