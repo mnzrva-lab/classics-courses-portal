@@ -2,11 +2,11 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ClassSequenceNavigation from '@/components/class-sequence-navigation'
 import ContentDownloadLinks from '@/components/content-download-links'
-import MarkdownContent from '@/components/markdown-content'
+import LibraryTranscriptReader from '@/components/library-transcript-reader'
 import RecordingPlayer from '@/components/recording-player'
 import TranscriptControls from '@/components/transcript-controls'
 import { perfectionGroups, perfectionProgram, perfectionSessionBySlug } from '@/content/perfection-of-wisdom/catalog'
-import { perfectionTranscriptForSession } from '@/content/perfection-of-wisdom/transcripts'
+import { getPerfectionTranscriptChapters } from '@/lib/perfection-transcript-source'
 
 const transcriptDisclaimer = 'This transcript was created by a student with AI and should be used for reference only. Please check it against the video and audio for accuracy of content.'
 
@@ -16,7 +16,7 @@ export default async function PerfectionSessionPage({ params }: { params: Promis
   if (!entry) notFound()
 
   const { group, session } = entry
-  const transcriptChapters = perfectionTranscriptForSession(session.id)
+  const transcriptChapters = await getPerfectionTranscriptChapters(session.id)
   const orderedSessions = perfectionGroups.flatMap((period) => period.sessions.map((item) => ({ period, session: item })))
   const sessionIndex = orderedSessions.findIndex((item) => item.period.slug === groupSlug && item.session.slug === sessionSlug)
   const previous = sessionIndex > 0 ? orderedSessions[sessionIndex - 1] : null
@@ -50,21 +50,7 @@ export default async function PerfectionSessionPage({ params }: { params: Promis
             <ContentDownloadLinks collection="perfection" sessionId={session.id} content="transcript" />
             <div className="info-callout"><strong>About this transcript</strong><br />{transcriptDisclaimer}</div>
             <TranscriptControls chapters={transcriptChapters.map((chapter) => ({ id: chapter.id, label: chapter.title.replace(/[*_`]/g, '') }))} />
-            <article className="transcript-v12-card">
-              {transcriptChapters.map((chapter) => (
-                <section key={chapter.id} id={chapter.id} style={{ scrollMarginTop: 96, marginBottom: 34 }}>
-                  <h3>{chapter.title.replace(/[*_`]/g, '')}</h3>
-                  {chapter.paragraphs.map((paragraph) => (
-                    <div className="transcript-paragraph-v12" data-transcript-paragraph id={paragraph.id} key={paragraph.id} style={{ scrollMarginTop: 96 }}>
-                      <div className="transcript-copy">
-                        {paragraph.speaker ? <div><strong>{paragraph.speaker}</strong></div> : null}
-                        <MarkdownContent content={paragraph.text} />
-                      </div>
-                    </div>
-                  ))}
-                </section>
-              ))}
-            </article>
+            <LibraryTranscriptReader chapters={transcriptChapters} />
           </>
         ) : (
           <p className="meta">The recording is available, but a Reference Transcript has not been added to the Library for this session yet.</p>
