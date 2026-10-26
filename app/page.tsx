@@ -66,8 +66,23 @@ function arizonaDate(iso: string) {
   return `${get('year')}-${get('month')}-${get('day')}`
 }
 
-function getUpcomingCourses(course18Schedule: DetailedSchedule) {
-  return archiveCatalog.courses.flatMap((archive) => {
+type FeaturedUpcomingSession = {
+  id: string
+  label: string
+  date: string
+  startsAt: string | null
+  endsAt: string | null
+}
+type FeaturedUpcomingCourse = {
+  courseNumber: number
+  title: string
+  href: string
+  artwork: string | null
+  sessions: FeaturedUpcomingSession[]
+}
+
+function getUpcomingCourses(course18Schedule: DetailedSchedule): FeaturedUpcomingCourse[] {
+  return archiveCatalog.courses.flatMap((archive): FeaturedUpcomingCourse[] => {
     const course = courseByNumber.get(archive.canonicalNumber)
     if (!course) return []
 
