@@ -1,32 +1,50 @@
+import CopyReference from '@/components/copy-reference'
 import MarkdownContent from '@/components/markdown-content'
 import type { PerfectionTranscriptChapter } from '@/content/perfection-of-wisdom/transcripts'
 
+type Props = {
+  chapters: PerfectionTranscriptChapter[]
+  programTitle: string
+  sessionTitle: string
+  sessionDate: string
+  sessionPath: string
+}
+
 /**
- * Shared transcript layout pilot.
- *
- * A nonempty speaker field marks the start of a speaker turn. Empty fields
- * continue that speaker. Every new chapter starts a fresh display context,
- * so its opening speaker is announced even if the previous chapter ended
- * with the same speaker. No source text or speaker metadata is modified.
+ * A speaker's name is displayed once per turn and again at every chapter
+ * opening. Citations always use the resolved speaker, even in paragraphs where
+ * the name is intentionally omitted from the visible transcript.
  */
 export default function LibraryTranscriptReader({
   chapters,
-}: {
-  chapters: PerfectionTranscriptChapter[]
-}) {
+  programTitle,
+  sessionTitle,
+  sessionDate,
+  sessionPath,
+}: Props) {
   return (
     <article className="transcript-v12-card" aria-label="Reference transcript">
       {chapters.map((chapter) => {
-        // Chapter boundaries reset the visible speaker label.
         let currentSpeaker = ''
+        const chapterTitle = chapter.title.replace(/[*_`]/g, '')
 
         return (
           <section key={chapter.id} id={chapter.id} style={{ scrollMarginTop: 96, marginBottom: 34 }}>
-            <h3>{chapter.title.replace(/[*_`]/g, '')}</h3>
+            <h3>{chapterTitle}</h3>
             {chapter.paragraphs.map((paragraph) => {
               const announcedSpeaker = paragraph.speaker.trim().replace(/[:：]\s*$/, '')
               const newTurn = Boolean(announcedSpeaker) && announcedSpeaker !== currentSpeaker
               if (announcedSpeaker) currentSpeaker = announcedSpeaker
+
+              const reference = [
+                currentSpeaker ? `Speaker: ${currentSpeaker}` : null,
+                programTitle,
+                sessionTitle,
+                sessionDate,
+                chapterTitle,
+                'Reference Transcript',
+                `Paragraph ${paragraph.id}`,
+              ].filter(Boolean).join(' · ')
 
               return (
                 <div
@@ -44,6 +62,9 @@ export default function LibraryTranscriptReader({
                         <strong className="transcript-inline-speaker">{currentSpeaker}: </strong>
                       ) : undefined}
                     />
+                  </div>
+                  <div className="passage-study-tools library-transcript-cite">
+                    <CopyReference reference={reference} path={`${sessionPath}#${paragraph.id}`} />
                   </div>
                 </div>
               )
