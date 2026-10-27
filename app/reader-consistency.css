@@ -86,3 +86,25 @@
   color: var(--sage-900);
   font-weight: 750;
 }
+
+
+/* Citation buttons use speaker metadata even on unlabeled continuation lines.
+   Keep the control large enough to tap on mobile. */
+.transcript-paragraph-v12 .library-transcript-cite .citation-menu > summary {
+  min-width: 54px;
+  min-height: 42px;
+  border-radius: 22px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.transcript-paragraph-v12 .library-transcript-cite .citation-menu-panel button {
+  min-height: 42px;
+}
+@media (max-width: 700px) {
+  .transcript-paragraph-v12 .library-transcript-cite {
+    position: static;
+    opacity: 1;
+    justify-content: flex-end;
+    margin-top: 6px;
+  }
+}
