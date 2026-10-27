@@ -50,7 +50,13 @@ export default async function PerfectionSessionPage({ params }: { params: Promis
             <ContentDownloadLinks collection="perfection" sessionId={session.id} content="transcript" />
             <div className="info-callout"><strong>About this transcript</strong><br />{transcriptDisclaimer}</div>
             <TranscriptControls chapters={transcriptChapters.map((chapter) => ({ id: chapter.id, label: chapter.title.replace(/[*_`]/g, '') }))} />
-            <LibraryTranscriptReader chapters={transcriptChapters} />
+            <LibraryTranscriptReader
+              chapters={transcriptChapters}
+              programTitle={perfectionProgram.title}
+              sessionTitle={session.name}
+              sessionDate={session.date}
+              sessionPath={`/perfection-of-wisdom/${groupSlug}/${sessionSlug}`}
+            />
           </>
         ) : (
           <p className="meta">The recording is available, but a Reference Transcript has not been added to the Library for this session yet.</p>
