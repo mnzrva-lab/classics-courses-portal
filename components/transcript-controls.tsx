@@ -14,7 +14,11 @@ export default function TranscriptControls({ chapters }: { chapters: Chapter[] }
     const paragraphs = Array.from(document.querySelectorAll<HTMLElement>('[data-transcript-paragraph]'))
     let count = 0
     paragraphs.forEach((element) => {
-      const match = !normalized || (element.textContent ?? '').toLowerCase().includes(normalized)
+      // Search the spoken words and their resolved speaker attribution.
+      // Exclude UI labels such as "Cite" from transcript search results.
+      const spokenText = element.querySelector<HTMLElement>('.transcript-copy')?.textContent ?? element.textContent ?? ''
+      const speaker = element.dataset.transcriptSpeaker ?? ''
+      const match = !normalized || `${spokenText} ${speaker}`.toLowerCase().includes(normalized)
       element.classList.toggle('transcript-search-hidden', !match)
       if (match) count += 1
     })
