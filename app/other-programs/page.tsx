@@ -1,7 +1,11 @@
 import Link from 'next/link'
 import { eyeOfCourageProgram } from '@/content/eye-of-courage'
+import { getStandaloneTeachings } from '@/lib/standalone-content'
 
-export default function OtherProgramsPage() {
+export const revalidate = 60
+
+export default async function OtherProgramsPage() {
+  const teachings = await getStandaloneTeachings()
   return (
     <main className="container page">
       <div className="eyebrow">Other Programs</div>
@@ -19,6 +23,26 @@ export default function OtherProgramsPage() {
             <span className="inline-library-link">Open teaching →</span>
           </div>
         </Link>
+        {teachings.map(teaching => (
+          <Link key={teaching.teachingSlug}
+            className={'card eoc-other-program-card' + (teaching.cover ? '' : ' no-cover')}
+            href={teaching.href}>
+            {teaching.cover ? (
+              <div className="eoc-other-program-image">
+                <img src={teaching.cover} alt={teaching.artworkAlt ?? teaching.title} loading="lazy" />
+              </div>
+            ) : null}
+            <div>
+              <div className="eyebrow">Standalone teaching</div>
+              <h2>{teaching.title}</h2>
+              {teaching.subtitle ? <p className="lead">{teaching.subtitle}</p> : null}
+              {(teaching.teacher || teaching.date) ? (
+                <p className="meta">{[teaching.teacher, teaching.date].filter(Boolean).join(' · ')}</p>
+              ) : null}
+              <span className="inline-library-link">Open teaching</span>
+            </div>
+          </Link>
+        ))}
       </section>
     </main>
   )

@@ -48,6 +48,16 @@ function publishedLibraryFile(path: string): { kind: 'json' | 'markdown'; maxByt
   if (new RegExp('^library/' + slug + '/' + slug + '/' + slug + '/study-notes\\.md$').test(path)) {
     return { kind: 'markdown', maxBytes: 80000 }
   }
+  if (new RegExp('^library/other-programs/' + slug + '/transcript\\.json$').test(path)) {
+    return { kind: 'json', maxBytes: 125000 }
+  }
+  if (new RegExp('^library/other-programs/' + slug + '/study-notes\\.md$').test(path)) {
+    return { kind: 'markdown', maxBytes: 80000 }
+  }
+  if (path === 'search/manifest.json') return { kind: 'json', maxBytes: 55000 }
+  if (/^search\/parts\/part-[a-f0-9]{20}-[0-9]{4}\.json$/.test(path)) {
+    return { kind: 'json', maxBytes: 125000 }
+  }
   return null
 }
 
@@ -65,7 +75,7 @@ async function readApprovedSource(path: string): Promise<string | null> {
       // Cache the 11 ACI 17 source files briefly on the server so public search
       // and glossary traffic do not trigger 11 private GitHub API calls each time.
       // Approved edits are picked up without redeployment (within 60 seconds).
-      ...(path.startsWith('classics/course-17/') || path.startsWith('library/')
+      ...(path.startsWith('classics/course-17/') || path.startsWith('library/') || path.startsWith('search/')
         ? { next: { revalidate: 60 } }
         : { cache: 'no-store' as const }),
       headers: {

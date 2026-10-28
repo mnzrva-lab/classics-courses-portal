@@ -302,3 +302,6 @@
 @media (max-width: 920px) {
   .eoc-commitment-fields { grid-template-columns: 1fr; }
 }
+
+/* A teaching without an approved cover remains text-only; no blank image column. */
+.eoc-other-program-card.no-cover { grid-template-columns: minmax(0, 1fr); }

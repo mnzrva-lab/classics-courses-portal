@@ -2,6 +2,7 @@ import Link from 'next/link'
 import SearchResultList from '@/components/search-result-list'
 import { searchScore, searchWords, type MatchMode } from '@/lib/search-match'
 import { getACI17Corpus, type ACI17Corpus } from '@/lib/aci17-published-content'
+import { getPublishedSearchRecords, type PublishedSearchRecord } from '@/lib/published-search-index'
 import { relatedWordCandidates, type WordSuggestion } from '@/lib/search-word-families'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
@@ -32,7 +33,7 @@ type SearchResult = {
   sessionLabel: string
   sessionKind: string
   teacher: string
-  contentType: 'Transcript' | 'Study Notes' | 'Recording'
+  contentType: 'Transcript' | 'Study Notes' | 'Recording' | 'Overview'
   chapter?: string
   speaker?: string
   body: string
@@ -78,7 +79,7 @@ function archiveKind(code: string, name: string) {
   return 'Class'
 }
 
-function buildResults(query: string, mode: MatchMode, aci17: ACI17Corpus | null = null) {
+function buildResults(query: string, mode: MatchMode, aci17: ACI17Corpus | null = null, published: readonly PublishedSearchRecord[] = []) {
   if (!query) return [] as SearchResult[]
   const results: SearchResult[] = []
 
@@ -201,6 +202,17 @@ function buildResults(query: string, mode: MatchMode, aci17: ACI17Corpus | null 
     }
   }
 
+  // Content from new managed courses and standalone teachings is generated
+  // automatically by the private GitHub publishing workflow, never hardcoded.
+  for (const record of published) {
+    const score = searchScore(record.body, query, mode)
+    if (!score) continue
+    const { glossarySource: _source, ...result } = record
+    results.push({
+      ...result, score: score + (record.contentType === 'Transcript' ? 5 : record.contentType === 'Study Notes' ? 3 : 0),
+    })
+  }
+
   return results.sort((a, b) => b.score - a.score || a.sourceLabel.localeCompare(b.sourceLabel))
 }
 
@@ -209,7 +221,7 @@ function buildResults(query: string, mode: MatchMode, aci17: ACI17Corpus | null 
  * Later, both must be refreshed from the same published private content. */
 let indexedVocabularyCache: string[] | null = null
 
-function indexedVocabulary(aci17: ACI17Corpus | null): string[] {
+function indexedVocabulary(aci17: ACI17Corpus | null, published: readonly PublishedSearchRecord[]): string[] {
   if (!indexedVocabularyCache) {
     const words = new Set<string>()
   const addText = (value: string | undefined) => {
@@ -243,8 +255,13 @@ function indexedVocabulary(aci17: ACI17Corpus | null): string[] {
   }
 
   // Expand the static vocabulary with published transcripts, not bundled text.
-  if (!aci17) return indexedVocabularyCache
   const words = new Set(indexedVocabularyCache)
+  for (const record of published) {
+    for (const value of [record.body, record.sourceLabel, record.sessionLabel, record.teacher]) {
+      for (const word of searchWords(value)) if (/^[a-z]{4,40}$/.test(word)) words.add(word)
+    }
+  }
+  if (!aci17) return [...words]
   for (const { session, transcript } of aci17.items) {
     for (const field of [session.name, session.sourceTitle, session.teacher, session.date]) {
       for (const word of searchWords(field ?? '')) if (/^[a-z]{4,40}$/.test(word)) words.add(word)
@@ -264,8 +281,10 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   const params = await searchParams
   const query = (params.q ?? '').trim(); const courseFilter = (params.course ?? '').trim(); const teacherFilter = (params.teacher ?? '').trim(); const typeFilter = (params.type ?? '').trim()
   const matchMode: MatchMode = params.match === 'all' ? 'all' : 'phrase'
-  const publishedACI17 = query ? await getACI17Corpus() : null
-  const rawResults = buildResults(query, matchMode, publishedACI17)
+  const [publishedACI17, managedRecords] = query
+    ? await Promise.all([getACI17Corpus(), getPublishedSearchRecords()])
+    : [null, [] as PublishedSearchRecord[]]
+  const rawResults = buildResults(query, matchMode, publishedACI17, managedRecords)
   const results = rawResults.filter((result) => (!courseFilter || result.sourceId === courseFilter) && (!teacherFilter || result.teacher === teacherFilter) && (!typeFilter || result.sessionKind === typeFilter))
   const courseOptions = Array.from(new Map(rawResults.map((result) => [result.sourceId, result.sourceLabel] as const))).sort((a, b) => a[1].localeCompare(b[1]))
   const teacherOptions = Array.from(new Set(rawResults.map((result) => result.teacher).filter(Boolean))).sort()
@@ -280,9 +299,9 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   const related: Array<WordSuggestion & { count: number }> = []
   const queryWords = searchWords(query)
   if (queryWords.length === 1 && /^[a-z]{4,40}$/.test(queryWords[0])) {
-    const options = relatedWordCandidates(query, indexedVocabulary(publishedACI17), results.length === 0, 20)
+    const options = relatedWordCandidates(query, indexedVocabulary(publishedACI17, managedRecords), results.length === 0, 20)
     for (const option of options) {
-      const count = buildResults(option.word, matchMode, publishedACI17).filter(matchesFilters).length
+      const count = buildResults(option.word, matchMode, publishedACI17, managedRecords).filter(matchesFilters).length
       if (count > 0) related.push({ ...option, count })
       if (related.length >= 6) break
     }

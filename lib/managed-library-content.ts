@@ -3,6 +3,7 @@ import { cache } from 'react'
 import { getACI17Manifest, getACI17Transcript } from '@/lib/aci17-published-content'
 import { archiveSessionSlug } from '@/content/classics/archive-route'
 import { readManagedJSON, readManagedMarkdown } from '@/lib/public-content'
+import { managedCoverUrl } from '@/lib/published-cover'
 import {
   isManagedLibraryIndex,
   isManagedLibraryManifest,
@@ -84,8 +85,12 @@ export const getPublishedLibraryOffering = cache(async (
   const base = offeringUrl(programSlug, offeringSlug)
   if (!base) return null
   const publicCourseSlug = 'course-' + programSlug.slice('classics-course-'.length)
+  // The private WebP in the offering folder wins; then a shared course cover;
+  // then an existing explicitly published /images path; otherwise no image.
+  const discoveredCover = await managedCoverUrl(programSlug, offeringSlug, true)
   return {
     ...manifest,
+    artwork: discoveredCover ?? manifest.artwork,
     source: 'managed-v1',
     href: base,
     sessions: manifest.sessions.map(session => ({

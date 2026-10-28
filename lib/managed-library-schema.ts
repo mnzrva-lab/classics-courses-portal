@@ -6,7 +6,7 @@
 export type ManagedLibraryEntry = {
   programSlug: string
   offeringSlug: string
-  source: 'managed-v1' | 'existing-aci17'
+  source: 'managed-v1' | 'existing-aci17' | 'standalone-v1'
 }
 export type ManagedLibraryIndex = {
   schemaVersion: 1
@@ -84,11 +84,13 @@ export function isManagedLibraryIndex(value: unknown): value is ManagedLibraryIn
   for (const entry of value.entries) {
     if (!isRecord(entry) || !isPublishedSlug(entry.programSlug) ||
         !isPublishedSlug(entry.offeringSlug) ||
-        (entry.source !== 'existing-aci17' && entry.source !== 'managed-v1')) return false
+        (entry.source !== 'existing-aci17' && entry.source !== 'managed-v1' && entry.source !== 'standalone-v1')) return false
     const id = entry.programSlug + '/' + entry.offeringSlug
     if (seen.has(id)) return false
     seen.add(id)
     if (entry.source === 'existing-aci17' && id !== 'classics-course-17/arizona-2026') return false
+    if (entry.source === 'standalone-v1' && entry.programSlug !== 'other-programs') return false
+    if (entry.source === 'managed-v1' && !/^classics-course-(?:[1-9]|1[0-8])$/.test(entry.programSlug)) return false
   }
   return true
 }
@@ -179,4 +181,45 @@ export function isManagedTranscript(value: unknown, session: ManagedLibrarySessi
         !session.recordingUrl.includes(videoId)) return false
   }
   return count > 0
+}
+
+
+/** One-off teachings have no fake term/class folder. All files share one root. */
+export type StandaloneTeachingManifest = {
+  schemaVersion: 1
+  teachingSlug: string
+  title: string
+  subtitle?: string
+  teacher?: string
+  date?: string
+  description?: string
+  recordingUrl?: string | null
+  transcript?: boolean
+  studyNotes?: boolean
+  artwork?: string
+  artworkAlt?: string
+  materials?: PublishedMaterialLink[]
+}
+
+export function isStandaloneTeachingManifest(value: unknown, slug: string): value is StandaloneTeachingManifest {
+  if (!isPublishedSlug(slug) || !isRecord(value) ||
+      value.schemaVersion !== 1 || value.teachingSlug !== slug ||
+      !nonempty(value.title, 250) ||
+      (value.subtitle !== undefined && !nonempty(value.subtitle, 300)) ||
+      (value.teacher !== undefined && !nonempty(value.teacher, 200)) ||
+      (value.date !== undefined && !nonempty(value.date, 80)) ||
+      (value.description !== undefined && !nonempty(value.description, 6000)) ||
+      (value.recordingUrl != null && !isApprovedExternalLink(value.recordingUrl)) ||
+      (value.transcript !== undefined && typeof value.transcript !== 'boolean') ||
+      (value.studyNotes !== undefined && typeof value.studyNotes !== 'boolean') ||
+      (value.artwork !== undefined && (!nonempty(value.artwork, 300) ||
+        !/^\/images\/[a-zA-Z0-9/_-]+\.(webp|png|jpg|jpeg)$/.test(value.artwork))) ||
+      (value.artworkAlt !== undefined && !nonempty(value.artworkAlt, 300)) ||
+      (value.materials !== undefined &&
+        (!Array.isArray(value.materials) || value.materials.length > 20 ||
+          !value.materials.every((item: unknown) =>
+            isRecord(item) && nonempty(item.label, 200) && isApprovedExternalLink(item.url))))) {
+    return false
+  }
+  return true
 }
