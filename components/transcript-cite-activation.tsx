@@ -40,20 +40,27 @@ export default function TranscriptCiteActivation() {
       }
     }
 
+    // Only quote selected text when the entire selection belongs to one
+    // transcript paragraph. Never attribute a cross-paragraph selection to
+    // a single speaker.
+    function quoteInParagraph(paragraph: HTMLElement): string {
+      const selection = window.getSelection()
+      if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return ''
+      if (paragraphFromNode(selection.anchorNode) !== paragraph ||
+          paragraphFromNode(selection.focusNode) !== paragraph) return ''
+      const copy = paragraph.querySelector('.transcript-copy')
+      if (!copy?.contains(selection.anchorNode) ||
+          !copy.contains(selection.focusNode)) return ''
+      return selection.toString().trim()
+    }
+
     function handleSelection() {
       const selection = window.getSelection()
-      if (!selection || selection.rangeCount === 0) return
-      const selectedText = selection.toString().trim()
-      if (!selectedText) return
-
-      // A quote is attributed only when both ends fall in one passage.
-      // Spanning multiple paragraphs could cross speakers.
-      const start = paragraphFromNode(selection.anchorNode)
-      const end = paragraphFromNode(selection.focusNode)
-      if (!start || start !== end) return
-      const copy = start.querySelector('.transcript-copy')
-      if (!copy?.contains(selection.anchorNode) || !copy.contains(selection.focusNode)) return
-      activate(start, selectedText)
+      if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return
+      const paragraph = paragraphFromNode(selection.anchorNode)
+      if (!paragraph) return
+      const selectedText = quoteInParagraph(paragraph)
+      if (selectedText) activate(paragraph, selectedText)
     }
 
     function handleTouchStart(event: PointerEvent) {
@@ -74,10 +81,9 @@ export default function TranscriptCiteActivation() {
       if (!target || target.closest('.library-transcript-cite')) return
       const paragraph = target.closest<HTMLElement>('[data-transcript-paragraph]')
       if (paragraph && root?.contains(paragraph) && target.closest('.transcript-copy')) {
-        const selection = window.getSelection()
-        // Do not discard a quote if this touch was the end of a selection.
-        const quote = selection?.toString().trim() ?? ''
-        activate(paragraph, quote)
+        // Preserve a genuine within-paragraph quote after touch selection.
+        // A previous selection or multiple-speaker selection cannot leak in.
+        activate(paragraph, quoteInParagraph(paragraph))
       }
     }
 
