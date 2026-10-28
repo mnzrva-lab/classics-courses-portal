@@ -25,6 +25,6 @@ See `docs/page-design-standards.md` for the full specification and known excepti
 
 ## Schedule-first class lists
 - Course 16: show ten individual verified class recording links directly on the course hub, sourced from the archived class JSON.
-- Course 18: split five paired teaching dates into ten individually linked class pages, but never split an unverified block time into invented class-specific times.
-- Living Lam Rim Term 7: list the first ten recurring Mondays as **C1 / Class 1** through **C10 / Class 10**, with the correct date shown under each title, matching Course 18. Each date-linked class page has the same derived Class # heading. These displayed ordinals are not proof of an official ten-class limit; don't invent a final date or teaching materials.
+- Course 18: split five paired teaching dates into ten individually linked class pages. The organizer confirmed **5:30–7:00 am AZ** for the first class and **7:30–9:00 am AZ** for the second. Keep 5:30–9:00 am AZ only for the overall paired countdown/schedule and remove `(shared block)` from individual class displays.
+- Living Lam Rim Term 7: keep the weekly schedule and calendar buttons in their own tinted `llr-live-term` panel. Render the class list **outside** that panel in a separate unboxed `llr-course-classes` section like Course 18. List the first ten recurring Mondays as **C1 / Class 1** through **C10 / Class 10**, with the correct date shown under each title, matching Course 18. Each date-linked class page has the same derived Class # heading. These displayed ordinals are not proof of an official ten-class limit; don't invent a final date or teaching materials.
 - Keep unlinked Reading materials hidden until approved URLs are ready. Do not discard source PDFs or fabricate URLs.

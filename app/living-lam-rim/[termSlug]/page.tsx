@@ -64,29 +64,43 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
       />
 
       {schedule ? (
-        <section className="section compact-section llr-live-term">
-          <div className="section-head">
-            <div>
-              <div className="eyebrow">Live course · Living Lam Rim Term 7</div>
-              <h2>First 10 classes</h2>
-              <p>Every Monday · {formatArizonaTimeRange(schedule)} (UTC−7)</p>
-              <p className="meta">{schedule.endDate ? `Through ${formatTermStartDate(schedule.endDate)}` : 'The final class date has not been announced.'}</p>
+        <>
+          <section className="section compact-section llr-live-term" aria-label="Weekly live schedule">
+            <div className="section-head">
+              <div>
+                <div className="eyebrow">Live course · Living Lam Rim Term 7</div>
+                <h2>Schedule</h2>
+                <p>Every Monday · {formatArizonaTimeRange(schedule)} (UTC−7)</p>
+                <p className="meta">{schedule.endDate ? 'Through ' + formatTermStartDate(schedule.endDate) : 'The final class date has not been announced.'}</p>
+              </div>
             </div>
-          </div>
-          <div className="actions llr-live-actions">
-            <a className="button sage" href="/living-lam-rim/term-7/calendar">＋ Add weekly classes to calendar</a>
-            <Link className="button" href="/calendar">View all upcoming classes</Link>
-          </div>
-          <LibrarySessionList rows={firstMondays.map((session, index) => ({
-            href: '/living-lam-rim/term-7/monday-' + session.date,
-            code: 'C' + (index + 1),
-            title: 'Class ' + (index + 1),
-            meta: formatArizonaDate(session.startsAt),
-            status: formatArizonaTimeRange(schedule),
-          }))} />
-          <p className="meta llr-calendar-note">The class labels follow the first ten Mondays in the announced schedule. The final number of classes has not been confirmed. </p>
-          <p className="meta llr-calendar-note">{schedule.endDate ? `The calendar series ends on ${formatTermStartDate(schedule.endDate)}.` : 'The calendar download repeats every Monday without an end date until the final date is confirmed.'}</p>
-        </section>
+            <div className="actions llr-live-actions">
+              <a className="button sage" href="/living-lam-rim/term-7/calendar">＋ Add weekly classes to calendar</a>
+              <Link className="button" href="/calendar">View all upcoming classes</Link>
+            </div>
+            <p className="meta llr-calendar-note">{schedule.endDate
+              ? 'The calendar series ends on ' + formatTermStartDate(schedule.endDate) + '.'
+              : 'The calendar download repeats every Monday without an end date until the final date is confirmed.'}</p>
+          </section>
+
+          <section className="section compact-section llr-course-classes" aria-label="Living Lam Rim Term 7 classes">
+            <div className="section-head">
+              <div>
+                <div className="eyebrow">Course content · Living Lam Rim Term 7</div>
+                <h2>Classes 1–10</h2>
+                <p>Choose a class to open its page. Dates follow the announced Monday schedule; materials will be added as they become available.</p>
+              </div>
+            </div>
+            <LibrarySessionList rows={firstMondays.map((session, index) => ({
+              href: '/living-lam-rim/term-7/monday-' + session.date,
+              code: 'C' + (index + 1),
+              title: 'Class ' + (index + 1),
+              meta: formatArizonaDate(session.startsAt),
+              status: formatArizonaTimeRange(schedule),
+            }))} />
+            <p className="meta llr-class-note">The list shows the first ten Mondays. It does not set the final number of classes in Term 7.</p>
+          </section>
+        </>
       ) : null}
 
       {term.sessions.length ? (

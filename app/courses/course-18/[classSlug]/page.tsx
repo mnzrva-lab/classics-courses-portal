@@ -4,7 +4,7 @@ import LibraryClassHeader from '@/components/library-class-header'
 import LibraryClassSection from '@/components/library-class-section'
 import ClassSequenceNavigation from '@/components/class-sequence-navigation'
 import { getCourse18Schedule } from '@/lib/course18-content'
-import { individualCourse18Classes, formatCourse18Date, formatCourse18BlockTime } from '@/lib/course18-individual-classes'
+import { individualCourse18Classes, formatCourse18Date, formatCourse18ClassTime } from '@/lib/course18-individual-classes'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,10 +37,8 @@ export default async function Course18ClassPage({
       <LibraryClassHeader
         eyebrow="Classics Course 18 · The Great Ideas of Buddhism, Part III"
         title={item.title}
-        meta={formatCourse18Date(block.startsAt) + ' · ' + formatCourse18BlockTime(block)}
+        meta={formatCourse18Date(block.startsAt) + ' · ' + formatCourse18ClassTime(item)}
       />
-
-      <p className="meta">This date and time are for the shared {block.label} teaching block. Individual class timings have not been confirmed separately.</p>
 
       <LibraryClassSection id="recording" eyebrow="Recording" title="Recording not added yet">
         <p className="meta">A recording for {item.title} has not yet been linked in the Library.</p>

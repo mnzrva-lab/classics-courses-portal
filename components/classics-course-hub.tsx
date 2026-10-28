@@ -5,7 +5,7 @@ import LibrarySessionList from '@/components/library-session-list'
 import { archiveSessionsFor } from '@/content/classics/archive-sessions'
 import { archiveSessionSlug } from '@/content/classics/archive-route'
 import { getCourse18Schedule } from '@/lib/course18-content'
-import { individualCourse18Classes, formatCourse18Date, formatCourse18BlockTime } from '@/lib/course18-individual-classes'
+import { individualCourse18Classes, formatCourse18Date, formatCourse18ClassTime } from '@/lib/course18-individual-classes'
 import NextClassCountdown from '@/components/next-class-countdown'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
@@ -125,7 +125,7 @@ export default async function ClassicsCourseHub({ courseSlug }: { courseSlug: st
             code: 'C' + item.number,
             title: item.title,
             meta: formatCourse18Date(item.block.startsAt),
-            status: formatCourse18BlockTime(item.block),
+            status: formatCourse18ClassTime(item),
           }))} />
         </section>
       ) : schedule.length ? (

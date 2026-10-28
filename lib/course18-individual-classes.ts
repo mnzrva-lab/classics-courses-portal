@@ -1,6 +1,8 @@
 /**
- * The ACI 18 source schedule lists five live teaching blocks, two classes each.
- * We expose ten individual class links without inventing individual start times.
+ * ACI 18 has five two-class teaching dates. The organizer confirmed on
+ * October 28, 2026 that the first class is 5:30–7:00 am AZ and the second
+ * is 7:30–9:00 am AZ. The original 5:30–9:00 am teaching block is retained
+ * for the shared live countdown and calendar.
  */
 export type Course18TeachingBlock = {
   id: string
@@ -16,9 +18,15 @@ export type Course18ClassEntry = {
   title: string
   href: string
   block: Course18TeachingBlock
+  startsAt: string
+  endsAt: string
 }
 
-/** Returns class 1..10 only when each one is backed by a scheduled teaching block. */
+const CLASS_MINUTES = 90
+const BREAK_MINUTES = 30
+const MS_PER_MINUTE = 60 * 1000
+
+/** One verified class pair produces two individual dated/time-specific entries. */
 export function individualCourse18Classes(schedule: Course18BlockSchedule): Course18ClassEntry[] {
   const entries: Course18ClassEntry[] = []
   const seen = new Set<number>()
@@ -28,14 +36,25 @@ export function individualCourse18Classes(schedule: Course18BlockSchedule): Cour
     const first = Number(pair[1])
     const second = Number(pair[2])
     if (first < 1 || second > 10 || second !== first + 1) continue
+
+    const blockStart = Date.parse(block.startsAt)
+    const blockEnd = Date.parse(block.endsAt)
+    if (!Number.isFinite(blockStart) || !Number.isFinite(blockEnd) ||
+        blockEnd - blockStart !== (CLASS_MINUTES * 2 + BREAK_MINUTES) * MS_PER_MINUTE) continue
+
     for (const number of [first, second]) {
       if (seen.has(number)) continue
       seen.add(number)
+      const minutesFromStart = number === first ? 0 : CLASS_MINUTES + BREAK_MINUTES
+      const startsAt = new Date(blockStart + minutesFromStart * MS_PER_MINUTE).toISOString()
+      const endsAt = new Date(blockStart + (minutesFromStart + CLASS_MINUTES) * MS_PER_MINUTE).toISOString()
       entries.push({
         number,
         title: 'Class ' + number,
         href: '/courses/course-18/class-' + number,
         block,
+        startsAt,
+        endsAt,
       })
     }
   }
@@ -49,12 +68,19 @@ export function formatCourse18Date(iso: string) {
   }).format(new Date(iso))
 }
 
-/** The time range belongs to the shared two-class block, not an individual class. */
-export function formatCourse18BlockTime(block: Course18TeachingBlock) {
+/** Display the organizer-confirmed class time, not the whole paired teaching block. */
+export function formatCourse18ClassTime(entry: Pick<Course18ClassEntry, 'startsAt' | 'endsAt'>) {
   const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/Phoenix',
     hour: 'numeric', minute: '2-digit', hour12: true,
   })
-  return formatter.format(new Date(block.startsAt)) + '–' +
-    formatter.format(new Date(block.endsAt)) + ' AZ (shared block)'
+  function localTime(iso: string) {
+    const parts = formatter.formatToParts(new Date(iso))
+    const part = (kind: string) => parts.find(item => item.type === kind)?.value ?? ''
+    return { clock: part('hour') + ':' + part('minute'), meridiem: part('dayPeriod').toLowerCase() }
+  }
+  const start = localTime(entry.startsAt)
+  const end = localTime(entry.endsAt)
+  return start.clock + (start.meridiem !== end.meridiem ? ' ' + start.meridiem : '') +
+    '–' + end.clock + ' ' + end.meridiem + ' AZ'
 }

@@ -91,6 +91,9 @@ jobs:
           grep -Fq 'Class 10</b>' /tmp/term7.html
           grep -Fq 'C1</span>' /tmp/term7.html
           grep -Fq 'C10</span>' /tmp/term7.html
+          grep -Fq '>Schedule</h2>' /tmp/term7.html
+          grep -Fq '>Classes 1–10</h2>' /tmp/term7.html
+          grep -Fq 'class="section compact-section llr-course-classes"' /tmp/term7.html
           curl -fsS --max-time 10 "http://127.0.0.1:3199/living-lam-rim/term-7/monday-2026-11-02" -o /tmp/term7-monday.html
           grep -Fq 'data-layout-standard="class-v1"' /tmp/term7-monday.html
           grep -Fq "Monday, November 2, 2026" /tmp/term7-monday.html
@@ -138,12 +141,20 @@ jobs:
           grep -Fq '/images/classics/course-18/arizona-2026.webp' /tmp/course18-page.html
           grep -Fq '/courses/course-18/class-1' /tmp/course18-page.html
           grep -Fq '/courses/course-18/class-10' /tmp/course18-page.html
+          grep -Fq '5:30–7:00 am AZ' /tmp/course18-page.html
+          grep -Fq '7:30–9:00 am AZ' /tmp/course18-page.html
+          if grep -Fq '(shared block)' /tmp/course18-page.html; then
+            echo "Outdated shared-block wording is still visible on Course 18"
+            exit 1
+          fi
           curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-18/class-1" -o /tmp/course18-class1.html
           grep -Fq 'data-layout-standard="class-v1"' /tmp/course18-class1.html
           grep -Fq 'Sunday, September 20, 2026' /tmp/course18-class1.html
+          grep -Fq '5:30–7:00 am AZ' /tmp/course18-class1.html
           curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-18/class-10" -o /tmp/course18-class10.html
           grep -Fq 'data-layout-standard="class-v1"' /tmp/course18-class10.html
           grep -Fq 'Sunday, January 24, 2027' /tmp/course18-class10.html
+          grep -Fq '7:30–9:00 am AZ' /tmp/course18-class10.html
           curl -fsS --max-time 10 "http://127.0.0.1:3199/living-lam-rim/term-1/class-1" -o /tmp/living-lam-rim-class.html
           grep -Fq 'data-layout-standard="class-v1"' /tmp/living-lam-rim-class.html
           grep -Fq 'id="recording"' /tmp/living-lam-rim-class.html

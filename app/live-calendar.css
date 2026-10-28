@@ -23,13 +23,8 @@
 .llr-live-term .section-head h2 { font-size: clamp(25px, 3vw, 34px); margin: 5px 0; }
 .llr-live-term .section-head p { margin: 6px 0; }
 .llr-live-actions { margin: 20px 0 12px; }
-.llr-upcoming-dates { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 0 25px; }
-.llr-upcoming-date {
-  display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap;
-  gap: 5px 12px; padding: 13px 0; border-bottom: 1px solid var(--line);
-}
-.llr-upcoming-date strong { font-size: 14px; }
-.llr-upcoming-date span { color: var(--ink-soft); font-size: 12px; }
+/* Calendar panel and course class rows are intentionally distinct surfaces. */
+.llr-course-classes .llr-class-note { margin: 18px 0 0; line-height: 1.55; }
 .llr-live-term .llr-calendar-note { margin: 17px 0 0; line-height: 1.5; }
 
 .library-calendar-feature {
@@ -79,7 +74,6 @@
   .library-calendar-row-copy { grid-column: 1; grid-row: 2; }
   .library-calendar-row-time { grid-column: 1; grid-row: 3; }
   .library-calendar-row-arrow { grid-column: 2; grid-row: 1 / 4; }
-  .llr-upcoming-dates { grid-template-columns: minmax(0,1fr); }
   .llr-live-term { padding: 18px; }
   .upcoming-feature-heading > .inline-library-link { font-size: 13px; }
 }
