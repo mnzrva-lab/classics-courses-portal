@@ -13,11 +13,11 @@ assert.deepEqual(classes.map(item => item.block.startsAt), schedule.sessions.fla
 assert.equal(formatCourse18Date(classes[2].block.startsAt), 'Sunday, October 25, 2026')
 // The organizer confirmed two individual 90-minute classes, with a 30-minute break.
 assert.deepEqual(classes.map(item => item.startsAt), schedule.sessions.flatMap(block => [
-  block.startsAt, new Date(Date.parse(block.startsAt) + 120 * 60 * 1000).toISOString(),
+  new Date(Date.parse(block.startsAt)).toISOString(), new Date(Date.parse(block.startsAt) + 120 * 60 * 1000).toISOString(),
 ]))
 assert.deepEqual(classes.map(item => item.endsAt), schedule.sessions.flatMap(block => [
   new Date(Date.parse(block.startsAt) + 90 * 60 * 1000).toISOString(),
-  block.endsAt,
+  new Date(Date.parse(block.endsAt)).toISOString(),
 ]))
 assert.equal(formatCourse18ClassTime(classes[0]), '5:30–7:00 am AZ')
 assert.equal(formatCourse18ClassTime(classes[1]), '7:30–9:00 am AZ')
