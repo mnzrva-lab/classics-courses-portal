@@ -4,7 +4,7 @@ import LibraryClassHeader from '@/components/library-class-header'
 import LibraryClassSection from '@/components/library-class-section'
 import ClassSequenceNavigation from '@/components/class-sequence-navigation'
 import RecordingPlayer from '@/components/recording-player'
-import { course18RecordingFor } from '@/lib/course18-recordings'
+import { getCourse18Recordings, course18RecordingFor } from '@/lib/course18-recordings'
 import { getCourse18Schedule } from '@/lib/course18-content'
 import { individualCourse18Classes, formatCourse18Date, formatCourse18ClassTime } from '@/lib/course18-individual-classes'
 
@@ -27,7 +27,8 @@ export default async function Course18ClassPage({
   const { block } = item
   const previous = classes[index - 1]
   const next = classes[index + 1]
-  const recording = course18RecordingFor(item.number)
+  const recordings = await getCourse18Recordings()
+  const recording = course18RecordingFor(recordings, item.number)
 
   return (
     <main className="container page">
