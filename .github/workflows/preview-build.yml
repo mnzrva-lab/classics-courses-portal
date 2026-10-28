@@ -23,6 +23,8 @@ jobs:
         run: npm install
       - name: Search matching tests
         run: node --experimental-strip-types scripts/test-search-match.mjs
+      - name: Tibetan term search tests
+        run: node --experimental-strip-types scripts/test-tibetan-term-search.mjs
       - name: Build
         run: npm run build
       - name: Smoke test exact search, term hub, and program introduction
@@ -54,6 +56,13 @@ jobs:
             exit 1
           fi
           node scripts/check-tibetan-term-rendering.mjs
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/tibetan" -o /tmp/tibetan-library.html
+          grep -Fq 'Search Tibetan terms' /tmp/tibetan-library.html
+          grep -Fq 'Saved terms' /tmp/tibetan-library.html
+          grep -Fq 'Cards' /tmp/tibetan-library.html
+          grep -Fq 'List' /tmp/tibetan-library.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/tibetan/saved" -o /tmp/tibetan-saved.html
+          grep -Fq 'My saved Tibetan terms' /tmp/tibetan-saved.html
           curl -fsS --max-time 10 "http://127.0.0.1:3199/search?q=OG%20MIN" -o /tmp/search-results.html
           if ! grep -Fq 'class="search-result-row"' /tmp/search-results.html; then
             echo "Search returned no result rows. First 2400 bytes:"
