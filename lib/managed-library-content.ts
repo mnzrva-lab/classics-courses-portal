@@ -27,8 +27,11 @@ export type PublishedLibraryClassContent = {
   studyNotes: string | null
 }
 
-function offeringUrl(programSlug: string, offeringSlug: string) {
-  return '/library/' + programSlug + '/' + offeringSlug
+function offeringUrl(programSlug: string, offeringSlug: string): string | null {
+  const match = /^classics-course-([1-9]|1[0-8])$/.exec(programSlug)
+  // A content source is not a student-facing section. New collections need
+  // explicit integration into an existing program's URL hierarchy.
+  return match ? '/courses/course-' + match[1] + '/' + offeringSlug : null
 }
 
 /** The private catalog is the only authority for new program routes. */
@@ -79,13 +82,15 @@ export const getPublishedLibraryOffering = cache(async (
   )
   if (!manifest) return null
   const base = offeringUrl(programSlug, offeringSlug)
+  if (!base) return null
+  const publicCourseSlug = 'course-' + programSlug.slice('classics-course-'.length)
   return {
     ...manifest,
     source: 'managed-v1',
     href: base,
     sessions: manifest.sessions.map(session => ({
       ...session,
-      href: base + '/' + session.slug,
+      href: '/archive/classics/' + publicCourseSlug + '/' + offeringSlug + '/' + session.slug,
     })),
   }
 })
