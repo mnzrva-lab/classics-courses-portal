@@ -85,7 +85,7 @@ function chapterStartTime(
 ): number | null {
   // A chapter begins where its first displayed paragraph begins, including
   // an explicitly marked estimate if that opening has no SRT match.
-  return paragraphTimes.get(chapter.paragraphs[0]?.id)?.seconds
+  return paragraphTimes.get(chapter.paragraphs[0].id)?.seconds
     ?? chapter.paragraphs.find(paragraph => paragraph.startSeconds !== null)?.startSeconds
     ?? chapter.startSeconds
 }
@@ -181,7 +181,7 @@ export default function ACI17PreviewReader({
           let currentSpeaker = ''
           const chapterTitle = chapter.title.replace(/[*_`]/g, '')
           const chapterTime = chapterStartTime(chapter, paragraphTimes)
-          const chapterEstimated = paragraphTimes.get(chapter.paragraphs[0]?.id)?.estimated ?? false
+          const chapterEstimated = paragraphTimes.get(chapter.paragraphs[0].id)?.estimated ?? false
           return (
             <section key={chapter.id} className="aci17-timed-chapter-group" aria-labelledby={`heading-${chapter.id}`}>
               <div className="timed-transcript-chapter" id={chapter.id} style={{ scrollMarginTop: 96 }}>
