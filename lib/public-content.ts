@@ -6,19 +6,35 @@ import 'server-only'
  * environment and must never be returned to browser clients.
  */
 const CONTENT_REPO = 'mnzrva-lab/classics-library-content'
-const PUBLISHED_FILES = {
+const ACI17_TRANSCRIPT_FILES = [
+  'classics/course-17/class-01/transcript.json',
+  'classics/course-17/class-02/transcript.json',
+  'classics/course-17/class-03/transcript.json',
+  'classics/course-17/class-04/transcript.json',
+  'classics/course-17/class-05/transcript.json',
+  'classics/course-17/class-06/transcript.json',
+  'classics/course-17/class-07/transcript.json',
+  'classics/course-17/class-08/transcript.json',
+  'classics/course-17/class-09/transcript.json',
+  'classics/course-17/class-10/transcript.json',
+] as const
+
+const PUBLISHED_FILES: Record<string, { kind: 'json' | 'markdown'; maxBytes: number }> = {
   'perfection-of-wisdom/overview.md': { kind: 'markdown', maxBytes: 20000 },
   'classics/course-18/schedule.json': { kind: 'json', maxBytes: 60000 },
   'living-lam-rim/term-7/schedule.json': { kind: 'json', maxBytes: 12000 },
   'home/latest-courses.json': { kind: 'json', maxBytes: 100000 },
   'perfection-of-wisdom/introduction-q-a-2021/first-qa-winter-2021/transcript.json': { kind: 'json', maxBytes: 100000 },
+  'classics/course-17/manifest.json': { kind: 'json', maxBytes: 60000 },
+  ...Object.fromEntries(ACI17_TRANSCRIPT_FILES.map(path => [path, { kind: 'json', maxBytes: 100000 }])),
 } as const
 
 export type PublishedMarkdownPath = 'perfection-of-wisdom/overview.md'
 export type PublishedJsonPath = 'classics/course-18/schedule.json' | 'living-lam-rim/term-7/schedule.json' | 'home/latest-courses.json'
   | 'perfection-of-wisdom/introduction-q-a-2021/first-qa-winter-2021/transcript.json'
+  | 'classics/course-17/manifest.json' | (typeof ACI17_TRANSCRIPT_FILES)[number]
 
-async function readApprovedSource(path: keyof typeof PUBLISHED_FILES): Promise<string | null> {
+async function readApprovedSource(path: PublishedMarkdownPath | PublishedJsonPath): Promise<string | null> {
   if (!Object.prototype.hasOwnProperty.call(PUBLISHED_FILES, path)) return null
 
   const token = process.env.LIBRARY_CONTENT_GITHUB_TOKEN?.trim()
@@ -27,7 +43,12 @@ async function readApprovedSource(path: keyof typeof PUBLISHED_FILES): Promise<s
   const url = `https://api.github.com/repos/${CONTENT_REPO}/contents/published/${path}?ref=main`
   try {
     const response = await fetch(url, {
-      cache: 'no-store',
+      // Cache the 11 ACI 17 source files briefly on the server so public search
+      // and glossary traffic do not trigger 11 private GitHub API calls each time.
+      // Approved edits are picked up without redeployment (within 60 seconds).
+      ...(path.startsWith('classics/course-17/')
+        ? { next: { revalidate: 60 } }
+        : { cache: 'no-store' as const }),
       headers: {
         Accept: 'application/vnd.github+json',
         Authorization: `Bearer ${token}`,

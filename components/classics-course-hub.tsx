@@ -10,6 +10,7 @@ import { course18PlaylistUrl, course18RecordingFor } from '@/lib/course18-record
 import NextClassCountdown from '@/components/next-class-countdown'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
+import { getACI17Manifest } from '@/lib/aci17-published-content'
 
 type CanonicalCourse = { canonicalNumber: number; slug: string; title: string; artwork?: string; artworkAlt?: string }
 type ArchiveOffering = {
@@ -48,7 +49,10 @@ export default async function ClassicsCourseHub({ courseSlug }: { courseSlug: st
   if (!course) notFound()
 
   const archive = archiveCatalog.courses.find((item) => item.canonicalNumber === course.canonicalNumber)
-  const offerings = archive?.offerings ?? []
+  const publishedACI17 = course.canonicalNumber === 17 ? await getACI17Manifest() : null
+  const offerings = publishedACI17
+    ? [{...publishedACI17.offering, recordingCount: publishedACI17.offering.sessions.length}]
+    : archive?.offerings ?? []
   const schedule = archive?.schedule ?? []
   const course16Sessions = course.canonicalNumber === 16 ? archiveSessionsFor(16, 'archive-2025-2026') : []
   const course18Schedule = course.canonicalNumber === 18 ? await getCourse18Schedule() : null
@@ -61,10 +65,10 @@ export default async function ClassicsCourseHub({ courseSlug }: { courseSlug: st
 
       <LibraryCourseHero
         eyebrow={'Classics Course ' + course.canonicalNumber}
-        title={course.title}
-        artwork={course.artwork ? {
-          src: course.artwork,
-          alt: course.artworkAlt ?? course.title,
+        title={publishedACI17?.title ?? course.title}
+        artwork={(publishedACI17?.artwork ?? course.artwork) ? {
+          src: (publishedACI17?.artwork ?? course.artwork)!,
+          alt: publishedACI17?.artworkAlt ?? course.artworkAlt ?? course.title,
           width: 1920,
           height: 1080,
         } : undefined}

@@ -6,7 +6,7 @@ import { perfectionGroups } from '@/content/perfection-of-wisdom/catalog'
 import { perfectionTranscripts } from '@/content/perfection-of-wisdom/transcripts'
 import { eyeOfCourageSessions, eyeOfCourageProgram, eyeOfCourageTranscripts } from '@/content/eye-of-courage'
 
-type GlossaryTerm = {
+export type GlossaryTerm = {
   term: string
   context: string
   source: string
@@ -17,7 +17,7 @@ type GlossaryTerm = {
 type Paragraph = { id: string; text: string }
 type Chapter = { paragraphs: Paragraph[] }
 
-type SourceEntry = {
+export type SourceEntry = {
   label: string
   hrefBase: string
   chapters: Chapter[]
@@ -141,12 +141,12 @@ export function transcriptTermSlug(term: string): string {
     .replace(/^-+|-+$/g, '')
 }
 
-export function transcriptGlossaryTerms(): GlossaryTerm[] {
+export function transcriptGlossaryTerms(additionalSources: SourceEntry[] = []): GlossaryTerm[] {
   const terms: GlossaryTerm[] = []
   const byTerm = new Map<string, GlossaryTerm>()
   const bracketPattern = /\[([^\[\]\n]+)\]/g
 
-  for (const source of sourceEntries()) {
+  for (const source of [...sourceEntries(), ...additionalSources]) {
     for (const chapter of source.chapters) {
       for (const paragraph of chapter.paragraphs) {
         for (const match of paragraph.text.matchAll(bracketPattern)) {

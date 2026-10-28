@@ -7,7 +7,7 @@ import TranscriptReaderToolbar from '@/components/transcript-reader-toolbar'
 import TranscriptControls from '@/components/transcript-controls'
 import TranscriptSearchHighlights from '@/components/transcript-search-highlights'
 import MarkdownContent from '@/components/markdown-content'
-import type { ACI17PreviewTranscript } from '@/lib/aci17-preview-transcript'
+import type { ACI17Transcript } from '@/lib/aci17-published-content'
 
 type ReaderSize = 'small' | 'medium' | 'large'
 
@@ -30,7 +30,7 @@ type ParagraphTime = { seconds: number; estimated: boolean }
  * interpolate their approximate start between adjacent SRT-backed anchors.
  * The estimate is never written back to the transcript source as a verified cue.
  */
-function approximateParagraphTimes(transcript: ACI17PreviewTranscript): Map<string, ParagraphTime> {
+function approximateParagraphTimes(transcript: ACI17Transcript): Map<string, ParagraphTime> {
   const paragraphs = transcript.chapters.flatMap(chapter => chapter.paragraphs)
   const result = new Map<string, ParagraphTime>()
   const weight = (text: string) => Math.max(80, text.replace(/\s/g, '').length)
@@ -84,7 +84,7 @@ function approximateParagraphTimes(transcript: ACI17PreviewTranscript): Map<stri
  * if provided, and never borrow a timestamp from a different chapter.
  */
 function chapterStartTime(
-  chapter: ACI17PreviewTranscript['chapters'][number],
+  chapter: ACI17Transcript['chapters'][number],
   paragraphTimes: Map<string, ParagraphTime>,
 ): number | null {
   // A chapter begins where its first displayed paragraph begins, including
@@ -102,7 +102,7 @@ function chapterStartTime(
 export default function ACI17PreviewReader({
   transcript, sessionTitle, sessionDate, sessionPath,
 }: {
-  transcript: ACI17PreviewTranscript
+  transcript: ACI17Transcript
   sessionTitle: string
   sessionDate: string
   sessionPath: string

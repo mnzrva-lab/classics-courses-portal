@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import SearchResultList from '@/components/search-result-list'
 import { searchScore, searchWords, type MatchMode } from '@/lib/search-match'
+import { getACI17Corpus, type ACI17Corpus } from '@/lib/aci17-published-content'
 import { relatedWordCandidates, type WordSuggestion } from '@/lib/search-word-families'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
@@ -77,11 +78,12 @@ function archiveKind(code: string, name: string) {
   return 'Class'
 }
 
-function buildResults(query: string, mode: MatchMode) {
+function buildResults(query: string, mode: MatchMode, aci17: ACI17Corpus | null = null) {
   if (!query) return [] as SearchResult[]
   const results: SearchResult[] = []
 
   for (const item of allArchiveSessions()) {
+    if (item.courseNumber === 17 && aci17) continue // ACI 17 comes from the published manifest.
     const course = classicsByNumber.get(item.courseNumber)
     if (!course) continue
     const searchable = [
@@ -113,6 +115,51 @@ function buildResults(query: string, mode: MatchMode) {
       score,
       reference: `Course ${course.canonicalNumber} · ${item.offeringLabel} · ${item.code} · Recording`,
     })
+  }
+
+  // Approved ACI 17 class data and transcripts share the same live source as its class pages.
+  if (aci17) {
+    const { manifest } = aci17
+    for (const { session, transcript, index } of aci17.items) {
+      const href = '/archive/classics/course-17/current-2026/' + archiveSessionSlug(session, index)
+      const teacher = session.teacher ?? ''
+      const details = [session.sourceTitle || session.name, teacher, session.date, session.duration].filter(Boolean).join(' · ')
+      const recordingScore = searchScore([
+        'Course 17', manifest.title, manifest.offering.label,
+        session.code, session.name, teacher, session.date,
+        session.sourceTitle ?? '',
+      ].join('\n'), query, mode)
+      if (recordingScore > 0) {
+        results.push({
+          id: 'aci17-recording-' + session.code,
+          sourceId: 'course-17', sourceLabel: 'Classics Course 17 · ' + manifest.title,
+          contextLabel: manifest.offering.label, sessionLabel: session.code + ' · ' + session.name,
+          sessionKind: 'Class', teacher, contentType: 'Recording',
+          body: details, href, score: recordingScore,
+          reference: 'Course 17 · ' + manifest.offering.label + ' · ' + session.code + ' · Recording',
+        })
+      }
+      for (const chapter of transcript?.chapters ?? []) {
+        for (const paragraph of chapter.paragraphs) {
+          const score = searchScore(paragraph.text, query, mode)
+          if (!score) continue
+          results.push({
+            id: paragraph.id,
+            sourceId: 'course-17', sourceLabel: 'Classics Course 17 · ' + manifest.title,
+            contextLabel: manifest.offering.label,
+            sessionLabel: session.code + ' · ' + session.name,
+            sessionKind: 'Class', teacher,
+            contentType: 'Transcript',
+            chapter: chapter.title.replace(/[*_\u0060]/g, ''),
+            speaker: paragraph.speaker,
+            body: paragraph.text,
+            href: href + '#' + paragraph.id,
+            score: score + 5,
+            reference: 'Course 17 · ' + manifest.offering.label + ' · ' + session.code + ' · Reference Transcript',
+          })
+        }
+      }
+    }
   }
 
   for (const [sessionId, chapters] of Object.entries(course8Transcripts)) {
@@ -162,9 +209,9 @@ function buildResults(query: string, mode: MatchMode) {
  * Later, both must be refreshed from the same published private content. */
 let indexedVocabularyCache: string[] | null = null
 
-function indexedVocabulary(): string[] {
-  if (indexedVocabularyCache) return indexedVocabularyCache
-  const words = new Set<string>()
+function indexedVocabulary(aci17: ACI17Corpus | null): string[] {
+  if (!indexedVocabularyCache) {
+    const words = new Set<string>()
   const addText = (value: string | undefined) => {
     if (!value) return
     for (const word of searchWords(value)) {
@@ -192,15 +239,33 @@ function indexedVocabulary(): string[] {
   for (const chapters of Object.values(perfectionTranscripts)) {
     for (const chapter of chapters) for (const paragraph of chapter.paragraphs) addText(paragraph.text)
   }
-  indexedVocabularyCache = [...words]
-  return indexedVocabularyCache
+    indexedVocabularyCache = [...words]
+  }
+
+  // Expand the static vocabulary with published transcripts, not bundled text.
+  if (!aci17) return indexedVocabularyCache
+  const words = new Set(indexedVocabularyCache)
+  for (const { session, transcript } of aci17.items) {
+    for (const field of [session.name, session.sourceTitle, session.teacher, session.date]) {
+      for (const word of searchWords(field ?? '')) if (/^[a-z]{4,40}$/.test(word)) words.add(word)
+    }
+    for (const chapter of transcript?.chapters ?? []) {
+      for (const paragraph of chapter.paragraphs) {
+        for (const word of searchWords(paragraph.text)) {
+          if (/^[a-z]{4,40}$/.test(word)) words.add(word)
+        }
+      }
+    }
+  }
+  return [...words]
 }
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string; course?: string; teacher?: string; type?: string; match?: string }> }) {
   const params = await searchParams
   const query = (params.q ?? '').trim(); const courseFilter = (params.course ?? '').trim(); const teacherFilter = (params.teacher ?? '').trim(); const typeFilter = (params.type ?? '').trim()
   const matchMode: MatchMode = params.match === 'all' ? 'all' : 'phrase'
-  const rawResults = buildResults(query, matchMode)
+  const publishedACI17 = query ? await getACI17Corpus() : null
+  const rawResults = buildResults(query, matchMode, publishedACI17)
   const results = rawResults.filter((result) => (!courseFilter || result.sourceId === courseFilter) && (!teacherFilter || result.teacher === teacherFilter) && (!typeFilter || result.sessionKind === typeFilter))
   const courseOptions = Array.from(new Map(rawResults.map((result) => [result.sourceId, result.sourceLabel] as const))).sort((a, b) => a[1].localeCompare(b[1]))
   const teacherOptions = Array.from(new Set(rawResults.map((result) => result.teacher).filter(Boolean))).sort()
@@ -215,9 +280,9 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   const related: Array<WordSuggestion & { count: number }> = []
   const queryWords = searchWords(query)
   if (queryWords.length === 1 && /^[a-z]{4,40}$/.test(queryWords[0])) {
-    const options = relatedWordCandidates(query, indexedVocabulary(), results.length === 0, 20)
+    const options = relatedWordCandidates(query, indexedVocabulary(publishedACI17), results.length === 0, 20)
     for (const option of options) {
-      const count = buildResults(option.word, matchMode).filter(matchesFilters).length
+      const count = buildResults(option.word, matchMode, publishedACI17).filter(matchesFilters).length
       if (count > 0) related.push({ ...option, count })
       if (related.length >= 6) break
     }

@@ -1,6 +1,9 @@
+export const revalidate = 60
+
 import Link from 'next/link'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
+import { getACI17Manifest } from '@/lib/aci17-published-content'
 
 type CatalogCourse = {
   canonicalNumber: number
@@ -37,7 +40,8 @@ function upcomingLabel(schedule: Array<{ label: string; date: string }>) {
   return `Upcoming · ${date}`
 }
 
-export default function CoursesPage() {
+export default async function CoursesPage() {
+  const publishedACI17 = await getACI17Manifest()
   return (
     <main className="container page classics-library-page">
       <div className="eyebrow">Classics library</div>
@@ -47,13 +51,15 @@ export default function CoursesPage() {
       <section className="section classics-card-grid" aria-label="The 18 Classics Courses">
         {catalog.map((course) => {
           const archive = archiveByNumber.get(course.canonicalNumber)
-          const offerings = archive?.offerings ?? []
+          const offerings = course.canonicalNumber === 17
+            ? [{ slug: publishedACI17.offering.slug, label: publishedACI17.offering.label }]
+            : archive?.offerings ?? []
           const schedule = archive?.schedule ?? []
 
           return (
             <article className="classics-card" key={course.canonicalNumber}>
               <div className="eyebrow">Course {course.canonicalNumber}</div>
-              <h2>{course.title}</h2>
+              <h2>{course.canonicalNumber === 17 ? publishedACI17.title : course.title}</h2>
 
               {offerings.length ? (
                 <div className="classics-card-offerings" aria-label={`Course ${course.canonicalNumber} offerings`}>

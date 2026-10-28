@@ -1,8 +1,11 @@
+export const revalidate = 60
+
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import CopyReference from '@/components/copy-reference'
 import TibetanHubStar from '@/components/tibetan-hub-star'
-import { transcriptGlossaryTerms, transcriptTermSlug } from '@/content/tibetan/transcript-glossary'
+import { transcriptTermSlug } from '@/content/tibetan/transcript-glossary'
+import { getPublishedGlossaryTerms } from '@/lib/published-tibetan-glossary'
 
 function passageWithHighlight(href: string, term: string) {
   const [base, anchor] = href.split('#')
@@ -18,7 +21,7 @@ export default async function TranscriptTermHub({ params }: {
   let decoded = requested
   try { decoded = decodeURIComponent(requested) } catch { /* Keep the raw URL parameter. */ }
   const requestedSlug = transcriptTermSlug(decoded)
-  const entry = transcriptGlossaryTerms().find((item) =>
+  const entry = (await getPublishedGlossaryTerms()).find((item) =>
     item.term === decoded || transcriptTermSlug(item.term) === requested || transcriptTermSlug(item.term) === requestedSlug
   )
   if (!entry) notFound()
