@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import SearchResultList from '@/components/search-result-list'
-import { searchScore, type MatchMode } from '@/lib/search-match'
+import { searchScore, searchWords, relatedWordCandidates, type MatchMode, type WordSuggestion } from '@/lib/search-match'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 import { allArchiveSessions } from '@/content/classics/archive-sessions'
@@ -156,6 +156,45 @@ function buildResults(query: string, mode: MatchMode) {
   return results.sort((a, b) => b.score - a.score || a.sourceLabel.localeCompare(b.sourceLabel))
 }
 
+
+/** Word discovery indexes the same bundled sources as the current exact search.
+ * Later, both must be refreshed from the same published private content. */
+let indexedVocabularyCache: string[] | null = null
+
+function indexedVocabulary(): string[] {
+  if (indexedVocabularyCache) return indexedVocabularyCache
+  const words = new Set<string>()
+  const addText = (value: string | undefined) => {
+    if (!value) return
+    for (const word of searchWords(value)) {
+      if (/^[a-z]{4,40}$/.test(word)) words.add(word)
+    }
+  }
+
+  for (const item of allArchiveSessions()) {
+    const course = classicsByNumber.get(item.courseNumber)
+    addText(course?.title)
+    for (const field of [item.offeringLabel, item.code, item.name, item.teacher, item.date, item.sourceTitle]) addText(field)
+  }
+  for (const session of courseData.sessions) {
+    for (const field of [courseData.course.title, courseData.offering.label, session.label, session.teacher]) addText(field)
+  }
+  for (const chapters of Object.values(course8Transcripts)) {
+    for (const chapter of chapters) for (const paragraph of chapter.paragraphs) addText(paragraph.text)
+  }
+  for (const notes of Object.values(course8StudyNotes)) {
+    for (const section of studyNoteSections(notes.markdown)) addText(section.body)
+  }
+  for (const chapters of Object.values(livingLamRimTranscripts)) {
+    for (const chapter of chapters) for (const paragraph of chapter.paragraphs) addText(paragraph.text)
+  }
+  for (const chapters of Object.values(perfectionTranscripts)) {
+    for (const chapter of chapters) for (const paragraph of chapter.paragraphs) addText(paragraph.text)
+  }
+  indexedVocabularyCache = [...words]
+  return indexedVocabularyCache
+}
+
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string; course?: string; teacher?: string; type?: string; match?: string }> }) {
   const params = await searchParams
   const query = (params.q ?? '').trim(); const courseFilter = (params.course ?? '').trim(); const teacherFilter = (params.teacher ?? '').trim(); const typeFilter = (params.type ?? '').trim()
@@ -166,6 +205,31 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   const teacherOptions = Array.from(new Set(rawResults.map((result) => result.teacher).filter(Boolean))).sort()
   const typeOptions = Array.from(new Set(rawResults.map((result) => result.sessionKind).filter(Boolean))).sort()
   const advancedActive = Boolean(courseFilter || teacherFilter || typeFilter || matchMode === 'all')
+  const matchesFilters = (result: SearchResult) =>
+    (!courseFilter || result.sourceId === courseFilter) &&
+    (!teacherFilter || result.teacher === teacherFilter) &&
+    (!typeFilter || result.sessionKind === typeFilter)
+
+  // These are separate queries with real matches, never additions to the exact count.
+  const related: Array<WordSuggestion & { count: number }> = []
+  const queryWords = searchWords(query)
+  if (queryWords.length === 1 && /^[a-z]{4,40}$/.test(queryWords[0])) {
+    const options = relatedWordCandidates(query, indexedVocabulary(), results.length === 0, 20)
+    for (const option of options) {
+      const count = buildResults(option.word, matchMode).filter(matchesFilters).length
+      if (count > 0) related.push({ ...option, count })
+      if (related.length >= 6) break
+    }
+  }
+
+  const suggestionHref = (word: string) => {
+    const link = new URLSearchParams({ q: word })
+    if (matchMode === 'all') link.set('match', 'all')
+    if (courseFilter) link.set('course', courseFilter)
+    if (teacherFilter) link.set('teacher', teacherFilter)
+    if (typeFilter) link.set('type', typeFilter)
+    return '/search?' + link.toString()
+  }
 
   return <main className="container page search-page-simple">
     <div className="eyebrow">Search</div><h1>Search the teachings</h1>
@@ -181,7 +245,19 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         <div className="actions"><button className="button sage" type="submit">Apply filters</button>{advancedActive ? <Link className="button" href={`/search?q=${encodeURIComponent(query)}`}>Clear filters</Link> : null}</div>
       </form></details>
       <section className="section search-results-simple"><div className="section-head"><div><h2>{results.length} result{results.length === 1 ? '' : 's'} for “{query}”</h2></div></div>
-        {results.length ? <SearchResultList results={results} query={query} mode={matchMode} /> : <p className="meta">No matching passages were found. Try All words (any order) in Advanced search for a broader search.</p>}
+        {related.length ? <aside className="search-word-discovery" aria-label="Other word forms with results">
+          <div className="search-word-discovery-heading">
+            <strong>{related.every((entry) => entry.kind === 'prefix') ? 'Words beginning with “' + query + '”' : 'Related word forms'}</strong>
+            <span>Separate searches; exact results stay unchanged</span>
+          </div>
+          <div className="search-word-discovery-links">
+            {related.map(({ word, count, kind }) => <Link href={suggestionHref(word)} className="search-word-discovery-link" key={word}>
+              <strong>{word}</strong><span>{count} {count === 1 ? 'result' : 'results'}</span>
+              {kind === 'prefix' ? <span className="sr-only">Word beginning with your search</span> : null}
+            </Link>)}
+          </div>
+        </aside> : null}
+        {results.length ? <SearchResultList results={results} query={query} mode={matchMode} /> : <p className="meta">No exact matches were found. {related.length ? 'Try one of the available words above.' : 'Check the spelling, or try All words (any order) in Advanced search.'}</p>}
       </section>
     </> : <section className="section search-empty"><p className="meta">Search includes the migrated Classics recording archives, Course 8 Study Notes and transcripts, Living Lam Rim transcripts, and Perfection of Wisdom transcripts. More transcript text will appear as it is added to the Library.</p></section>}
   </main>
