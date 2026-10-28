@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "publicPageRoots": [
+    "app/courses",
+    "app/living-lam-rim",
+    "app/perfection-of-wisdom",
+    "app/other-programs",
+    "app/archive/classics"
+  ],
+  "roles": {
+    "app/courses/page.tsx": "index",
+    "app/courses/[courseSlug]/page.tsx": "delegate-course",
+    "app/courses/course-8/page.tsx": "delegate-course",
+    "app/courses/[courseSlug]/[offeringSlug]/page.tsx": "course",
+    "app/courses/[courseSlug]/[offeringSlug]/[sessionSlug]/page.tsx": "legacy-exception",
+    "app/courses/course-8/taiwan-2026/page.tsx": "course",
+    "app/courses/course-8/taiwan-2026/[sessionSlug]/page.tsx": "class",
+    "app/living-lam-rim/page.tsx": "index",
+    "app/living-lam-rim/[termSlug]/page.tsx": "course",
+    "app/living-lam-rim/[termSlug]/[sessionSlug]/page.tsx": "class",
+    "app/other-programs/page.tsx": "index",
+    "app/other-programs/eye-of-courage/page.tsx": "course",
+    "app/other-programs/eye-of-courage/class-1/page.tsx": "delegate-class",
+    "app/other-programs/eye-of-courage/class-2/page.tsx": "delegate-class",
+    "app/other-programs/eye-of-courage/class-2/workshop/page.tsx": "special-exception",
+    "app/perfection-of-wisdom/page.tsx": "course",
+    "app/perfection-of-wisdom/[groupSlug]/page.tsx": "course",
+    "app/perfection-of-wisdom/[groupSlug]/[sessionSlug]/page.tsx": "class",
+    "app/archive/classics/[courseSlug]/[offeringSlug]/[sessionSlug]/page.tsx": "class"
+  },
+  "exceptions": {
+    "app/courses/[courseSlug]/[offeringSlug]/[sessionSlug]/page.tsx": "Legacy Supabase-backed session implementation kept in source for compatibility. It is not a verified current GitHub-backed public study route and must be migrated intentionally before removing this exception.",
+    "app/other-programs/eye-of-courage/class-2/workshop/page.tsx": "Dedicated interactive workbook, reached from the standard Eye of Courage class-2 page. Uses its specialized workbook layout and must retain an accessible route back to the class."
+  }
+}

@@ -15,6 +15,9 @@ export default async function PerfectionOfWisdomPage() {
 
   return (
     <main className="container page perfection-page">
+      <div className="offering-breadcrumbs">
+        <Link href="/">Home</Link><span>/</span><span>{perfectionProgram.title}</span>
+      </div>
       <LibraryCourseHero eyebrow={perfectionProgram.eyebrow} title={perfectionProgram.title}>
         <div className="perfection-intro-markdown" data-content-origin={externalIntro ? 'private-github' : 'local'}>
           <MarkdownContent content={intro} />

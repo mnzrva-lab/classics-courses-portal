@@ -27,6 +27,8 @@ jobs:
         run: node --experimental-strip-types scripts/test-tibetan-term-search.mjs
       - name: Living Lam Rim Term 7 schedule tests
         run: node --experimental-strip-types scripts/test-weekly-term7.mjs
+      - name: Verify public page design standards
+        run: node scripts/check-page-standards.mjs
       - name: Build
         run: npm run build
       - name: Smoke test exact search, term hub, and program introduction
@@ -74,6 +76,8 @@ jobs:
           curl -fsS --max-time 10 "http://127.0.0.1:3199/living-lam-rim/term-7" -o /tmp/term7.html
           grep -Fq "Open the Gift of Liberation" /tmp/term7.html
           grep -Fq "Weekly live classes" /tmp/term7.html
+          grep -Fq 'data-layout-standard="course-hero-v1"' /tmp/term7.html
+          grep -Fq 'class="library-course-hero-artwork"' /tmp/term7.html
           grep -Fq "/images/living-lam-rim/term-7/BG.webp" /tmp/term7.html
           curl -fsS --max-time 10 "http://127.0.0.1:3199/images/living-lam-rim/term-7/BG.webp" -o /tmp/term7-cover.webp
           cmp -s public/images/living-lam-rim/term-7/BG.webp /tmp/term7-cover.webp
@@ -88,6 +92,20 @@ jobs:
           curl -fsS --max-time 10 "http://127.0.0.1:3199/" -o /tmp/upcoming-home.html
           grep -Fq "Open the Gift of Liberation" /tmp/upcoming-home.html
           grep -Fq "View live calendar" /tmp/upcoming-home.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/other-programs/eye-of-courage" -o /tmp/eye-of-courage-page.html
+          grep -Fq 'data-layout-standard="course-hero-v1"' /tmp/eye-of-courage-page.html
+          grep -Fq '/eye-of-courage/cover.jpg' /tmp/eye-of-courage-page.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/eye-of-courage/cover.jpg" -o /tmp/eye-of-courage-cover.jpg
+          test -s /tmp/eye-of-courage-cover.jpg
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-8/taiwan-2026" -o /tmp/course8-offering-page.html
+          grep -Fq 'data-layout-standard="course-hero-v1"' /tmp/course8-offering-page.html
+          grep -Fq 'no-artwork' /tmp/course8-offering-page.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/living-lam-rim/term-1/class-1" -o /tmp/living-lam-rim-class.html
+          grep -Fq 'data-layout-standard="class-v1"' /tmp/living-lam-rim-class.html
+          grep -Fq 'id="recording"' /tmp/living-lam-rim-class.html
+          grep -Fq 'id="transcript"' /tmp/living-lam-rim-class.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/other-programs/eye-of-courage/class-1" -o /tmp/eye-of-courage-class.html
+          grep -Fq 'data-layout-standard="class-v1"' /tmp/eye-of-courage-class.html
           grep -Fq "/images/living-lam-rim/term-7/BG.webp" /tmp/upcoming-home.html
           curl -fsS --max-time 10 "http://127.0.0.1:3199/perfection-of-wisdom" -o /tmp/perfection-intro.html
           grep -F "String of White Lotuses" /tmp/perfection-intro.html > /dev/null
