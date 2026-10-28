@@ -67,7 +67,6 @@ export default async function ClassicsArchiveSessionPage({ params }: { params: P
         <h2>{previewTranscript || timedTranscript ? 'Reference Transcript' : 'Transcript not added yet'}</h2>
         {previewTranscript ? (
           <>
-            <div className="info-callout aci17-preview-banner"><p><strong>Preview · Unverified timecodes.</strong> This transcript was created with AI and should be checked against the original recording. Chapter and paragraph times are provisional SRT-derived starting points, not final verified video alignment. Missing times are deliberately left blank.</p></div>
             <ACI17PreviewReader transcript={previewTranscript} sessionTitle={session.name} sessionDate={session.date ?? ''} sessionPath={`/archive/classics/${course.slug}/${offering.slug}/${sessionSlug}`} />
           </>
         ) : timedTranscript ? (

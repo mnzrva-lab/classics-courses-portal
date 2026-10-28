@@ -21,6 +21,18 @@ function formatTimestamp(seconds: number | null) {
     : `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
 }
 
+
+/**
+ * The start of a chapter follows the first timed passage within it.
+ * Corrected introductory speech may have no match in the SRT, so the first
+ * paragraph itself need not be timed. Preserve the chapter's explicit anchor
+ * if provided, and never borrow a timestamp from a different chapter.
+ */
+function chapterStartTime(chapter: ACI17PreviewTranscript['chapters'][number]): number | null {
+  return chapter.paragraphs.find(paragraph => paragraph.startSeconds !== null)?.startSeconds
+    ?? chapter.startSeconds
+}
+
 /**
  * ACI 17 uses the same reader shell, sizing and time-toggle controls as the
  * original timed archive reader. The only input is the lightweight private
@@ -40,12 +52,10 @@ export default function ACI17PreviewReader({
   const [showParagraphTimes, setShowParagraphTimes] = useState(false)
   const [preferencesLoaded, setPreferencesLoaded] = useState(false)
 
-  const chapters = useMemo(() => transcript.chapters.map((chapter) => ({
-    id: chapter.id,
-    label: chapter.startSeconds === null
-      ? `${chapter.title} · time pending`
-      : `${formatTimestamp(chapter.startSeconds)} · ${chapter.title}`,
-  })), [transcript])
+  const chapters = useMemo(() => transcript.chapters.map((chapter) => {
+    const start = chapterStartTime(chapter)
+    return { id: chapter.id, label: start === null ? chapter.title : `${formatTimestamp(start)} · ${chapter.title}` }
+  }), [transcript])
 
   useEffect(() => {
     try {
@@ -104,9 +114,6 @@ export default function ACI17PreviewReader({
         </button>
       </div>
 
-      <div className="timed-transcript-helper meta">
-        Chapter times stay visible for navigation. Turn on paragraph times when you want to jump near a specific passage.
-      </div>
       <TranscriptControls chapters={chapters} />
 
       <article className="transcript-v12-card timed-transcript-card aci17-timed-transcript" data-library-transcript="true" aria-label="ACI 17 reference transcript">
@@ -115,19 +122,25 @@ export default function ACI17PreviewReader({
         {transcript.chapters.map((chapter) => {
           let currentSpeaker = ''
           const chapterTitle = chapter.title.replace(/[*_`]/g, '')
+          const chapterTime = chapterStartTime(chapter)
           return (
             <section key={chapter.id} className="aci17-timed-chapter-group" aria-labelledby={`heading-${chapter.id}`}>
               <div className="timed-transcript-chapter" id={chapter.id} style={{ scrollMarginTop: 96 }}>
-                {chapter.startSeconds !== null ? (
-                  <button type="button" className="timed-chapter-time" data-transcript-seek={chapter.startSeconds} aria-label={`Play from chapter ${formatTimestamp(chapter.startSeconds)}`}>
-                    {formatTimestamp(chapter.startSeconds)}
+                {chapterTime !== null ? (
+                  <button type="button" className="timed-chapter-time" data-transcript-seek={chapterTime} aria-label={`Play from chapter ${formatTimestamp(chapterTime)}`}>
+                    {formatTimestamp(chapterTime)}
                   </button>
-                ) : (
-                  <span className="aci17-time-pending aci17-chapter-pending" title="Chapter start needs timecode verification">Time pending</span>
-                )}
+                ) : null}
                 <div className="timed-chapter-title"><h3 id={`heading-${chapter.id}`}>{chapterTitle}</h3></div>
               </div>
-              {chapter.paragraphs.map((paragraph) => {
+              {chapter.paragraphs.map((paragraph, paragraphIndex) => {
+                // If an untimed introduction precedes the very first SRT cue,
+                // the near-zero cue must not masquerade as the start of the
+                // second paragraph in the *complete* corrected transcript.
+                const unalignedStartCue = paragraphIndex > 0 &&
+                  chapter.paragraphs[0].startSeconds === null &&
+                  paragraph.startSeconds !== null && paragraph.startSeconds < 1
+                const paragraphTime = unalignedStartCue ? null : paragraph.startSeconds
                 const announcedSpeaker = paragraph.speaker.trim().replace(/[:：]\s*$/, '')
                 const newTurn = Boolean(announcedSpeaker) && announcedSpeaker !== currentSpeaker
                 if (announcedSpeaker) currentSpeaker = announcedSpeaker
@@ -147,16 +160,14 @@ export default function ACI17PreviewReader({
                     style={{ scrollMarginTop: 96 }}
                   >
                     <div className="transcript-copy timed-transcript-copy">
-                      {paragraph.startSeconds !== null ? (
+                      {paragraphTime !== null ? (
                         <button
                           type="button"
                           className="transcript-timestamp timed-transcript-time"
-                          data-transcript-seek={paragraph.startSeconds}
-                          aria-label={`Play near this passage from ${formatTimestamp(paragraph.startSeconds)}`}
-                        >{formatTimestamp(paragraph.startSeconds)}</button>
-                      ) : (
-                        <span className="timed-transcript-time aci17-untimed-paragraph" title="Timestamp needs verification">—</span>
-                      )}
+                          data-transcript-seek={paragraphTime}
+                          aria-label={`Play near this passage from ${formatTimestamp(paragraphTime)}`}
+                        >{formatTimestamp(paragraphTime)}</button>
+                      ) : null}
                       <div className="timed-transcript-html">
                         <MarkdownContent
                           content={paragraph.text}
