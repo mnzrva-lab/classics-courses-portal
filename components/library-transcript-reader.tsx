@@ -1,4 +1,5 @@
 import CopyReference from '@/components/copy-reference'
+import TranscriptCiteActivation from '@/components/transcript-cite-activation'
 import MarkdownContent from '@/components/markdown-content'
 import type { PerfectionTranscriptChapter } from '@/content/perfection-of-wisdom/transcripts'
 
@@ -23,7 +24,9 @@ export default function LibraryTranscriptReader({
   sessionPath,
 }: Props) {
   return (
-    <article className="transcript-v12-card" aria-label="Reference transcript">
+    <article className="transcript-v12-card library-transcript-reader" aria-label="Reference transcript" data-library-transcript="true">
+      <TranscriptCiteActivation />
+      <p className="library-cite-touch-hint">Tap a paragraph to cite it. Select words to include them in the citation.</p>
       {chapters.map((chapter) => {
         let currentSpeaker = ''
         const chapterTitle = chapter.title.replace(/[*_`]/g, '')
@@ -64,7 +67,7 @@ export default function LibraryTranscriptReader({
                     />
                   </div>
                   <div className="passage-study-tools library-transcript-cite">
-                    <CopyReference reference={reference} path={`${sessionPath}#${paragraph.id}`} />
+                    <CopyReference reference={reference} path={`${sessionPath}#${paragraph.id}`} quoteFromSelection />
                   </div>
                 </div>
               )
