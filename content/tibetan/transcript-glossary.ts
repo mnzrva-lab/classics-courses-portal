@@ -123,6 +123,14 @@ function sourceEntries(): SourceEntry[] {
   return entries
 }
 
+/** Stable, URL-safe identifier. Apostrophes in Wylie spellings remain distinct. */
+export function transcriptTermSlug(term: string): string {
+  return term.normalize('NFKC').toLocaleLowerCase()
+    .replace(/['’]/g, '-apostrophe-')
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 export function transcriptGlossaryTerms(): GlossaryTerm[] {
   const terms: GlossaryTerm[] = []
   const byTerm = new Map<string, GlossaryTerm>()
