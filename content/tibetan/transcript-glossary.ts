@@ -11,7 +11,7 @@ type GlossaryTerm = {
   context: string
   source: string
   href: string
-  occurrences: Array<{ context: string; source: string; href: string }>
+  occurrences: Array<{ context: string; source: string; href: string; markedTerm: string }>
 }
 
 type Paragraph = { id: string; text: string }
@@ -63,14 +63,24 @@ function isCandidate(value: string) {
   return sourceMarkedWylie || sourceMarkedTibetan
 }
 
+/**
+ * Keep transcript excerpts faithful to the source.
+ * Only the glossary/term-page heading omits the source's [brackets].
+ * Use source offsets so punctuation and every bracketed marker stay intact.
+ */
 function contextAround(text: string, start: number, end: number) {
-  const before = cleanInline(text.slice(0, start)).split(/\s+/).filter(Boolean)
-  const middle = cleanInline(text.slice(start, end))
-  const after = cleanInline(text.slice(end)).split(/\s+/).filter(Boolean)
-  const words = [...before.slice(-11), middle, ...after.slice(0, 15)].filter(Boolean)
-  const prefix = before.length > 11 ? '…' : ''
-  const suffix = after.length > 15 ? '…' : ''
-  return `${prefix}${words.join(' ')}${suffix}`
+  const beforeTokens = Array.from(text.slice(0, start).matchAll(/\\S+/g))
+  const afterTokens = Array.from(text.slice(end).matchAll(/\\S+/g))
+  const firstWord = beforeTokens.length > 11 ? beforeTokens[beforeTokens.length - 11] : null
+  const lastWord = afterTokens.length > 15 ? afterTokens[14] : null
+
+  const excerptStart = firstWord?.index ?? 0
+  const excerptEnd = lastWord
+    ? end + (lastWord.index ?? 0) + lastWord[0].length
+    : text.length
+
+  const excerpt = text.slice(excerptStart, excerptEnd).replace(/\\s+/g, ' ').trim()
+  return `${excerptStart > 0 ? '…' : ''}${excerpt}${excerptEnd < text.length ? '…' : ''}`
 }
 
 function sourceEntries(): SourceEntry[] {
@@ -153,6 +163,7 @@ export function transcriptGlossaryTerms(): GlossaryTerm[] {
             context: contextAround(paragraph.text, start, end),
             source: source.label,
             href: `${source.hrefBase}#${paragraph.id}`,
+            markedTerm: match[0],
           }
           const existing = byTerm.get(normalized)
           if (existing) {
