@@ -25,6 +25,8 @@ jobs:
         run: node --experimental-strip-types scripts/test-search-match.mjs
       - name: Tibetan term search tests
         run: node --experimental-strip-types scripts/test-tibetan-term-search.mjs
+      - name: Living Lam Rim Term 7 schedule tests
+        run: node --experimental-strip-types scripts/test-weekly-term7.mjs
       - name: Build
         run: npm run build
       - name: Smoke test exact search, term hub, and program introduction
@@ -69,6 +71,19 @@ jobs:
             head -c 2400 /tmp/search-results.html
             exit 1
           fi
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/living-lam-rim/term-7" -o /tmp/term7.html
+          grep -Fq "Open the Gift of Liberation" /tmp/term7.html
+          grep -Fq "Weekly live classes" /tmp/term7.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/living-lam-rim/term-7/calendar" -o /tmp/term7.ics
+          grep -Fq "DTSTART:20261102T140000Z" /tmp/term7.ics
+          grep -Fq "DTEND:20261102T151500Z" /tmp/term7.ics
+          grep -Fq "RRULE:FREQ=WEEKLY;BYDAY=MO" /tmp/term7.ics
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/calendar" -o /tmp/calendar.html
+          grep -Fq "Open the Gift of Liberation" /tmp/calendar.html
+          grep -Fq "Live class calendar" /tmp/calendar.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/" -o /tmp/upcoming-home.html
+          grep -Fq "Open the Gift of Liberation" /tmp/upcoming-home.html
+          grep -Fq "View live calendar" /tmp/upcoming-home.html
           curl -fsS --max-time 10 "http://127.0.0.1:3199/perfection-of-wisdom" -o /tmp/perfection-intro.html
           grep -F "String of White Lotuses" /tmp/perfection-intro.html > /dev/null
           grep -F "Root text" /tmp/perfection-intro.html > /dev/null
