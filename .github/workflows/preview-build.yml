@@ -87,9 +87,17 @@ jobs:
           grep -Fq "/images/living-lam-rim/term-7/BG.webp" /tmp/term7.html
           grep -Fq "/living-lam-rim/term-7/monday-2026-11-02" /tmp/term7.html
           grep -Fq "/living-lam-rim/term-7/monday-2027-01-04" /tmp/term7.html
+          grep -Fq 'Class 1</b>' /tmp/term7.html
+          grep -Fq 'Class 10</b>' /tmp/term7.html
+          grep -Fq 'C1</span>' /tmp/term7.html
+          grep -Fq 'C10</span>' /tmp/term7.html
           curl -fsS --max-time 10 "http://127.0.0.1:3199/living-lam-rim/term-7/monday-2026-11-02" -o /tmp/term7-monday.html
           grep -Fq 'data-layout-standard="class-v1"' /tmp/term7-monday.html
           grep -Fq "Monday, November 2, 2026" /tmp/term7-monday.html
+          grep -Fq '>Class 1</h1>' /tmp/term7-monday.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/living-lam-rim/term-7/monday-2027-01-04" -o /tmp/term7-monday-10.html
+          grep -Fq '>Class 10</h1>' /tmp/term7-monday-10.html
+          grep -Fq 'Monday, January 4, 2027' /tmp/term7-monday-10.html
           curl -fsS --max-time 10 "http://127.0.0.1:3199/images/living-lam-rim/term-7/BG.webp" -o /tmp/term7-cover.webp
           cmp -s public/images/living-lam-rim/term-7/BG.webp /tmp/term7-cover.webp
           printf "39e65a1dfae70d658063e33a220e729cf41e614d6ba71a6c0182b52d0339439a  public/images/living-lam-rim/term-7/BG.webp\n" | sha256sum -c -

@@ -26,5 +26,5 @@ See `docs/page-design-standards.md` for the full specification and known excepti
 ## Schedule-first class lists
 - Course 16: show ten individual verified class recording links directly on the course hub, sourced from the archived class JSON.
 - Course 18: split five paired teaching dates into ten individually linked class pages, but never split an unverified block time into invented class-specific times.
-- Living Lam Rim Term 7: list the first ten recurring Mondays as dated links, without implying an end date or an official class count. Schedule placeholders explicitly say materials are not yet available.
+- Living Lam Rim Term 7: list the first ten recurring Mondays as **C1 / Class 1** through **C10 / Class 10**, with the correct date shown under each title, matching Course 18. Each date-linked class page has the same derived Class # heading. These displayed ordinals are not proof of an official ten-class limit; don't invent a final date or teaching materials.
 - Keep unlinked Reading materials hidden until approved URLs are ready. Do not discard source PDFs or fabricate URLs.

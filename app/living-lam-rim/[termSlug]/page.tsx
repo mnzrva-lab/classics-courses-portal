@@ -68,7 +68,7 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
           <div className="section-head">
             <div>
               <div className="eyebrow">Live course · Living Lam Rim Term 7</div>
-              <h2>First 10 Mondays</h2>
+              <h2>First 10 classes</h2>
               <p>Every Monday · {formatArizonaTimeRange(schedule)} (UTC−7)</p>
               <p className="meta">{schedule.endDate ? `Through ${formatTermStartDate(schedule.endDate)}` : 'The final class date has not been announced.'}</p>
             </div>
@@ -79,12 +79,12 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
           </div>
           <LibrarySessionList rows={firstMondays.map((session, index) => ({
             href: '/living-lam-rim/term-7/monday-' + session.date,
-            code: String(index + 1),
-            title: formatArizonaDate(session.startsAt),
-            meta: formatArizonaTimeRange(schedule),
-            status: 'Class details to be added',
+            code: 'C' + (index + 1),
+            title: 'Class ' + (index + 1),
+            meta: formatArizonaDate(session.startsAt),
+            status: formatArizonaTimeRange(schedule),
           }))} />
-          <p className="meta llr-calendar-note">These are the first ten dates generated from the announced weekly Monday schedule, not a confirmed ten-class limit. </p>
+          <p className="meta llr-calendar-note">The class labels follow the first ten Mondays in the announced schedule. The final number of classes has not been confirmed. </p>
           <p className="meta llr-calendar-note">{schedule.endDate ? `The calendar series ends on ${formatTermStartDate(schedule.endDate)}.` : 'The calendar download repeats every Monday without an end date until the final date is confirmed.'}</p>
         </section>
       ) : null}

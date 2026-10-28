@@ -9,7 +9,7 @@ import { formatArizonaDate, formatArizonaTimeRange } from '@/lib/weekly-term-sch
 export const dynamic = 'force-dynamic'
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000
 
-/** Date-based placeholders are not claims of a numbered/recorded class. */
+/** Class labels follow the Monday sequence; recordings and official end date remain unconfirmed. */
 export default async function Term7MondayPage({
   params,
 }: { params: Promise<{ dateSlug: string }> }) {
@@ -23,6 +23,8 @@ export default async function Term7MondayPage({
       current < first || (current - first) % WEEK_MS !== 0 ||
       (schedule.endDate && date > schedule.endDate)) notFound()
 
+  const classNumber = Math.floor((current - first) / WEEK_MS) + 1
+  const classTitle = 'Class ' + classNumber
   const previousDate = current > first ? new Date(current - WEEK_MS).toISOString().slice(0, 10) : null
   const followingDate = new Date(current + WEEK_MS).toISOString().slice(0, 10)
   const nextDate = !schedule.endDate || followingDate <= schedule.endDate ? followingDate : null
@@ -33,15 +35,15 @@ export default async function Term7MondayPage({
       <div className="offering-breadcrumbs">
         <Link href="/living-lam-rim">Living Lam Rim</Link><span>/</span>
         <Link href="/living-lam-rim/term-7">Term 7 · {schedule.title}</Link><span>/</span>
-        <span>{date}</span>
+        <span>{classTitle}</span>
       </div>
 
       <LibraryClassHeader
         eyebrow="Living Lam Rim · Term 7"
-        title={formatArizonaDate(start)}
-        meta={schedule.title + ' · ' + formatArizonaTimeRange(schedule)}
+        title={classTitle}
+        meta={formatArizonaDate(start) + ' · ' + formatArizonaTimeRange(schedule)}
       />
-      <p className="meta">This is a Monday in the announced weekly series. A class number and its materials have not been assigned yet. The final date of the series has not been announced.</p>
+      <p className="meta">This is a scheduled Monday in the {schedule.title} series. Class numbers follow the weekly dates; recordings and study materials have not been added yet. {schedule.endDate ? 'The last announced date is ' + schedule.endDate + '.' : 'The final class date has not been announced.'}</p>
 
       <LibraryClassSection id="recording" eyebrow="Recording" title="Recording not added yet">
         <p className="meta">The class recording will be linked here when it is available.</p>
@@ -53,13 +55,13 @@ export default async function Term7MondayPage({
 
       <ClassSequenceNavigation
         previous={previousDate ? {
-          href: '/living-lam-rim/term-7/monday-' + previousDate, label: 'Previous Monday',
+          href: '/living-lam-rim/term-7/monday-' + previousDate, label: 'Class ' + (classNumber - 1),
         } : null}
         next={nextDate ? {
-          href: '/living-lam-rim/term-7/monday-' + nextDate, label: 'Next Monday',
+          href: '/living-lam-rim/term-7/monday-' + nextDate, label: 'Class ' + (classNumber + 1),
         } : null}
         allHref="/living-lam-rim/term-7"
-        allLabel="All scheduled Mondays"
+        allLabel="All classes"
       />
     </main>
   )
