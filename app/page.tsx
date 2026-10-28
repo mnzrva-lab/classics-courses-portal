@@ -137,7 +137,7 @@ function getUpcomingCourses(course18Schedule: Course18Schedule, term7Schedule: W
     programLabel: 'Living Lam Rim · Term 7',
     title: term7Schedule.title,
     href: '/living-lam-rim/term-7',
-    artwork: null,
+    artwork: '/images/living-lam-rim/term-7/BG.webp',
     sessions: [],
     recurrence: term7Schedule,
   }]
