@@ -1,19 +1,18 @@
 'use client'
 
 import { useEffect } from 'react'
+import { matchRanges, type MatchMode } from '@/lib/search-match'
 
-/**
- * Highlights a search term after opening an exact passage from the results.
- * Text nodes only: never rewrite the transcript source, paragraph IDs or links.
- */
+/** Mark matching words in rendered transcripts without editing the original source. */
 export default function TranscriptSearchHighlights() {
   useEffect(() => {
-    const query = new URLSearchParams(window.location.search).get('highlight')?.trim()
+    const params = new URLSearchParams(window.location.search)
+    const query = params.get('highlight')?.trim()
     if (!query) return
-    const terms = Array.from(new Set(query.split(/\s+/).filter(Boolean))).sort((a, b) => b.length - a.length)
-    if (!terms.length) return
+    const mode: MatchMode = params.get('match') === 'all' ? 'all' : 'phrase'
     const marks: HTMLElement[] = []
     const paragraphs = document.querySelectorAll<HTMLElement>('[data-transcript-paragraph] .transcript-copy')
+
     for (const paragraph of paragraphs) {
       const walker = document.createTreeWalker(paragraph, NodeFilter.SHOW_TEXT, {
         acceptNode(node) {
@@ -24,38 +23,31 @@ export default function TranscriptSearchHighlights() {
       const nodes: Text[] = []
       while (walker.nextNode()) nodes.push(walker.currentNode as Text)
       for (const node of nodes) {
-        const original = node.data
-        const lower = original.toLocaleLowerCase()
+        const source = node.data
+        const ranges = matchRanges(source, query, mode)
+        if (!ranges.length) continue
         const fragment = document.createDocumentFragment()
-        let offset = 0
-        let found = false
-        while (offset < original.length) {
-          const term = terms.find((item) => lower.startsWith(item.toLocaleLowerCase(), offset))
-          if (term) {
-            const mark = document.createElement('mark')
-            mark.className = 'transcript-find-mark'
-            mark.textContent = original.slice(offset, offset + term.length)
-            fragment.appendChild(mark)
-            marks.push(mark)
-            found = true
-            offset += term.length
-          } else {
-            let end = offset + 1
-            while (end < original.length && !terms.some((item) => lower.startsWith(item.toLocaleLowerCase(), end))) end++
-            fragment.appendChild(document.createTextNode(original.slice(offset, end)))
-            offset = end
-          }
+        let last = 0
+        for (const range of ranges) {
+          if (range.start > last) fragment.appendChild(document.createTextNode(source.slice(last, range.start)))
+          const mark = document.createElement('mark')
+          mark.className = 'transcript-find-mark'
+          mark.textContent = source.slice(range.start, range.end)
+          fragment.appendChild(mark)
+          marks.push(mark)
+          last = range.end
         }
-        if (found) node.replaceWith(fragment)
+        if (last < source.length) fragment.appendChild(document.createTextNode(source.slice(last)))
+        node.replaceWith(fragment)
       }
     }
+
     return () => {
       for (const mark of marks) {
-        if (mark.isConnected) {
-          const parent = mark.parentNode
-          mark.replaceWith(document.createTextNode(mark.textContent ?? ''))
-          parent?.normalize()
-        }
+        if (!mark.isConnected) continue
+        const parent = mark.parentNode
+        mark.replaceWith(document.createTextNode(mark.textContent ?? ''))
+        parent?.normalize()
       }
     }
   }, [])
