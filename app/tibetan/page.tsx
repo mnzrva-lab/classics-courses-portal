@@ -1,10 +1,6 @@
 import Link from 'next/link'
-import { transcriptGlossaryTerms } from '@/content/tibetan/transcript-glossary'
+import { transcriptGlossaryTerms, transcriptTermSlug } from '@/content/tibetan/transcript-glossary'
 
-function passageWithHighlight(href: string, term: string) {
-  const [base, anchor] = href.split('#')
-  return base + '?highlight=' + encodeURIComponent(term) + (anchor ? '#' + anchor : '')
-}
 const PAGE_SIZE = 24
 
 export default async function TibetanPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
@@ -31,21 +27,7 @@ export default async function TibetanPage({ searchParams }: { searchParams: Prom
                 <p className="tibetan-term-context">{item.context}</p>
                 <div className="tibetan-term-source">{item.source}</div>
                 <div className="tibetan-term-count">{item.occurrences.length} source passage{item.occurrences.length === 1 ? '' : 's'}</div>
-                <Link href={`/tibetan/source/${encodeURIComponent(item.term)}`}>View term hub and citations →</Link>
-                {item.occurrences.length === 1 ? (
-                  <Link href={passageWithHighlight(item.href, item.term)}>Open passage →</Link>
-                ) : (
-                  <details className="tibetan-mentions">
-                    <summary>Browse all {item.occurrences.length} mentions</summary>
-                    {item.occurrences.map((mention) => (
-                      <div className="tibetan-mention" key={mention.href}>
-                        <strong>{mention.source}</strong>
-                        <p>{mention.context}</p>
-                        <Link href={passageWithHighlight(mention.href, item.term)}>Open exact passage →</Link>
-                      </div>
-                    ))}
-                  </details>
-                )}
+                <Link className="tibetan-term-hub-link" href={`/tibetan/source/${transcriptTermSlug(item.term)}`}>View term hub →</Link>
               </article>
             ))}
           </div>
