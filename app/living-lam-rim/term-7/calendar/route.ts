@@ -1,5 +1,5 @@
 import { getTerm7Schedule } from '@/lib/term7-content'
-import { weeklyTermOccurrences } from '@/lib/weekly-term-schedule'
+import { weeklyTermOccurrences, formatTermStartDate } from '@/lib/weekly-term-schedule'
 
 export const dynamic = 'force-dynamic'
 
@@ -35,16 +35,19 @@ export async function GET(request: Request) {
     'METHOD:PUBLISH',
     'X-WR-CALNAME:Living Lam Rim - Term 7',
     'BEGIN:VEVENT',
-    'UID:living-lam-rim-term7-20261102@classics-courses-portal',
+    'UID:living-lam-rim-term7@classics-courses-portal',
     'DTSTAMP:' + utcIcs(new Date().toISOString()),
     'DTSTART:' + utcIcs(first.startsAt),
     'DTEND:' + utcIcs(first.endsAt),
     'RRULE:FREQ=WEEKLY;BYDAY=MO' + (schedule.endDate ? ';UNTIL=' + utcIcs(schedule.endDate + 'T23:59:59.000Z') : ''),
     'SUMMARY:' + escapeIcs('Living Lam Rim · Term 7 · ' + schedule.title),
     'DESCRIPTION:' + escapeIcs(
-      'Weekly live classes on Mondays from November 2, 2026, 7:00-8:15 am Arizona time. ' +
-      'A final class date has not yet been announced. This repeating calendar event has no end date until confirmed.\n' +
-      'Course information: ' + courseUrl,
+      'Weekly live classes on Mondays from ' + formatTermStartDate(schedule.startDate) +
+      ', ' + schedule.startTime + '-' + schedule.endTime + ' Arizona time (UTC-7). ' +
+      (schedule.endDate
+        ? 'Last scheduled Monday: ' + formatTermStartDate(schedule.endDate) + '.'
+        : 'A final class date has not been announced. This repeating event has no end date until confirmed.') +
+      '\nCourse information: ' + courseUrl,
     ),
     'URL:' + courseUrl,
     'STATUS:CONFIRMED',
