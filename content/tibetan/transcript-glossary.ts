@@ -10,6 +10,7 @@ type GlossaryTerm = {
   context: string
   source: string
   href: string
+  occurrences: Array<{ context: string; source: string; href: string }>
 }
 
 type Paragraph = { id: string; text: string }
@@ -107,7 +108,7 @@ function sourceEntries(): SourceEntry[] {
 
 export function transcriptGlossaryTerms(): GlossaryTerm[] {
   const terms: GlossaryTerm[] = []
-  const seen = new Set<string>()
+  const byTerm = new Map<string, GlossaryTerm>()
   const bracketPattern = /\[([^\[\]\n]+)\]/g
 
   for (const source of sourceEntries()) {
@@ -123,15 +124,20 @@ export function transcriptGlossaryTerms(): GlossaryTerm[] {
           const cleanedTerm = cleanInline(match[1] ?? '')
           if (!cleanedTerm || !isCandidate(cleanedTerm)) continue
           const normalized = cleanedTerm.toLocaleLowerCase()
-          if (seen.has(normalized)) continue
-          seen.add(normalized)
-
-          terms.push({
-            term: cleanedTerm,
+          const occurrence = {
             context: contextAround(paragraph.text, start, end),
             source: source.label,
             href: `${source.hrefBase}#${paragraph.id}`,
-          })
+          }
+          const existing = byTerm.get(normalized)
+          if (existing) {
+            // Count distinct passages, not repeated matches within the same passage.
+            if (!existing.occurrences.some((item) => item.href === occurrence.href)) existing.occurrences.push(occurrence)
+          } else {
+            const item = { term: cleanedTerm, ...occurrence, occurrences: [occurrence] }
+            byTerm.set(normalized, item)
+            terms.push(item)
+          }
         }
       }
     }
