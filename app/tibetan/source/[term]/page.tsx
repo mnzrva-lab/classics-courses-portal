@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import CopyReference from '@/components/copy-reference'
+import TibetanHubStar from '@/components/tibetan-hub-star'
 import { transcriptGlossaryTerms, transcriptTermSlug } from '@/content/tibetan/transcript-glossary'
 
 function passageWithHighlight(href: string, term: string) {
@@ -28,6 +29,7 @@ export default async function TranscriptTermHub({ params }: {
       <section className="section">
         <div className="eyebrow">Transcript-derived Tibetan term</div>
         <h1>{entry.term}</h1>
+        <TibetanHubStar term={entry.term} slug={transcriptTermSlug(entry.term)} />
         <p className="lead">{entry.occurrences.length} teaching passage{entry.occurrences.length === 1 ? '' : 's'} mentioning this term</p>
         <p className="meta">This term was collected automatically from marked passages in the teaching transcripts. The original spelling and passages are preserved. This page does not claim a verified translation or dictionary definition.</p>
       </section>
