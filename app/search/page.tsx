@@ -117,7 +117,7 @@ function buildResults(query: string, mode: MatchMode) {
   for (const [sessionId, chapters] of Object.entries(course8Transcripts)) {
     const session = course8Sessions.get(sessionId); if (!session) continue
     for (const chapter of chapters) for (const paragraph of chapter.paragraphs) {
-      const score = searchScore(`${chapter.title}\n${paragraph.speaker}\n${paragraph.text}`, query, mode); if (!score) continue
+      const score = searchScore(paragraph.text, query, mode); if (!score) continue
       const href = `/courses/course-8/taiwan-2026/${session.slug}#${paragraph.id}`
       results.push({ id: paragraph.id, sourceId: courseData.course.slug, sourceLabel: `Classics Course ${courseData.course.canonicalNumber} · ${courseData.course.title}`, contextLabel: courseData.offering.label, sessionLabel: session.label, sessionKind: session.kind, teacher: session.teacher, contentType: 'Transcript', chapter: chapter.title, speaker: paragraph.speaker, body: paragraph.text, href, score: score + 5, reference: `Course ${courseData.course.canonicalNumber} · ${courseData.offering.label} · ${session.label} · Transcript` })
     }
@@ -126,7 +126,7 @@ function buildResults(query: string, mode: MatchMode) {
   for (const [sessionId, notes] of Object.entries(course8StudyNotes)) {
     const session = course8Sessions.get(sessionId); if (!session) continue
     studyNoteSections(notes.markdown).forEach((section, index) => {
-      const score = searchScore(`${section.title}\n${section.body}`, query, mode); if (!score) return
+      const score = searchScore(section.body, query, mode); if (!score) return
       const href = `/courses/course-8/taiwan-2026/${session.slug}#study-notes`
       results.push({ id: `${sessionId}-notes-${index + 1}`, sourceId: courseData.course.slug, sourceLabel: `Classics Course ${courseData.course.canonicalNumber} · ${courseData.course.title}`, contextLabel: courseData.offering.label, sessionLabel: session.label, sessionKind: session.kind, teacher: session.teacher, contentType: 'Study Notes', chapter: section.title, body: section.body.replace(/^[-*]\s+/gm, ''), href, score: score + 3, reference: `Course ${courseData.course.canonicalNumber} · ${courseData.offering.label} · ${session.label} · Study Notes` })
     })
@@ -136,7 +136,7 @@ function buildResults(query: string, mode: MatchMode) {
     const entry = lamRimSessionIndex.get(sessionId); if (!entry) continue
     const { term, session } = entry
     for (const chapter of chapters) for (const paragraph of chapter.paragraphs) {
-      const score = searchScore(`${chapter.title}\n${paragraph.speaker}\n${paragraph.text}`, query, mode); if (!score) continue
+      const score = searchScore(paragraph.text, query, mode); if (!score) continue
       const href = `/living-lam-rim/${term.slug}/${session.slug}#${paragraph.id}`
       const termLabel = `Term ${term.term}${term.title ? ` · ${term.title}` : ''}`
       results.push({ id: paragraph.id, sourceId: lamRimCatalog.program.slug, sourceLabel: lamRimCatalog.program.title, contextLabel: termLabel, sessionLabel: session.label, sessionKind: session.kind, teacher: 'Timothy Lowenhaupt', contentType: 'Transcript', chapter: chapter.title, speaker: paragraph.speaker, body: paragraph.text, href, score: score + 5, reference: `${lamRimCatalog.program.title} · ${termLabel} · ${session.label} · Transcript` })
@@ -147,7 +147,7 @@ function buildResults(query: string, mode: MatchMode) {
     const entry = perfectionSessionIndex.get(sessionId); if (!entry) continue
     const { group, session } = entry
     for (const chapter of chapters) for (const paragraph of chapter.paragraphs) {
-      const score = searchScore(`${chapter.title}\n${paragraph.speaker}\n${paragraph.text}`, query, mode); if (!score) continue
+      const score = searchScore(paragraph.text, query, mode); if (!score) continue
       const href = `/perfection-of-wisdom/${group.slug}/${session.slug}#${paragraph.id}`
       results.push({ id: paragraph.id, sourceId: perfectionProgram.slug, sourceLabel: perfectionProgram.title, contextLabel: group.title, sessionLabel: session.name, sessionKind: perfectionKind(session.name), teacher: session.teacher, contentType: 'Transcript', chapter: chapter.title.replace(/[*_`]/g, ''), speaker: paragraph.speaker, body: paragraph.text, href, score: score + 5, reference: `${perfectionProgram.title} · ${group.title} · ${session.code} · Transcript` })
     }
