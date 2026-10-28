@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import LibrarySessionList from '@/components/library-session-list'
+import LibraryCourseHero from '@/components/library-course-hero'
 import rawCatalog from '@/content/living-lam-rim/catalog.json'
 import { getTerm7Schedule } from '@/lib/term7-content'
 import { weeklyTermOccurrences, formatArizonaDate, formatArizonaTimeRange, formatTermStartDate } from '@/lib/weekly-term-schedule'
@@ -41,25 +42,25 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
     <main className="container page living-lam-rim-term-page">
       <div className="offering-breadcrumbs"><Link href="/living-lam-rim">Living Lam Rim</Link><span>/</span><span>Term {term.term}</span></div>
 
-      <header className="compact-page-head">
-        <div className="eyebrow">Term {term.term}</div>
-        <h1>{schedule?.title ?? (term.title ?? `Term ${term.term}`)}</h1>
-        <p className="lead">{schedule ? `Weekly Mondays from ${formatArizonaDate(schedule.startDate + 'T14:00:00Z')}` : term.range}</p>
-        {term.note ? <p className="meta">{term.note}</p> : null}
-      </header>
-
-      {schedule ? (
-        <figure className="llr-term-cover">
-          <img
-            src="/images/living-lam-rim/term-7/BG.webp"
-            alt="A figure overlooking a green city and mountains beneath flowing digital patterns"
-            width={1920}
-            height={1080}
-            loading="eager"
-            decoding="async"
-          />
-        </figure>
-      ) : null}
+      <LibraryCourseHero
+        eyebrow={'Living Lam Rim · Term ' + term.term}
+        title={schedule?.title ?? (term.title ?? 'Term ' + term.term)}
+        subtitle={schedule ? 'Weekly live classes' : undefined}
+        artwork={schedule ? {
+          src: '/images/living-lam-rim/term-7/BG.webp',
+          alt: 'A figure overlooking a green city and mountains beneath flowing digital patterns',
+          width: 1920,
+          height: 1080,
+          position: 'center',
+        } : undefined}
+        facts={schedule ? [
+          'From ' + formatArizonaDate(schedule.startDate + 'T14:00:00Z'),
+          'Every Monday · ' + formatArizonaTimeRange(schedule),
+        ] : [term.range, term.sessions.length + ' recording' + (term.sessions.length === 1 ? '' : 's')]}
+        description={schedule
+          ? (schedule.endDate ? 'Through ' + formatTermStartDate(schedule.endDate) : 'The final class date has not been announced.')
+          : (term.note ?? undefined)}
+      />
 
       {schedule ? (
         <section className="section compact-section llr-live-term">

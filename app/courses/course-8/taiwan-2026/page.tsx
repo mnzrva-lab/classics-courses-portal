@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import LibrarySessionList from '@/components/library-session-list'
+import LibraryCourseHero from '@/components/library-course-hero'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 import rawMaterials from '@/content/classics/course-08/taiwan-2026/materials.json'
 
@@ -82,18 +83,12 @@ export default function Course8TaiwanPage() {
         <span>{offering.label}</span>
       </div>
 
-      <section className="offering-hero no-artwork">
-        <div className="offering-hero-copy">
-          <div className="eyebrow">Classics Course {course.canonicalNumber} · {offering.label}</div>
-          <h1 className="offering-title">{course.title}</h1>
-          <p className="lead">with {offering.teachers.join(' and ')}</p>
-          <div className="offering-meta">
-            <span className="pill">Aug 18-22, 2026</span>
-            <span className="pill">{offering.location}</span>
-            <span className="pill">{offering.languages.join(' · ')}</span>
-          </div>
-        </div>
-      </section>
+      <LibraryCourseHero
+        eyebrow={'Classics Course ' + course.canonicalNumber + ' · ' + offering.label}
+        title={course.title}
+        subtitle={'with ' + offering.teachers.join(' and ')}
+        facts={['Aug 18-22, 2026', offering.location, offering.languages.join(' · ')]}
+      />
 
       <section className="section" id="materials">
         <div className="offering-section-head">

@@ -1,6 +1,6 @@
-import Image from 'next/image'
 import Link from 'next/link'
 import LibrarySessionList from '@/components/library-session-list'
+import LibraryCourseHero from '@/components/library-course-hero'
 import { eyeOfCourageProgram, eyeOfCourageSessions } from '@/content/eye-of-courage'
 
 export default function EyeOfCourageProgramPage() {
@@ -27,29 +27,18 @@ export default function EyeOfCourageProgramPage() {
     <main className="container page eoc-program-page">
       <div className="offering-breadcrumbs"><Link href="/other-programs">Other Programs</Link><span>/</span><span>{eyeOfCourageProgram.title}</span></div>
 
-      <header className="eoc-program-intro">
-        <div className="eoc-program-cover-wrap">
-          <Image
-            className="eoc-program-cover"
-            src={eyeOfCourageProgram.coverPath}
-            alt="Tigers overlooking Guadalajara at sunset"
-            fill
-            sizes="(max-width: 820px) 100vw, (max-width: 1120px) 40vw, 42vw"
-            preload
-          />
-        </div>
-        <div className="eoc-program-copy">
-          <div className="eyebrow">Special teaching · Casa Tartuk</div>
-          <h1>{eyeOfCourageProgram.title}</h1>
-          <p className="eoc-program-subtitle">{eyeOfCourageProgram.subtitle}</p>
-          <div className="eoc-program-facts" aria-label="Course details">
-            <span>{eyeOfCourageProgram.location}</span>
-            <span>{eyeOfCourageProgram.dates}</span>
-            <span>Teacher · {eyeOfCourageProgram.teacher}</span>
-          </div>
-          <p className="eoc-program-description">{eyeOfCourageProgram.description}</p>
-        </div>
-      </header>
+      <LibraryCourseHero
+        eyebrow="Special teaching · Casa Tartuk"
+        title={eyeOfCourageProgram.title}
+        subtitle={eyeOfCourageProgram.subtitle}
+        artwork={{ src: eyeOfCourageProgram.coverPath, alt: 'Tigers overlooking Guadalajara at sunset', position: '38% center' }}
+        facts={[
+          eyeOfCourageProgram.location,
+          eyeOfCourageProgram.dates,
+          'Teacher · ' + eyeOfCourageProgram.teacher,
+        ]}
+        description={eyeOfCourageProgram.description}
+      />
 
       <section className="section compact-section">
         <div className="section-head"><div><div className="eyebrow">Course content</div><h2>Classes &amp; recordings</h2></div></div>

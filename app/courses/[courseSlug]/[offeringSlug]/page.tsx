@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import LibrarySessionList from '@/components/library-session-list'
+import LibraryCourseHero from '@/components/library-course-hero'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import { archiveSessionsFor } from '@/content/classics/archive-sessions'
@@ -43,7 +44,9 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
     return (
       <main className="container page">
         <div className="offering-breadcrumbs"><Link href="/courses">Classics Courses</Link><span>/</span><Link href={`/courses/${course.slug}`}>Course {course.canonicalNumber}</Link><span>/</span><span>{offering.label}</span></div>
-        <section className="section"><div className="eyebrow">Course Offering</div><h1>{course.title}</h1><p className="lead">{offering.label}</p><Link className="inline-library-link" href={offering.internalHref}>Open course →</Link></section>
+        <LibraryCourseHero eyebrow="Course Offering" title={course.title} subtitle={offering.label}>
+          <Link className="inline-library-link" href={offering.internalHref}>Open course →</Link>
+        </LibraryCourseHero>
       </main>
     )
   }
@@ -52,12 +55,15 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
     <main className="container page compact-offering-page">
       <div className="offering-breadcrumbs"><Link href="/courses">Classics Courses</Link><span>/</span><Link href={`/courses/${course.slug}`}>Course {course.canonicalNumber}</Link><span>/</span><span>{offering.label}</span></div>
 
-      <header className="compact-page-head">
-        <div className="eyebrow">Classics Course {course.canonicalNumber} · Course Offering</div>
-        <h1>{course.title}</h1>
-        <p className="lead">{offering.label}</p>
-        {offering.playlistUrl ? <a className="inline-library-link" href={offering.playlistUrl} target="_blank" rel="noreferrer">Open playlist on YouTube ↗</a> : null}
-      </header>
+      <LibraryCourseHero
+        eyebrow={'Classics Course ' + course.canonicalNumber + ' · Course Offering'}
+        title={course.title}
+        subtitle={offering.label}
+      >
+        {offering.playlistUrl ? (
+          <a className="inline-library-link" href={offering.playlistUrl} target="_blank" rel="noreferrer">Open playlist on YouTube ↗</a>
+        ) : null}
+      </LibraryCourseHero>
 
       {sessions.length ? (
         <section className="section compact-section">

@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import LibraryCourseHero from '@/components/library-course-hero'
 import { notFound } from 'next/navigation'
 import LocalSessionTime from '@/components/local-session-time'
 import NextClassCountdown from '@/components/next-class-countdown'
@@ -58,10 +59,7 @@ export default function ClassicsCourseHub({ courseSlug }: { courseSlug: string }
     <main className="container page compact-course-hub">
       <div className="offering-breadcrumbs"><Link href="/courses">Classics Courses</Link><span>/</span><span>Course {course.canonicalNumber}</span></div>
 
-      <header className="compact-page-head">
-        <div className="eyebrow">Classics Course {course.canonicalNumber}</div>
-        <h1>{course.title}</h1>
-      </header>
+      <LibraryCourseHero eyebrow={'Classics Course ' + course.canonicalNumber} title={course.title} />
 
       {offerings.length ? (
         <section className="section compact-section">

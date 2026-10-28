@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import MarkdownContent from '@/components/markdown-content'
+import LibraryCourseHero from '@/components/library-course-hero'
 import { readPublishedMarkdown } from '@/lib/public-content'
 import { perfectionGroups, perfectionProgram } from '@/content/perfection-of-wisdom/catalog'
 
@@ -14,14 +15,12 @@ export default async function PerfectionOfWisdomPage() {
 
   return (
     <main className="container page perfection-page">
-      <header className="compact-page-head">
-        <div className="eyebrow">{perfectionProgram.eyebrow}</div>
-        <h1>{perfectionProgram.title}</h1>
+      <LibraryCourseHero eyebrow={perfectionProgram.eyebrow} title={perfectionProgram.title}>
         <div className="perfection-intro-markdown" data-content-origin={externalIntro ? 'private-github' : 'local'}>
           <MarkdownContent content={intro} />
         </div>
         <a className="inline-library-link" href={perfectionProgram.playlistUrl} target="_blank" rel="noreferrer">Open playlist on YouTube ↗</a>
-      </header>
+      </LibraryCourseHero>
 
       <section className="section compact-section">
         <div className="section-head"><div><div className="eyebrow">Course content</div><h2>Sessions</h2><p>Sessions are grouped by the teaching period in which they were offered.</p></div></div>
