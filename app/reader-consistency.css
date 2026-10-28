@@ -88,21 +88,33 @@
 }
 
 
-/* Transcript citations stay out of the reading line.
-   Desktop: a small control in a reserved top-right gutter, on hover/focus.
-   Touch: one action row is revealed only for the tapped or selected passage.
-   These selectors affect the private-GitHub transcript pilot only. */
+/* Private-GitHub transcript pilot: Cite belongs to a real, separate
+   grid column. Neither the button nor its menu can overlap spoken text. */
 .library-transcript-reader .transcript-paragraph-v12 {
-  padding-right: 84px !important;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 54px;
+  column-gap: 14px;
+  align-items: start;
+  padding: 8px 12px 9px 16px !important;
+}
+.library-transcript-reader .transcript-paragraph-v12 > .transcript-copy {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
 }
 .library-transcript-reader .transcript-paragraph-v12 > .library-transcript-cite {
-  position: absolute !important;
-  top: 8px !important;
-  right: 10px !important;
+  /* Override the older absolute-positioned passage action style. */
+  position: static !important;
+  inset: auto !important;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  align-self: start;
   margin: 0 !important;
+  padding: 0;
   opacity: 0 !important;
   pointer-events: none;
-  z-index: 3;
+  z-index: 2;
 }
 .library-transcript-reader .transcript-paragraph-v12:hover > .library-transcript-cite,
 .library-transcript-reader .transcript-paragraph-v12:focus-within > .library-transcript-cite,
@@ -111,81 +123,109 @@
   pointer-events: auto;
 }
 .library-transcript-reader .citation-menu > summary {
-  min-width: 47px;
-  min-height: 34px;
-  height: 34px;
-  padding: 0 9px;
-  font-size: 11px;
-  border-radius: 18px;
+  min-width: 50px;
+  min-height: 36px;
+  height: 36px;
+  padding: 0 10px;
   border: 1px solid var(--line);
+  border-radius: 18px;
   background: var(--paper);
+  font-size: 11px;
+  font-weight: 700;
 }
 .library-transcript-reader .citation-menu > summary:focus-visible {
   outline: 2px solid var(--sage-900);
   outline-offset: 2px;
 }
+
+/* When Cite opens, place the action on a new grid row. This keeps the
+   popup in the document flow instead of floating over the paragraph. */
+.library-transcript-reader .transcript-paragraph-v12 > .library-transcript-cite:has(.citation-menu[open]) {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  justify-self: end;
+  margin-top: 7px !important;
+}
+.library-transcript-reader .citation-menu[open] {
+  display: grid;
+  justify-items: end;
+}
+.library-transcript-reader .citation-menu[open] .citation-menu-panel {
+  position: static !important;
+  top: auto;
+  right: auto;
+  width: 196px;
+  max-width: min(240px, 78vw);
+  margin-top: 6px;
+  box-shadow: none;
+}
+.library-transcript-reader .citation-menu-panel button {
+  min-height: 40px;
+}
 .library-cite-touch-hint {
   display: none;
 }
 
+/* Mobile and touch devices: keep all buttons out of the reading layout.
+   Only the tapped, text-selected or keyboard-focused passage gains a
+   small action row below its words. */
 @media (max-width: 700px), (hover: none), (pointer: coarse) {
   .library-transcript-reader .transcript-paragraph-v12 {
-    padding-right: 8px !important;
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+    padding: 10px 8px 12px !important;
   }
-
-  /* Prevent a sticky touch :hover from exposing every Cite control. */
-  .library-transcript-reader .transcript-paragraph-v12:not([data-cite-active]):not(:focus-within) > .library-transcript-cite {
-    opacity: 0 !important;
-    pointer-events: none !important;
+  .library-transcript-reader .transcript-paragraph-v12 > .transcript-copy {
+    grid-column: 1;
+    grid-row: 1;
   }
-
-  /* The inactive controls take no space, but remain keyboard-focusable. */
   .library-transcript-reader .transcript-paragraph-v12 > .library-transcript-cite {
     position: absolute !important;
+    grid-column: 1;
+    grid-row: 2;
     top: 0 !important;
     right: 0 !important;
     width: 1px;
     height: 1px;
-    padding: 0;
-    margin: 0 !important;
     overflow: hidden;
     clip-path: inset(50%);
     opacity: 0 !important;
     pointer-events: none;
+    margin: 0 !important;
   }
   .library-transcript-reader .transcript-paragraph-v12[data-cite-active] > .library-transcript-cite,
   .library-transcript-reader .transcript-paragraph-v12:focus-within > .library-transcript-cite {
     position: static !important;
-    top: auto !important;
-    right: auto !important;
+    inset: auto !important;
+    grid-column: 1;
+    grid-row: 2;
     width: auto;
     height: auto;
     overflow: visible;
     clip-path: none;
     display: flex;
+    justify-self: stretch;
     justify-content: flex-end;
-    margin-top: 5px !important;
+    margin-top: 6px !important;
     opacity: 1 !important;
     pointer-events: auto;
   }
-  .library-transcript-reader .citation-menu > summary {
-    min-width: 50px;
-    min-height: 42px;
-    height: 42px;
-    font-size: 12px;
+  /* Suppress sticky touch hover for inactive passages. */
+  .library-transcript-reader .transcript-paragraph-v12:not([data-cite-active]):not(:focus-within) > .library-transcript-cite {
+    opacity: 0 !important;
+    pointer-events: none !important;
   }
-  .library-transcript-reader .citation-menu[open] {
-    display: grid;
-    justify-items: end;
-  }
-  /* Expanded citation choices push the next paragraph down, never cover it. */
-  .library-transcript-reader .citation-menu[open] .citation-menu-panel {
+  .library-transcript-reader .transcript-paragraph-v12 > .library-transcript-cite:has(.citation-menu[open]) {
     position: static !important;
-    top: auto;
-    right: auto;
-    width: min(240px, 78vw);
-    margin-top: 6px;
-    box-shadow: none;
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: stretch;
+  }
+  .library-transcript-reader .citation-menu > summary {
+    min-width: 52px;
+    min-height: 44px;
+    height: 44px;
+    font-size: 12px;
   }
   .library-transcript-reader .citation-menu-panel button {
     min-height: 44px;
@@ -196,5 +236,11 @@
     color: var(--ink-soft);
     font-size: 13px;
     line-height: 1.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .library-transcript-reader .library-transcript-cite {
+    transition: none;
   }
 }
