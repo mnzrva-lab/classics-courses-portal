@@ -79,8 +79,14 @@ function approximateParagraphTimes(transcript: ACI17PreviewTranscript): Map<stri
  * paragraph itself need not be timed. Preserve the chapter's explicit anchor
  * if provided, and never borrow a timestamp from a different chapter.
  */
-function chapterStartTime(chapter: ACI17PreviewTranscript['chapters'][number]): number | null {
-  return chapter.paragraphs.find(paragraph => paragraph.startSeconds !== null)?.startSeconds
+function chapterStartTime(
+  chapter: ACI17PreviewTranscript['chapters'][number],
+  paragraphTimes: Map<string, ParagraphTime>,
+): number | null {
+  // A chapter begins where its first displayed paragraph begins, including
+  // an explicitly marked estimate if that opening has no SRT match.
+  return paragraphTimes.get(chapter.paragraphs[0]?.id)?.seconds
+    ?? chapter.paragraphs.find(paragraph => paragraph.startSeconds !== null)?.startSeconds
     ?? chapter.startSeconds
 }
 
@@ -105,9 +111,9 @@ export default function ACI17PreviewReader({
   const paragraphTimes = useMemo(() => approximateParagraphTimes(transcript), [transcript])
 
   const chapters = useMemo(() => transcript.chapters.map((chapter) => {
-    const start = chapterStartTime(chapter)
+    const start = chapterStartTime(chapter, paragraphTimes)
     return { id: chapter.id, label: start === null ? chapter.title : `${formatTimestamp(start)} · ${chapter.title}` }
-  }), [transcript])
+  }), [transcript, paragraphTimes])
 
   useEffect(() => {
     try {
@@ -174,12 +180,13 @@ export default function ACI17PreviewReader({
         {transcript.chapters.map((chapter) => {
           let currentSpeaker = ''
           const chapterTitle = chapter.title.replace(/[*_`]/g, '')
-          const chapterTime = chapterStartTime(chapter)
+          const chapterTime = chapterStartTime(chapter, paragraphTimes)
+          const chapterEstimated = paragraphTimes.get(chapter.paragraphs[0]?.id)?.estimated ?? false
           return (
             <section key={chapter.id} className="aci17-timed-chapter-group" aria-labelledby={`heading-${chapter.id}`}>
               <div className="timed-transcript-chapter" id={chapter.id} style={{ scrollMarginTop: 96 }}>
                 {chapterTime !== null ? (
-                  <button type="button" className="timed-chapter-time" data-transcript-seek={chapterTime} aria-label={`Play from chapter ${formatTimestamp(chapterTime)}`}>
+                  <button type="button" className={`timed-chapter-time${chapterEstimated ? ' aci17-estimated' : ''}`} data-transcript-seek={chapterTime} aria-label={`Play from chapter ${formatTimestamp(chapterTime)}`}>
                     {formatTimestamp(chapterTime)}
                   </button>
                 ) : null}
