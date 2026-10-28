@@ -1,103 +1,77 @@
-import Link from 'next/link'
+import LibraryCalendarExplorer, { type LiveCalendarCourse } from '@/components/library-calendar-explorer'
 import { getCourse18Schedule } from '@/lib/course18-content'
 import { getTerm7Schedule } from '@/lib/term7-content'
-import { weeklyTermOccurrences, formatArizonaDate, formatArizonaTimeRange, formatTermStartDate } from '@/lib/weekly-term-schedule'
+import { individualCourse18Classes } from '@/lib/course18-individual-classes'
+import { weeklyTermOccurrences } from '@/lib/weekly-term-schedule'
 
 export const dynamic = 'force-dynamic'
-
-type CalendarItem = {
-  id: string
-  title: string
-  program: string
-  startsAt: string
-  endsAt: string
-  href: string
-  repeats: boolean
-}
-
-function azDate(iso: string) {
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Phoenix',
-    weekday: 'short', month: 'short', day: 'numeric', year: 'numeric',
-  }).format(new Date(iso))
-}
-
-function azTime(iso: string) {
-  return new Intl.DateTimeFormat('en-US', {
-    timeZone: 'America/Phoenix',
-    hour: 'numeric', minute: '2-digit', hour12: true,
-  }).format(new Date(iso))
-}
 
 export default async function CalendarPage() {
   const [term7, course18] = await Promise.all([getTerm7Schedule(), getCourse18Schedule()])
   const now = Date.now()
-  const recurring: CalendarItem[] = weeklyTermOccurrences(term7, now, 12).map((session) => ({
-    id: session.id,
-    title: term7.title,
-    program: 'Living Lam Rim · Term 7',
-    startsAt: session.startsAt,
-    endsAt: session.endsAt,
-    href: '/living-lam-rim/term-7',
-    repeats: true,
-  }))
-  const course18Events: CalendarItem[] = course18.sessions
-    .filter((session) => Date.parse(session.endsAt) > now)
-    .map((session) => ({
-      id: session.id,
-      title: session.label,
-      program: 'Classics Course 18 · The Great Ideas of Buddhism, Part III',
-      startsAt: session.startsAt,
-      endsAt: session.endsAt,
+  const course18Classes = individualCourse18Classes(course18)
+  const firstCourse18 = course18Classes[0]
+  const lastCourse18 = course18Classes[course18Classes.length - 1]
+
+  // Show 16 Mondays from the beginning or the most recent Monday, whichever is later.
+  // A rolling window is not an announced final class count.
+  const firstTerm7Start = Date.parse(term7.startDate + 'T' + term7.startTime + ':00-07:00')
+  const mondayWindow = Math.max(firstTerm7Start, now - 7 * 24 * 60 * 60 * 1000)
+  const term7Dates = weeklyTermOccurrences(term7, mondayWindow, 16)
+  const term7First = term7Dates[0]
+  const term7Last = term7Dates[term7Dates.length - 1]
+
+  const courses: LiveCalendarCourse[] = [
+    {
+      id: 'course18',
+      label: 'Classics Course 18',
+      title: 'The Great Ideas of Buddhism, Part III',
+      artwork: '/images/classics/course-18/arizona-2026.webp',
+      artworkAlt: 'Moon reflected in a dark cup of tea',
       href: '/courses/course-18',
-      repeats: false,
-    }))
+      startsAt: firstCourse18?.startsAt ?? course18.sessions[0].startsAt,
+      endsAt: lastCourse18?.endsAt ?? course18.sessions[course18.sessions.length - 1].endsAt,
+      cadence: 'Five teaching dates, with two classes on each date.',
+      scheduleNote: 'All 10 published classes are listed, including earlier classes. Class times follow the confirmed 5:30–7:00 am and 7:30–9:00 am Arizona schedule.',
+      palette: 'classics',
+      events: course18Classes.map((entry) => ({
+        id: 'c18-class-' + entry.number,
+        title: entry.title,
+        number: entry.number,
+        href: entry.href,
+        startsAt: entry.startsAt,
+        endsAt: entry.endsAt,
+      })),
+    },
+    {
+      id: 'term7',
+      label: 'Living Lam Rim · Term 7',
+      title: term7.title,
+      artwork: '/images/living-lam-rim/term-7/BG.webp',
+      artworkAlt: 'Living Lam Rim Term 7 original teaching cover',
+      href: '/living-lam-rim/term-7',
+      calendarHref: '/living-lam-rim/term-7/calendar',
+      startsAt: new Date(firstTerm7Start).toISOString(),
+      endsAt: term7.endDate ? new Date(term7.endDate + 'T23:59:59-07:00').toISOString() : null,
+      cadence: 'Every Monday · 7:00–8:15 am Arizona time',
+      scheduleNote: term7.endDate
+        ? 'Published weekly dates through the announced end date. This list shows the next scheduled Mondays.'
+        : 'Recurring series. The final class date has not been announced. Dates shown are a rolling schedule, not the full length of the course.',
+      palette: 'lamrim',
+      events: term7Dates.map((entry) => {
+        const days = Math.round((Date.parse(entry.date + 'T12:00:00Z') - Date.parse(term7.startDate + 'T12:00:00Z')) / (7 * 86400000))
+        const number = days + 1
+        return {
+          id: entry.id,
+          title: 'Class ' + number,
+          number,
+          href: '/living-lam-rim/term-7/monday-' + entry.date,
+          startsAt: entry.startsAt,
+          endsAt: entry.endsAt,
+        }
+      }),
+    },
+  ]
 
-  const events = [...recurring, ...course18Events]
-    .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt))
-    .slice(0, 16)
-
-  return (
-    <main className="container page library-calendar-page">
-      <div className="eyebrow">Teaching library</div>
-      <h1>Live class calendar</h1>
-      <p className="lead">Upcoming live classes and weekly teaching sessions, shown in Arizona time.</p>
-
-      <section className="library-calendar-feature" aria-label="Living Lam Rim Term 7 weekly schedule">
-        <div className="eyebrow">Starts {formatArizonaDate(term7.startDate + 'T14:00:00Z')}</div>
-        <h2>Living Lam Rim · Term 7</h2>
-        <h3>{term7.title}</h3>
-        <p>Every Monday · {formatArizonaTimeRange(term7)} (UTC−7)</p>
-        <p className="meta">{term7.endDate ? `Weekly Mondays through ${formatTermStartDate(term7.endDate)}.` : 'Weekly classes continue on Mondays. The final class date has not been announced.'}</p>
-        <div className="actions">
-          <Link className="button sage" href="/living-lam-rim/term-7">View course</Link>
-          <a className="button" href="/living-lam-rim/term-7/calendar">＋ Add recurring classes to calendar</a>
-        </div>
-      </section>
-
-      <section className="section compact-section">
-        <div className="section-head">
-          <div>
-            <div className="eyebrow">Upcoming</div>
-            <h2>Live sessions</h2>
-            <p>Showing the next published classes and the next Mondays in the weekly series.</p>
-          </div>
-        </div>
-        <div className="library-calendar-agenda">
-          {events.map((event) => (
-            <Link className="library-calendar-row" href={event.href} key={event.id}>
-              <time dateTime={event.startsAt} className="library-calendar-row-date">{azDate(event.startsAt)}</time>
-              <div className="library-calendar-row-copy">
-                <small>{event.program}</small>
-                <strong>{event.title}</strong>
-                {event.repeats ? <span>Weekly Mondays</span> : null}
-              </div>
-              <span className="library-calendar-row-time">{azTime(event.startsAt)}–{azTime(event.endsAt)} AZ</span>
-              <span aria-hidden="true" className="library-calendar-row-arrow">→</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-    </main>
-  )
+  return <LibraryCalendarExplorer courses={courses} generatedAt={new Date(now).toISOString()} />
 }
