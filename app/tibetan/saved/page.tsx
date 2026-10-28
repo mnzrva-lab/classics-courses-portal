@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import TibetanTermBrowser from '@/components/tibetan-term-browser'
-import { transcriptGlossaryTerms, transcriptTermSlug } from '@/content/tibetan/transcript-glossary'
+import { transcriptTermSlug } from '@/content/tibetan/transcript-glossary'
+import { getPublishedGlossaryTerms } from '@/lib/published-tibetan-glossary'
 
-export default function SavedTibetanTermsPage() {
-  const terms = transcriptGlossaryTerms().map((item) => ({
+export default async function SavedTibetanTermsPage() {
+  const terms = (await getPublishedGlossaryTerms()).map((item) => ({
     term: item.term,
     slug: transcriptTermSlug(item.term),
     context: item.context,
