@@ -1,0 +1,85 @@
+/* Upcoming weekly teachings and the public teaching-calendar agenda. */
+.upcoming-more-courses { margin-top: 22px; }
+.upcoming-more-courses > .eyebrow { margin-bottom: 9px; }
+.upcoming-more-row {
+  display: grid;
+  grid-template-columns: minmax(160px, .8fr) minmax(0, 1.6fr) auto 20px;
+  align-items: center;
+  gap: 14px;
+  border-top: 1px solid var(--line);
+  padding: 13px 4px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.upcoming-more-row:last-child { border-bottom: 1px solid var(--line); }
+.upcoming-more-row > span:first-child { font-size: 12px; font-weight: 800; color: var(--sage-900); }
+.upcoming-more-row strong { font-size: 15px; }
+.upcoming-more-row > span:nth-last-child(2) { font-size: 13px; color: var(--ink-soft); white-space: nowrap; }
+.upcoming-more-row > span:last-child { font-size: 20px; color: var(--sage-900); text-align: right; }
+.upcoming-more-row:hover strong { text-decoration: underline; text-underline-offset: 3px; }
+
+.llr-live-term { padding: 23px; background: var(--sage-050); border: 1px solid var(--line); border-radius: 20px; }
+.llr-live-term .section-head { margin-bottom: 14px; }
+.llr-live-term .section-head h2 { font-size: clamp(25px, 3vw, 34px); margin: 5px 0; }
+.llr-live-term .section-head p { margin: 6px 0; }
+.llr-live-actions { margin: 20px 0 12px; }
+.llr-upcoming-dates { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 0 25px; }
+.llr-upcoming-date {
+  display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap;
+  gap: 5px 12px; padding: 13px 0; border-bottom: 1px solid var(--line);
+}
+.llr-upcoming-date strong { font-size: 14px; }
+.llr-upcoming-date span { color: var(--ink-soft); font-size: 12px; }
+.llr-live-term .llr-calendar-note { margin: 17px 0 0; line-height: 1.5; }
+
+.library-calendar-feature {
+  padding: clamp(20px, 3.5vw, 35px);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--sage-050);
+  margin-top: 25px;
+}
+.library-calendar-feature h2 { font-size: clamp(20px, 2.6vw, 29px); margin: 9px 0 7px; }
+.library-calendar-feature h3 { font-size: clamp(25px, 3.5vw, 37px); margin: 0 0 15px; letter-spacing: -.025em; }
+.library-calendar-feature > p { margin: 9px 0; line-height: 1.6; }
+.library-calendar-feature > .actions { margin-top: 19px; }
+.library-calendar-agenda { display: grid; }
+.library-calendar-row {
+  display: grid;
+  grid-template-columns: minmax(130px, .85fr) minmax(200px, 2fr) minmax(180px, .9fr) 20px;
+  align-items: center;
+  gap: 17px;
+  padding: 19px 3px;
+  border-top: 1px solid var(--line);
+  text-decoration: none;
+  color: var(--ink);
+}
+.library-calendar-row:last-child { border-bottom: 1px solid var(--line); }
+.library-calendar-row-date { font-size: 14px; font-weight: 750; color: var(--sage-900); }
+.library-calendar-row-copy { display: grid; gap: 3px; }
+.library-calendar-row-copy small { color: var(--ink-soft); font-size: 12px; }
+.library-calendar-row-copy strong { font-size: 16px; line-height: 1.35; }
+.library-calendar-row-copy span { font-size: 12px; color: var(--ink-soft); }
+.library-calendar-row-time { font-variant-numeric: tabular-nums; font-size: 13px; white-space: nowrap; }
+.library-calendar-row-arrow { color: var(--sage-900); text-align: right; font-size: 20px; }
+.library-calendar-row:hover .library-calendar-row-copy strong { text-decoration: underline; text-underline-offset: 3px; }
+
+@media (max-width: 850px) {
+  .library-calendar-row { grid-template-columns: 135px minmax(0,1fr) 20px; gap: 12px; }
+  .library-calendar-row-time { grid-column: 2; grid-row: 2; }
+  .library-calendar-row-arrow { grid-column: 3; grid-row: 1 / 3; }
+  .upcoming-more-row { grid-template-columns: 1fr auto; gap: 5px 11px; }
+  .upcoming-more-row strong { grid-column: 1; }
+  .upcoming-more-row > span:nth-last-child(2) { grid-column: 1; }
+  .upcoming-more-row > span:last-child { grid-column: 2; grid-row: 1 / 4; }
+}
+@media (max-width: 620px) {
+  .library-calendar-row { grid-template-columns: minmax(0,1fr) 20px; gap: 7px 10px; }
+  .library-calendar-row-date { grid-column: 1; grid-row: 1; }
+  .library-calendar-row-copy { grid-column: 1; grid-row: 2; }
+  .library-calendar-row-time { grid-column: 1; grid-row: 3; }
+  .library-calendar-row-arrow { grid-column: 2; grid-row: 1 / 4; }
+  .llr-upcoming-dates { grid-template-columns: minmax(0,1fr); }
+  .llr-live-term { padding: 18px; }
+  .upcoming-feature-heading > .inline-library-link { font-size: 13px; }
+}
