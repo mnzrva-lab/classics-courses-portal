@@ -98,7 +98,6 @@ export default function SiteNavigation({ isAdmin, currentCourse, perfectionHref,
           <SidebarLink pathname={pathname} href="/" icon="⌂">Home</SidebarLink>
           <div className="sidebar-label">Courses</div>
           <SidebarLink pathname={pathname} href="/courses" icon="▤">Classics Courses</SidebarLink>
-          <SidebarLink pathname={pathname} href="/library" icon="▦">Published Library</SidebarLink>
           <SidebarLink pathname={pathname} href="/living-lam-rim" icon="◌">Living Lam Rim</SidebarLink>
           <SidebarLink pathname={pathname} href={perfectionHref} icon="◇">Perfection of Wisdom</SidebarLink>
           <SidebarLink pathname={pathname} href="/other-programs" icon="◫">Other Programs</SidebarLink>
@@ -124,7 +123,6 @@ export default function SiteNavigation({ isAdmin, currentCourse, perfectionHref,
             <Link href="/living-lam-rim" onClick={closeMore}>Living Lam Rim</Link>
             <Link href={perfectionHref} onClick={closeMore}>Perfection of Wisdom</Link>
             <Link href="/other-programs" onClick={closeMore}>Other Programs</Link>
-            <Link href="/library" onClick={closeMore}>Published Library</Link>
             <Link href="/meditations" onClick={closeMore}>Meditations</Link>
             <Link href="/tibetan" onClick={closeMore}>Tibetan</Link>
             {personalStudyEnabled ? <Link href="/my-learning" onClick={closeMore}>My Learning</Link> : null}
