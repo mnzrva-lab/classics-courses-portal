@@ -1,0 +1,1900 @@
+{
+  "schemaVersion": 1,
+  "classes": {
+    "class-1": {
+      "youtubeVideoId": "x6AY_fEKo-0",
+      "paragraphs": {
+        "class-1-paragraph-1": {
+          "startSeconds": 8,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p001"
+        },
+        "class-1-paragraph-2": {
+          "startSeconds": 144,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p002"
+        },
+        "class-1-paragraph-3": {
+          "startSeconds": 241,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p003"
+        },
+        "class-1-paragraph-4": {
+          "startSeconds": 314,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p004"
+        },
+        "class-1-paragraph-5": {
+          "startSeconds": 442,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p005"
+        },
+        "class-1-paragraph-6": {
+          "startSeconds": 514,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p006"
+        },
+        "class-1-paragraph-7": {
+          "startSeconds": 548,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p007"
+        },
+        "class-1-paragraph-8": {
+          "startSeconds": 604,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p008"
+        },
+        "class-1-paragraph-9": {
+          "startSeconds": 609,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p009"
+        },
+        "class-1-paragraph-10": {
+          "startSeconds": 617,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p010"
+        },
+        "class-1-paragraph-11": {
+          "startSeconds": 617,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p011"
+        },
+        "class-1-paragraph-12": {
+          "startSeconds": 687,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p012"
+        },
+        "class-1-paragraph-13": {
+          "startSeconds": 783,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p013"
+        },
+        "class-1-paragraph-14": {
+          "startSeconds": 867,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p014"
+        },
+        "class-1-paragraph-15": {
+          "startSeconds": 906,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p015"
+        },
+        "class-1-paragraph-16": {
+          "startSeconds": 952,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p016"
+        },
+        "class-1-paragraph-17": {
+          "startSeconds": 1031,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p017"
+        },
+        "class-1-paragraph-18": {
+          "startSeconds": 1136,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p018"
+        },
+        "class-1-paragraph-19": {
+          "startSeconds": 1173,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p019"
+        },
+        "class-1-paragraph-20": {
+          "startSeconds": 1263,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p020"
+        },
+        "class-1-paragraph-21": {
+          "startSeconds": 1284,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p021"
+        },
+        "class-1-paragraph-22": {
+          "startSeconds": 1361,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p022"
+        },
+        "class-1-paragraph-23": {
+          "startSeconds": 1450,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p023"
+        },
+        "class-1-paragraph-24": {
+          "startSeconds": 1510,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p024"
+        },
+        "class-1-paragraph-25": {
+          "startSeconds": 1577,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p025"
+        },
+        "class-1-paragraph-26": {
+          "startSeconds": 1656,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p026"
+        },
+        "class-1-paragraph-27": {
+          "startSeconds": 1685,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p027"
+        },
+        "class-1-paragraph-28": {
+          "startSeconds": 1688,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p028"
+        },
+        "class-1-paragraph-29": {
+          "startSeconds": 1744,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p029"
+        },
+        "class-1-paragraph-30": {
+          "startSeconds": 1810,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p030"
+        },
+        "class-1-paragraph-31": {
+          "startSeconds": 1817,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p031"
+        },
+        "class-1-paragraph-32": {
+          "startSeconds": 1907,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p032"
+        },
+        "class-1-paragraph-33": {
+          "startSeconds": 1923,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p033"
+        },
+        "class-1-paragraph-34": {
+          "startSeconds": 1931,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p034"
+        },
+        "class-1-paragraph-35": {
+          "startSeconds": 1980,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p035"
+        },
+        "class-1-paragraph-36": {
+          "startSeconds": 2049,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p036"
+        },
+        "class-1-paragraph-37": {
+          "startSeconds": 2049,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p037"
+        },
+        "class-1-paragraph-38": {
+          "startSeconds": 2107,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p038"
+        },
+        "class-1-paragraph-39": {
+          "startSeconds": 2131,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p039"
+        },
+        "class-1-paragraph-40": {
+          "startSeconds": 2132,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p040"
+        },
+        "class-1-paragraph-41": {
+          "startSeconds": 2217,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p041"
+        },
+        "class-1-paragraph-42": {
+          "startSeconds": 2253,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p042"
+        },
+        "class-1-paragraph-43": {
+          "startSeconds": 2290,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p043"
+        },
+        "class-1-paragraph-44": {
+          "startSeconds": 2321,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p044"
+        },
+        "class-1-paragraph-45": {
+          "startSeconds": 2490,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p045"
+        },
+        "class-1-paragraph-46": {
+          "startSeconds": 2520,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p046"
+        },
+        "class-1-paragraph-47": {
+          "startSeconds": 2622,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p047"
+        },
+        "class-1-paragraph-48": {
+          "startSeconds": 2671,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p048"
+        },
+        "class-1-paragraph-49": {
+          "startSeconds": 2805,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p049"
+        },
+        "class-1-paragraph-50": {
+          "startSeconds": 2845,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p050"
+        },
+        "class-1-paragraph-51": {
+          "startSeconds": 2882,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p051"
+        },
+        "class-1-paragraph-52": {
+          "startSeconds": 2983,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p052"
+        },
+        "class-1-paragraph-53": {
+          "startSeconds": 3089,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p053"
+        },
+        "class-1-paragraph-54": {
+          "startSeconds": 3096,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p054"
+        },
+        "class-1-paragraph-55": {
+          "startSeconds": 3119,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p055"
+        },
+        "class-1-paragraph-56": {
+          "startSeconds": 3126,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p056"
+        },
+        "class-1-paragraph-57": {
+          "startSeconds": 3165,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p057"
+        },
+        "class-1-paragraph-58": {
+          "startSeconds": 3178,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p058"
+        },
+        "class-1-paragraph-59": {
+          "startSeconds": 3216,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p059"
+        },
+        "class-1-paragraph-60": {
+          "startSeconds": 3216,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p060"
+        },
+        "class-1-paragraph-61": {
+          "startSeconds": 3249,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p061"
+        },
+        "class-1-paragraph-62": {
+          "startSeconds": 3343,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p062"
+        },
+        "class-1-paragraph-63": {
+          "startSeconds": 3423,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p063"
+        },
+        "class-1-paragraph-64": {
+          "startSeconds": 3436,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p064"
+        },
+        "class-1-paragraph-65": {
+          "startSeconds": 3461,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p065"
+        },
+        "class-1-paragraph-66": {
+          "startSeconds": 3500,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p066"
+        },
+        "class-1-paragraph-67": {
+          "startSeconds": 3545,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p067"
+        },
+        "class-1-paragraph-68": {
+          "startSeconds": 3563,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p068"
+        },
+        "class-1-paragraph-69": {
+          "startSeconds": 3577,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p069"
+        },
+        "class-1-paragraph-70": {
+          "startSeconds": 3580,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p070"
+        },
+        "class-1-paragraph-71": {
+          "startSeconds": 3626,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p071"
+        },
+        "class-1-paragraph-72": {
+          "startSeconds": 3665,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p072"
+        },
+        "class-1-paragraph-73": {
+          "startSeconds": 3724,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p073"
+        },
+        "class-1-paragraph-74": {
+          "startSeconds": 3804,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p074"
+        },
+        "class-1-paragraph-75": {
+          "startSeconds": 3830,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p075"
+        },
+        "class-1-paragraph-76": {
+          "startSeconds": 3868,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p076"
+        },
+        "class-1-paragraph-77": {
+          "startSeconds": 3877,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p077"
+        },
+        "class-1-paragraph-78": {
+          "startSeconds": 3892,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p078"
+        },
+        "class-1-paragraph-79": {
+          "startSeconds": 3951,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p079"
+        },
+        "class-1-paragraph-80": {
+          "startSeconds": 3973,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p080"
+        },
+        "class-1-paragraph-81": {
+          "startSeconds": 3977,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p081"
+        },
+        "class-1-paragraph-82": {
+          "startSeconds": 4051,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p082"
+        },
+        "class-1-paragraph-83": {
+          "startSeconds": 4098,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p083"
+        },
+        "class-1-paragraph-84": {
+          "startSeconds": 4123,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p084"
+        },
+        "class-1-paragraph-85": {
+          "startSeconds": 4182,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p085"
+        },
+        "class-1-paragraph-86": {
+          "startSeconds": 4205,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p086"
+        },
+        "class-1-paragraph-87": {
+          "startSeconds": 4249,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p087"
+        },
+        "class-1-paragraph-88": {
+          "startSeconds": 4293,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p088"
+        },
+        "class-1-paragraph-89": {
+          "startSeconds": 4303,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p089"
+        },
+        "class-1-paragraph-90": {
+          "startSeconds": 4328,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p090"
+        },
+        "class-1-paragraph-91": {
+          "startSeconds": 4388,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p091"
+        },
+        "class-1-paragraph-92": {
+          "startSeconds": 4441,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p092"
+        },
+        "class-1-paragraph-93": {
+          "startSeconds": 4537,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p093"
+        },
+        "class-1-paragraph-94": {
+          "startSeconds": 4622,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p094"
+        },
+        "class-1-paragraph-95": {
+          "startSeconds": 4679,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p095"
+        },
+        "class-1-paragraph-96": {
+          "startSeconds": 4682,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p096"
+        },
+        "class-1-paragraph-97": {
+          "startSeconds": 4740,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p097"
+        },
+        "class-1-paragraph-98": {
+          "startSeconds": 4792,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p098"
+        },
+        "class-1-paragraph-99": {
+          "startSeconds": 4821,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p099"
+        },
+        "class-1-paragraph-100": {
+          "startSeconds": 4884,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p100"
+        },
+        "class-1-paragraph-101": {
+          "startSeconds": 5003,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p101"
+        },
+        "class-1-paragraph-102": {
+          "startSeconds": 5021,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p102"
+        },
+        "class-1-paragraph-103": {
+          "startSeconds": 5028,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p103"
+        },
+        "class-1-paragraph-104": {
+          "startSeconds": 5136,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p104"
+        },
+        "class-1-paragraph-105": {
+          "startSeconds": 5176,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p105"
+        },
+        "class-1-paragraph-106": {
+          "startSeconds": 5188,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p106"
+        },
+        "class-1-paragraph-107": {
+          "startSeconds": 5247,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p107"
+        },
+        "class-1-paragraph-108": {
+          "startSeconds": 5330,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p108"
+        },
+        "class-1-paragraph-109": {
+          "startSeconds": 5354,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p109"
+        },
+        "class-1-paragraph-110": {
+          "startSeconds": 5354,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p110"
+        },
+        "class-1-paragraph-111": {
+          "startSeconds": 5406,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p111"
+        },
+        "class-1-paragraph-112": {
+          "startSeconds": 5410,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p112"
+        },
+        "class-1-paragraph-113": {
+          "startSeconds": 5435,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p113"
+        },
+        "class-1-paragraph-114": {
+          "startSeconds": 5443,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p114"
+        },
+        "class-1-paragraph-115": {
+          "startSeconds": 5451,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p115"
+        },
+        "class-1-paragraph-116": {
+          "startSeconds": 5492,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p116"
+        },
+        "class-1-paragraph-117": {
+          "startSeconds": 5551,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p117"
+        },
+        "class-1-paragraph-118": {
+          "startSeconds": 5606,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p118"
+        },
+        "class-1-paragraph-119": {
+          "startSeconds": 5656,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p119"
+        },
+        "class-1-paragraph-120": {
+          "startSeconds": 5722,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p120"
+        },
+        "class-1-paragraph-121": {
+          "startSeconds": 5753,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p121"
+        },
+        "class-1-paragraph-122": {
+          "startSeconds": 5781,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p122"
+        },
+        "class-1-paragraph-123": {
+          "startSeconds": 5847,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p123"
+        },
+        "class-1-paragraph-124": {
+          "startSeconds": 5875,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p124"
+        },
+        "class-1-paragraph-125": {
+          "startSeconds": 5937,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p125"
+        },
+        "class-1-paragraph-126": {
+          "startSeconds": 5969,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p126"
+        },
+        "class-1-paragraph-127": {
+          "startSeconds": 5995,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p127"
+        },
+        "class-1-paragraph-128": {
+          "startSeconds": 6010,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p128"
+        },
+        "class-1-paragraph-129": {
+          "startSeconds": 6014,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p129"
+        },
+        "class-1-paragraph-130": {
+          "startSeconds": 6057,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p130"
+        },
+        "class-1-paragraph-131": {
+          "startSeconds": 6149,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p131"
+        },
+        "class-1-paragraph-132": {
+          "startSeconds": 6225,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p132"
+        },
+        "class-1-paragraph-133": {
+          "startSeconds": 6310,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p133"
+        },
+        "class-1-paragraph-134": {
+          "startSeconds": 6442,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p134"
+        },
+        "class-1-paragraph-135": {
+          "startSeconds": 6497,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p135"
+        },
+        "class-1-paragraph-136": {
+          "startSeconds": 6562,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p136"
+        },
+        "class-1-paragraph-137": {
+          "startSeconds": 6562,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p137"
+        },
+        "class-1-paragraph-138": {
+          "startSeconds": 6563,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p138"
+        },
+        "class-1-paragraph-139": {
+          "startSeconds": 6574,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p139"
+        },
+        "class-1-paragraph-140": {
+          "startSeconds": 6576,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p140"
+        },
+        "class-1-paragraph-141": {
+          "startSeconds": 6580,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p141"
+        },
+        "class-1-paragraph-142": {
+          "startSeconds": 6580,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p142"
+        },
+        "class-1-paragraph-143": {
+          "startSeconds": 6663,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p143"
+        },
+        "class-1-paragraph-144": {
+          "startSeconds": 6668,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p144"
+        },
+        "class-1-paragraph-145": {
+          "startSeconds": 6698,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p145"
+        },
+        "class-1-paragraph-146": {
+          "startSeconds": 6702,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p146"
+        },
+        "class-1-paragraph-147": {
+          "startSeconds": 6760,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p147"
+        },
+        "class-1-paragraph-148": {
+          "startSeconds": 6793,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p148"
+        },
+        "class-1-paragraph-149": {
+          "startSeconds": 6826,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p149"
+        },
+        "class-1-paragraph-150": {
+          "startSeconds": 6827,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p150"
+        },
+        "class-1-paragraph-151": {
+          "startSeconds": 6892,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p151"
+        },
+        "class-1-paragraph-152": {
+          "startSeconds": 6933,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p152"
+        },
+        "class-1-paragraph-153": {
+          "startSeconds": 7007,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p153"
+        },
+        "class-1-paragraph-154": {
+          "startSeconds": 7014,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p154"
+        },
+        "class-1-paragraph-155": {
+          "startSeconds": 7020,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p155"
+        },
+        "class-1-paragraph-156": {
+          "startSeconds": 7072,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p156"
+        },
+        "class-1-paragraph-157": {
+          "startSeconds": 7113,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p157"
+        },
+        "class-1-paragraph-158": {
+          "startSeconds": 7127,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p158"
+        },
+        "class-1-paragraph-159": {
+          "startSeconds": 7146,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p159"
+        },
+        "class-1-paragraph-160": {
+          "startSeconds": 7170,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p160"
+        },
+        "class-1-paragraph-161": {
+          "startSeconds": 7217,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p161"
+        },
+        "class-1-paragraph-162": {
+          "startSeconds": 7229,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p162"
+        },
+        "class-1-paragraph-163": {
+          "startSeconds": 7234,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-1-2026-09-11-p163"
+        }
+      }
+    },
+    "class-2": {
+      "youtubeVideoId": "P-vLWp8EtnY",
+      "paragraphs": {
+        "class-2-paragraph-1": {
+          "startSeconds": 18,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p001"
+        },
+        "class-2-paragraph-2": {
+          "startSeconds": 18,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p002"
+        },
+        "class-2-paragraph-3": {
+          "startSeconds": 25,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p003"
+        },
+        "class-2-paragraph-4": {
+          "startSeconds": 44,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p004"
+        },
+        "class-2-paragraph-5": {
+          "startSeconds": 44,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p005"
+        },
+        "class-2-paragraph-6": {
+          "startSeconds": 76,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p006"
+        },
+        "class-2-paragraph-7": {
+          "startSeconds": 76,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p007"
+        },
+        "class-2-paragraph-8": {
+          "startSeconds": 87,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p008"
+        },
+        "class-2-paragraph-9": {
+          "startSeconds": 88,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p009"
+        },
+        "class-2-paragraph-10": {
+          "startSeconds": 109,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p010"
+        },
+        "class-2-paragraph-11": {
+          "startSeconds": 117,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p011"
+        },
+        "class-2-paragraph-12": {
+          "startSeconds": 128,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p012"
+        },
+        "class-2-paragraph-13": {
+          "startSeconds": 128,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p013"
+        },
+        "class-2-paragraph-14": {
+          "startSeconds": 141,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p014"
+        },
+        "class-2-paragraph-15": {
+          "startSeconds": 257,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p015"
+        },
+        "class-2-paragraph-16": {
+          "startSeconds": 265,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p016"
+        },
+        "class-2-paragraph-17": {
+          "startSeconds": 327,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p017"
+        },
+        "class-2-paragraph-18": {
+          "startSeconds": 327,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p018"
+        },
+        "class-2-paragraph-19": {
+          "startSeconds": 358,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p019"
+        },
+        "class-2-paragraph-20": {
+          "startSeconds": 437,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p020"
+        },
+        "class-2-paragraph-21": {
+          "startSeconds": 467,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p021"
+        },
+        "class-2-paragraph-22": {
+          "startSeconds": 497,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p022"
+        },
+        "class-2-paragraph-23": {
+          "startSeconds": 527,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p023"
+        },
+        "class-2-paragraph-24": {
+          "startSeconds": 610,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p024"
+        },
+        "class-2-paragraph-25": {
+          "startSeconds": 650,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p025"
+        },
+        "class-2-paragraph-26": {
+          "startSeconds": 678,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p026"
+        },
+        "class-2-paragraph-27": {
+          "startSeconds": 734,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p027"
+        },
+        "class-2-paragraph-28": {
+          "startSeconds": 789,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p028"
+        },
+        "class-2-paragraph-29": {
+          "startSeconds": 824,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p029"
+        },
+        "class-2-paragraph-30": {
+          "startSeconds": 879,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p030"
+        },
+        "class-2-paragraph-31": {
+          "startSeconds": 917,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p031"
+        },
+        "class-2-paragraph-32": {
+          "startSeconds": 930,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p032"
+        },
+        "class-2-paragraph-33": {
+          "startSeconds": 957,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p033"
+        },
+        "class-2-paragraph-34": {
+          "startSeconds": 1033,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p034"
+        },
+        "class-2-paragraph-35": {
+          "startSeconds": 1040,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p035"
+        },
+        "class-2-paragraph-36": {
+          "startSeconds": 1043,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p036"
+        },
+        "class-2-paragraph-37": {
+          "startSeconds": 1072,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p037"
+        },
+        "class-2-paragraph-38": {
+          "startSeconds": 1083,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p038"
+        },
+        "class-2-paragraph-39": {
+          "startSeconds": 1148,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p039"
+        },
+        "class-2-paragraph-40": {
+          "startSeconds": 1192,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p040"
+        },
+        "class-2-paragraph-41": {
+          "startSeconds": 1223,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p041"
+        },
+        "class-2-paragraph-42": {
+          "startSeconds": 1257,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p042"
+        },
+        "class-2-paragraph-43": {
+          "startSeconds": 1306,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p043"
+        },
+        "class-2-paragraph-44": {
+          "startSeconds": 1408,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p044"
+        },
+        "class-2-paragraph-45": {
+          "startSeconds": 1464,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p045"
+        },
+        "class-2-paragraph-46": {
+          "startSeconds": 1491,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p047"
+        },
+        "class-2-paragraph-47": {
+          "startSeconds": 1628,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p048"
+        },
+        "class-2-paragraph-48": {
+          "startSeconds": 1858,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p049"
+        },
+        "class-2-paragraph-49": {
+          "startSeconds": 1858,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p050"
+        },
+        "class-2-paragraph-50": {
+          "startSeconds": 1914,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p052"
+        },
+        "class-2-paragraph-51": {
+          "startSeconds": 2010,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p053"
+        },
+        "class-2-paragraph-52": {
+          "startSeconds": 2102,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p054"
+        },
+        "class-2-paragraph-53": {
+          "startSeconds": 2169,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p055"
+        },
+        "class-2-paragraph-54": {
+          "startSeconds": 2206,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p056"
+        },
+        "class-2-paragraph-55": {
+          "startSeconds": 2278,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p057"
+        },
+        "class-2-paragraph-56": {
+          "startSeconds": 2326,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p058"
+        },
+        "class-2-paragraph-57": {
+          "startSeconds": 2405,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p059"
+        },
+        "class-2-paragraph-58": {
+          "startSeconds": 2442,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p060"
+        },
+        "class-2-paragraph-59": {
+          "startSeconds": 2480,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p061"
+        },
+        "class-2-paragraph-60": {
+          "startSeconds": 2538,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p062"
+        },
+        "class-2-paragraph-61": {
+          "startSeconds": 2611,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p063"
+        },
+        "class-2-paragraph-62": {
+          "startSeconds": 2660,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p064"
+        },
+        "class-2-paragraph-63": {
+          "startSeconds": 2713,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p065"
+        },
+        "class-2-paragraph-64": {
+          "startSeconds": 2757,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p066"
+        },
+        "class-2-paragraph-65": {
+          "startSeconds": 2820,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p067"
+        },
+        "class-2-paragraph-66": {
+          "startSeconds": 2826,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p068"
+        },
+        "class-2-paragraph-67": {
+          "startSeconds": 2841,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p069"
+        },
+        "class-2-paragraph-68": {
+          "startSeconds": 2930,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p070"
+        },
+        "class-2-paragraph-69": {
+          "startSeconds": 2939,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p071"
+        },
+        "class-2-paragraph-70": {
+          "startSeconds": 2978,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p073"
+        },
+        "class-2-paragraph-71": {
+          "startSeconds": 2991,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p074"
+        },
+        "class-2-paragraph-72": {
+          "startSeconds": 3016,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p075"
+        },
+        "class-2-paragraph-73": {
+          "startSeconds": 3078,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p076"
+        },
+        "class-2-paragraph-74": {
+          "startSeconds": 3108,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p077"
+        },
+        "class-2-paragraph-75": {
+          "startSeconds": 3188,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p078"
+        },
+        "class-2-paragraph-76": {
+          "startSeconds": 3240,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p079"
+        },
+        "class-2-paragraph-77": {
+          "startSeconds": 3253,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p080"
+        },
+        "class-2-paragraph-78": {
+          "startSeconds": 3341,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p081"
+        },
+        "class-2-paragraph-79": {
+          "startSeconds": 3371,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p082"
+        },
+        "class-2-paragraph-80": {
+          "startSeconds": 3435,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p083"
+        },
+        "class-2-paragraph-81": {
+          "startSeconds": 3508,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p084"
+        },
+        "class-2-paragraph-82": {
+          "startSeconds": 3639,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p085"
+        },
+        "class-2-paragraph-83": {
+          "startSeconds": 3674,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p086"
+        },
+        "class-2-paragraph-84": {
+          "startSeconds": 3745,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p087"
+        },
+        "class-2-paragraph-85": {
+          "startSeconds": 3823,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p088"
+        },
+        "class-2-paragraph-86": {
+          "startSeconds": 3870,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p089"
+        },
+        "class-2-paragraph-87": {
+          "startSeconds": 3906,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p090"
+        },
+        "class-2-paragraph-88": {
+          "startSeconds": 3911,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p091"
+        },
+        "class-2-paragraph-89": {
+          "startSeconds": 3960,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p092"
+        },
+        "class-2-paragraph-90": {
+          "startSeconds": 3973,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p093"
+        },
+        "class-2-paragraph-91": {
+          "startSeconds": 3993,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p094"
+        },
+        "class-2-paragraph-92": {
+          "startSeconds": 4010,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p095"
+        },
+        "class-2-paragraph-93": {
+          "startSeconds": 4045,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p096"
+        },
+        "class-2-paragraph-94": {
+          "startSeconds": 4052,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p097"
+        },
+        "class-2-paragraph-95": {
+          "startSeconds": 4080,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p098"
+        },
+        "class-2-paragraph-96": {
+          "startSeconds": 4117,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p099"
+        },
+        "class-2-paragraph-97": {
+          "startSeconds": 4172,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p100"
+        },
+        "class-2-paragraph-98": {
+          "startSeconds": 4201,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p101"
+        },
+        "class-2-paragraph-99": {
+          "startSeconds": 4255,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p102"
+        },
+        "class-2-paragraph-100": {
+          "startSeconds": 4334,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p103"
+        },
+        "class-2-paragraph-101": {
+          "startSeconds": 4428,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p104"
+        },
+        "class-2-paragraph-102": {
+          "startSeconds": 4471,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p105"
+        },
+        "class-2-paragraph-103": {
+          "startSeconds": 4550,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p106"
+        },
+        "class-2-paragraph-104": {
+          "startSeconds": 4638,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p107"
+        },
+        "class-2-paragraph-105": {
+          "startSeconds": 4688,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p108"
+        },
+        "class-2-paragraph-106": {
+          "startSeconds": 4702,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p109"
+        },
+        "class-2-paragraph-107": {
+          "startSeconds": 4747,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p110"
+        },
+        "class-2-paragraph-108": {
+          "startSeconds": 4851,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p111"
+        },
+        "class-2-paragraph-109": {
+          "startSeconds": 4890,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p112"
+        },
+        "class-2-paragraph-110": {
+          "startSeconds": 4967,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p113"
+        },
+        "class-2-paragraph-111": {
+          "startSeconds": 5023,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p114"
+        },
+        "class-2-paragraph-112": {
+          "startSeconds": 5137,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p115"
+        },
+        "class-2-paragraph-113": {
+          "startSeconds": 5175,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p116"
+        },
+        "class-2-paragraph-114": {
+          "startSeconds": 5315,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p117"
+        },
+        "class-2-paragraph-115": {
+          "startSeconds": 5368,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p118"
+        },
+        "class-2-paragraph-116": {
+          "startSeconds": 5471,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p119"
+        },
+        "class-2-paragraph-117": {
+          "startSeconds": 5509,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p120"
+        },
+        "class-2-paragraph-118": {
+          "startSeconds": 5526,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p121"
+        },
+        "class-2-paragraph-119": {
+          "startSeconds": 5526,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p121"
+        },
+        "class-2-paragraph-120": {
+          "startSeconds": 5526,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p121"
+        },
+        "class-2-paragraph-121": {
+          "startSeconds": 5526,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p121"
+        },
+        "class-2-paragraph-122": {
+          "startSeconds": 5526,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p121"
+        },
+        "class-2-paragraph-123": {
+          "startSeconds": 5526,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p121"
+        },
+        "class-2-paragraph-124": {
+          "startSeconds": 5526,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p121"
+        },
+        "class-2-paragraph-125": {
+          "startSeconds": 5526,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p121"
+        },
+        "class-2-paragraph-126": {
+          "startSeconds": 5526,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p121"
+        },
+        "class-2-paragraph-127": {
+          "startSeconds": 5526,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p121"
+        },
+        "class-2-paragraph-128": {
+          "startSeconds": 5526,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p121"
+        },
+        "class-2-paragraph-129": {
+          "startSeconds": 5526,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p121"
+        },
+        "class-2-paragraph-130": {
+          "startSeconds": 5613,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p122"
+        },
+        "class-2-paragraph-131": {
+          "startSeconds": 5624,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p123"
+        },
+        "class-2-paragraph-132": {
+          "startSeconds": 5694,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p124"
+        },
+        "class-2-paragraph-133": {
+          "startSeconds": 5727,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p125"
+        },
+        "class-2-paragraph-134": {
+          "startSeconds": 5854,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p126"
+        },
+        "class-2-paragraph-135": {
+          "startSeconds": 5865,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p127"
+        },
+        "class-2-paragraph-136": {
+          "startSeconds": 5865,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p127"
+        },
+        "class-2-paragraph-137": {
+          "startSeconds": 5865,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p127"
+        },
+        "class-2-paragraph-138": {
+          "startSeconds": 5865,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p127"
+        },
+        "class-2-paragraph-139": {
+          "startSeconds": 5865,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p127"
+        },
+        "class-2-paragraph-140": {
+          "startSeconds": 5865,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p127"
+        },
+        "class-2-paragraph-141": {
+          "startSeconds": 5865,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p127"
+        },
+        "class-2-paragraph-142": {
+          "startSeconds": 5865,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p127"
+        },
+        "class-2-paragraph-143": {
+          "startSeconds": 5865,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p127"
+        },
+        "class-2-paragraph-144": {
+          "startSeconds": 5865,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p127"
+        },
+        "class-2-paragraph-145": {
+          "startSeconds": 5971,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p128"
+        },
+        "class-2-paragraph-146": {
+          "startSeconds": 6011,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p129"
+        },
+        "class-2-paragraph-147": {
+          "startSeconds": 6019,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p130"
+        },
+        "class-2-paragraph-148": {
+          "startSeconds": 6019,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p130"
+        },
+        "class-2-paragraph-149": {
+          "startSeconds": 6019,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p130"
+        },
+        "class-2-paragraph-150": {
+          "startSeconds": 6019,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p130"
+        },
+        "class-2-paragraph-151": {
+          "startSeconds": 6019,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p130"
+        },
+        "class-2-paragraph-152": {
+          "startSeconds": 6019,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p130"
+        },
+        "class-2-paragraph-153": {
+          "startSeconds": 6019,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p130"
+        },
+        "class-2-paragraph-154": {
+          "startSeconds": 6019,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p130"
+        },
+        "class-2-paragraph-155": {
+          "startSeconds": 6019,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p130"
+        },
+        "class-2-paragraph-156": {
+          "startSeconds": 6019,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p130"
+        },
+        "class-2-paragraph-157": {
+          "startSeconds": 6117,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p131"
+        },
+        "class-2-paragraph-158": {
+          "startSeconds": 6126,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p132"
+        },
+        "class-2-paragraph-159": {
+          "startSeconds": 6132,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p133"
+        },
+        "class-2-paragraph-160": {
+          "startSeconds": 6145,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p134"
+        },
+        "class-2-paragraph-161": {
+          "startSeconds": 6145,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p134"
+        },
+        "class-2-paragraph-162": {
+          "startSeconds": 6145,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p134"
+        },
+        "class-2-paragraph-163": {
+          "startSeconds": 6145,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p134"
+        },
+        "class-2-paragraph-164": {
+          "startSeconds": 6145,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p134"
+        },
+        "class-2-paragraph-165": {
+          "startSeconds": 6145,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p134"
+        },
+        "class-2-paragraph-166": {
+          "startSeconds": 6145,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p134"
+        },
+        "class-2-paragraph-167": {
+          "startSeconds": 6145,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p134"
+        },
+        "class-2-paragraph-168": {
+          "startSeconds": 6145,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p134"
+        },
+        "class-2-paragraph-169": {
+          "startSeconds": 6145,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p134"
+        },
+        "class-2-paragraph-170": {
+          "startSeconds": 6145,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p134"
+        },
+        "class-2-paragraph-171": {
+          "startSeconds": 6145,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p134"
+        },
+        "class-2-paragraph-172": {
+          "startSeconds": 6236,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p135"
+        },
+        "class-2-paragraph-173": {
+          "startSeconds": 6279,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p136"
+        },
+        "class-2-paragraph-174": {
+          "startSeconds": 6292,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p137"
+        },
+        "class-2-paragraph-175": {
+          "startSeconds": 6292,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p137"
+        },
+        "class-2-paragraph-176": {
+          "startSeconds": 6311,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p138"
+        },
+        "class-2-paragraph-177": {
+          "startSeconds": 6348,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p139"
+        },
+        "class-2-paragraph-178": {
+          "startSeconds": 6348,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p139"
+        },
+        "class-2-paragraph-179": {
+          "startSeconds": 6348,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p139"
+        },
+        "class-2-paragraph-180": {
+          "startSeconds": 6348,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p139"
+        },
+        "class-2-paragraph-181": {
+          "startSeconds": 6381,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p140"
+        },
+        "class-2-paragraph-182": {
+          "startSeconds": 6400,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p141"
+        },
+        "class-2-paragraph-183": {
+          "startSeconds": 6400,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p141"
+        },
+        "class-2-paragraph-184": {
+          "startSeconds": 6400,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p141"
+        },
+        "class-2-paragraph-185": {
+          "startSeconds": 6400,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p141"
+        },
+        "class-2-paragraph-186": {
+          "startSeconds": 6400,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p141"
+        },
+        "class-2-paragraph-187": {
+          "startSeconds": 6400,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p141"
+        },
+        "class-2-paragraph-188": {
+          "startSeconds": 6400,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p141"
+        },
+        "class-2-paragraph-189": {
+          "startSeconds": 6400,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p141"
+        },
+        "class-2-paragraph-190": {
+          "startSeconds": 6400,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p141"
+        },
+        "class-2-paragraph-191": {
+          "startSeconds": 6400,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p141"
+        },
+        "class-2-paragraph-192": {
+          "startSeconds": 6400,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p141"
+        },
+        "class-2-paragraph-193": {
+          "startSeconds": 6501,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p142"
+        },
+        "class-2-paragraph-194": {
+          "startSeconds": 6525,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p143"
+        },
+        "class-2-paragraph-195": {
+          "startSeconds": 6592,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p144"
+        },
+        "class-2-paragraph-196": {
+          "startSeconds": 6646,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p145"
+        },
+        "class-2-paragraph-197": {
+          "startSeconds": 6768,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p146"
+        },
+        "class-2-paragraph-198": {
+          "startSeconds": 6876,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p147"
+        },
+        "class-2-paragraph-199": {
+          "startSeconds": 6979,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p148"
+        },
+        "class-2-paragraph-200": {
+          "startSeconds": 7091,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p149"
+        },
+        "class-2-paragraph-201": {
+          "startSeconds": 7140,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p150"
+        },
+        "class-2-paragraph-202": {
+          "startSeconds": 7179,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p151"
+        },
+        "class-2-paragraph-203": {
+          "startSeconds": 7200,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p152"
+        },
+        "class-2-paragraph-204": {
+          "startSeconds": 7302,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p153"
+        },
+        "class-2-paragraph-205": {
+          "startSeconds": 7354,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p154"
+        },
+        "class-2-paragraph-206": {
+          "startSeconds": 7390,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p155"
+        },
+        "class-2-paragraph-207": {
+          "startSeconds": 7417,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p156"
+        },
+        "class-2-paragraph-208": {
+          "startSeconds": 7460,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p157"
+        },
+        "class-2-paragraph-209": {
+          "startSeconds": 7495,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p158"
+        },
+        "class-2-paragraph-210": {
+          "startSeconds": 7546,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p159"
+        },
+        "class-2-paragraph-211": {
+          "startSeconds": 7603,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p160"
+        },
+        "class-2-paragraph-212": {
+          "startSeconds": 7682,
+          "timingSource": "estimated",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p161"
+        },
+        "class-2-paragraph-213": {
+          "startSeconds": 7736,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p162"
+        },
+        "class-2-paragraph-214": {
+          "startSeconds": 7759,
+          "timingSource": "youtube-caption",
+          "sourceParagraphId": "the-eye-of-courage-class-2-2026-09-12-p163"
+        }
+      }
+    }
+  }
+}
