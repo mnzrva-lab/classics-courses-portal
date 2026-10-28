@@ -51,7 +51,26 @@ const perfectionSessionIndex = new Map(perfectionGroups.flatMap((group) => group
 function highlight(text: string, query: string) {
   const terms = Array.from(new Set(query.trim().split(/\s+/).filter(Boolean))).sort((a, b) => b.length - a.length)
   if (!terms.length) return text
-  const escaped = terms.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\function clip(text: string, length = 320) {'))
+  const tokens: Array<{ text: string; match: boolean }> = []
+  const lower = text.toLocaleLowerCase()
+  let pos = 0
+  while (pos < text.length) {
+    const term = terms.find((item) => lower.startsWith(item.toLocaleLowerCase(), pos))
+    if (term) {
+      tokens.push({ text: text.slice(pos, pos + term.length), match: true })
+      pos += term.length
+    } else {
+      const start = pos
+      pos++
+      while (pos < text.length && !terms.some((item) => lower.startsWith(item.toLocaleLowerCase(), pos))) pos++
+      tokens.push({ text: text.slice(start, pos), match: false })
+    }
+  }
+  return tokens.map((token, index) => token.match
+    ? <mark className="search-query-mark" key={index}>{token.text}</mark>
+    : <Fragment key={index}>{token.text}</Fragment>)
+}
+function clip(text: string, length = 320) {'))
   const regex = new RegExp(`(${escaped.join('|')})`, 'gi')
   return text.split(regex).map((part, index) => terms.some((term) => part.toLocaleLowerCase() === term.toLocaleLowerCase())
     ? <mark className="search-query-mark" key={index}>{part}</mark>
