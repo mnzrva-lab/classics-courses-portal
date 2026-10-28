@@ -1,3 +1,5 @@
+export const revalidate = 60
+
 import Link from 'next/link'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'

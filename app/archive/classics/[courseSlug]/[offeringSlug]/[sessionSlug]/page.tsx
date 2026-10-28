@@ -1,3 +1,5 @@
+export const revalidate = 60
+
 import Link from 'next/link'
 import LibraryClassHeader from '@/components/library-class-header'
 import LibraryClassSection from '@/components/library-class-section'

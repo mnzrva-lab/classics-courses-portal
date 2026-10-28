@@ -1,3 +1,5 @@
+export const revalidate = 60
+
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import LibrarySessionList from '@/components/library-session-list'

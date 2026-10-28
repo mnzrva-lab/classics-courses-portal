@@ -1,3 +1,5 @@
+export const revalidate = 60
+
 import Link from 'next/link'
 import TibetanTermBrowser from '@/components/tibetan-term-browser'
 import { transcriptTermSlug } from '@/content/tibetan/transcript-glossary'
