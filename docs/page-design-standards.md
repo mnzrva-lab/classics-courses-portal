@@ -87,3 +87,13 @@ Run `node scripts/check-transcript-standards.mjs` and `npm run build` before pre
 - Schedule placeholders are normal class pages under the standard registry, with breadcrumbs, `LibraryClassHeader`, recording/transcript availability sections and `ClassSequenceNavigation`. Replace placeholder messages only once source material has been verified.
 
 CI verifies exact counts (Course 16 = 10 verified recordings; Course 18 = 10 planned class slots), source dates, linked pages, and the absence of the unfinished Course 8 Reading section. This requirement does not change the production branch.
+
+## 8. Recording and transcript navigation (one shared controller)
+
+`TranscriptSync` is mounted once in `app/layout.tsx`. Do not introduce another fixed navigation pill inside a class reader. Do not reintroduce `TranscriptQuickNav`, `timed-transcript-jump-back`, or the large "Video + transcript sync" explanation popup.
+
+After a student scrolls into a visible Reference Transcript, one compact toolbar offers **↑ Transcript** (back to transcript top) and **↑ Video** (back to the recording). If, and only if, an embedded recording is available for synchronization with paragraph timestamps, the same toolbar also offers **Follow off / Follow on**. Follow is off when a class opens, and choosing ↑ Video switches it off. Timestamps seek playback and the current paragraph highlights regardless of Follow; only Follow on scrolls automatically.
+
+On mobile, the toolbar appears above the bottom app navigation with 44px touch targets; on desktop it is a small bottom-right pill. It never overlaps another transcript navigation bar. Hidden tabs, missing transcript text and the initial recording view do not display this toolbar. The canonical CSS is in `app/transcript-reader-standard.css`.
+
+Run the transcript standard checks, then verify Eye of Courage Classes 1 and 2, ACI 17 Class 10, Course 8 with timestamps, an untimed Perfection of Wisdom session, and a class without a transcript, at desktop and mobile widths.

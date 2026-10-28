@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import TranscriptControls from '@/components/transcript-controls'
 import TranscriptReaderToolbar from '@/components/transcript-reader-toolbar'
 import TranscriptCiteActivation from '@/components/transcript-cite-activation'
@@ -40,8 +40,6 @@ export default function TimedArchiveTranscript({
   sessionDate?: string
   sessionPath?: string
 }) {
-  const rootRef = useRef<HTMLDivElement | null>(null)
-  const [showJumpBack, setShowJumpBack] = useState(false)
   const [readerSize, setReaderSize] = useState<ReaderSize>('medium')
   const [showParagraphTimes, setShowParagraphTimes] = useState(false)
   const [preferencesLoaded, setPreferencesLoaded] = useState(false)
@@ -74,32 +72,8 @@ export default function TimedArchiveTranscript({
     } catch {}
   }, [readerSize, showParagraphTimes, preferencesLoaded])
 
-  useEffect(() => {
-    function update() {
-      const root = rootRef.current
-      if (!root) return
-      setShowJumpBack(root.getBoundingClientRect().top < -320)
-    }
-    update()
-    window.addEventListener('scroll', update, { passive: true })
-    window.addEventListener('resize', update)
-    return () => {
-      window.removeEventListener('scroll', update)
-      window.removeEventListener('resize', update)
-    }
-  }, [])
-
-  function jumpToTranscript() {
-    rootRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
-  function jumpToVideo() {
-    document.getElementById('recording')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
   return (
     <div
-      ref={rootRef}
       className={`timed-transcript-root aci17-timed-reader reader-size-${readerSize}${hasParagraphTimes && showParagraphTimes ? ' show-paragraph-times' : ''}`}
       style={{ scrollMarginTop: 96 }}
     >
@@ -158,12 +132,7 @@ export default function TimedArchiveTranscript({
         })}
       </article>
 
-      {showJumpBack ? (
-        <div className="timed-transcript-jump-back" aria-label="Transcript navigation">
-          <button type="button" onClick={jumpToTranscript}>↑ Transcript</button>
-          <button type="button" onClick={jumpToVideo}>↑ Video</button>
-        </div>
-      ) : null}
+
     </div>
   )
 }

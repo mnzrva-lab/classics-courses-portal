@@ -62,3 +62,76 @@
     margin-top: 28px;
   }
 }
+
+/* Single contextual toolbar for every class reader; one desktop or mobile row. */
+.transcript-sync-floating {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 68;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(251,247,239,.97);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(12px);
+}
+.transcript-sync-floating > button {
+  appearance: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.transcript-sync-floating > button:hover { background: var(--white); }
+.transcript-sync-floating > button:focus-visible { outline: 3px solid var(--signal-700); outline-offset: 2px; }
+.transcript-sync-floating > .transcript-sync-video { background: var(--sage-700); color: var(--white); }
+.transcript-sync-floating > .transcript-sync-video:hover { background: var(--sage-900); }
+.transcript-sync-floating > .transcript-sync-follow {
+  border-color: var(--line);
+  background: var(--paper-2);
+  color: var(--ink-soft);
+}
+.transcript-sync-floating > .transcript-sync-follow:hover { background: var(--white); }
+.transcript-sync-floating > .transcript-sync-follow.is-following {
+  border-color: var(--sage-300);
+  background: var(--sage-100);
+  color: var(--sage-900);
+}
+@media (max-width: 720px) {
+  .transcript-sync-floating {
+    left: 12px;
+    right: 12px;
+    bottom: calc(74px + env(safe-area-inset-bottom));
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    width: auto;
+    max-width: none;
+    border-radius: 16px;
+  }
+  .transcript-sync-floating:not(.has-follow) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .transcript-sync-floating > button {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 6px;
+    border-radius: 11px;
+    font-size: 12px;
+  }
+}
+@media (max-width: 360px) { .transcript-sync-floating > button { font-size: 11px; } }

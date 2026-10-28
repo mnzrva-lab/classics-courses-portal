@@ -50,6 +50,20 @@ mustContain('app/layout.tsx', "import './transcript-reader-standard.css'")
 mustContain('app/transcript-reader-standard.css', '.unified-transcript-reader.show-paragraph-times')
 mustContain('app/transcript-reader-standard.css', 'box-shadow: none !important')
 mustContain('components/transcript-sync.tsx', "'#transcript [data-transcript-paragraph]'")
+const syncNavigation = read('components/transcript-sync.tsx')
+assert.ok(syncNavigation.includes('usePathname()'), 'sync state resets between class routes')
+assert.ok(syncNavigation.includes("if (!inTranscript) return null"), 'navigation appears only while reading')
+assert.ok(syncNavigation.includes('Follow off') && syncNavigation.includes('Follow on'), 'Follow is reversible')
+assert.ok(syncNavigation.includes("if (id === 'recording')"), 'jumping to video disables Follow')
+assert.ok(syncNavigation.includes('const canFollow = available && pointsRef.current.length > 0'), 'untimed transcripts have no Follow')
+assert.ok(read('app/layout.tsx').includes('<TranscriptSync/>'), 'one controller is mounted globally')
+assert.ok(!read('components/eye-of-courage-class-page.tsx').includes('TranscriptQuickNav'), 'no duplicate Eye nav')
+for (const reader of [aci17, archive]) {
+  assert.ok(!reader.includes('timed-transcript-jump-back') && !reader.includes('showJumpBack'), 'no duplicate timed nav')
+}
+assert.ok(!read('app/eye-of-courage-refinement.css').includes('.transcript-quick-nav'), 'old Eye nav CSS removed')
+assert.ok(!read('app/timed-transcript.css').includes('.timed-transcript-jump-back'), 'old timed nav CSS removed')
+assert.ok(read('app/transcript-reader-standard.css').includes('.transcript-sync-floating'), 'one navigation stylesheet')
 
 // ACI 17 has exactly ten class URLs, with transcript reader wired from one route.
 const archiveCatalog = JSON.parse(read('content/classics/archive-sessions/course-17.json'))

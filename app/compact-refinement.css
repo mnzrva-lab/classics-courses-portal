@@ -74,16 +74,6 @@
 .class-study-tabs-mount + #study-notes,
 .class-study-tabs-mount + .class-study-tab-panel { margin-top: 0 !important; }
 
-/* Actual sync controls are compact and only appear when video + timestamped transcript both work. */
-.transcript-sync-floating {
-  max-width: 390px;
-  padding: 10px 12px !important;
-  gap: 10px !important;
-}
-.transcript-sync-floating strong { font-size: 12px; }
-.transcript-sync-floating .meta { font-size: 10px; line-height: 1.35; }
-.transcript-sync-floating .button { min-height: 34px; padding: 0 10px; font-size: 10.5px; }
-
 /* Living Lam Rim: six term cards follow the approved V12-style overview. */
 .living-terms-section { margin-top: 58px; }
 .living-terms-heading { margin-bottom: 28px; }

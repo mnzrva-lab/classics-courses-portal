@@ -7,7 +7,6 @@ import EyeOfCourageTabs from '@/components/eye-of-courage-tabs'
 import EyeOfCourageWorkshopShell from '@/components/eye-of-courage-workshop-shell'
 import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
-import TranscriptQuickNav from '@/components/transcript-quick-nav'
 import LibraryTranscriptReader from '@/components/library-transcript-reader'
 import {
   eyeOfCourageProgram,
@@ -34,7 +33,6 @@ export default function EyeOfCourageClassPage({ sessionSlug }: { sessionSlug: 'c
       {transcript.length ? <>
         <TranscriptNotice />
         <LibraryTranscriptReader chapters={transcript} programTitle={eyeOfCourageProgram.title} sessionTitle={session.label} sessionDate={session.date} sessionPath={`/other-programs/eye-of-courage/${session.slug}`} />
-        <TranscriptQuickNav />
       </> : <p className="meta">Transcript not added yet.</p>}
     </div>
   )

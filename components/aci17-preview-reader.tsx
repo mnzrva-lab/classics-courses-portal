@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import CopyReference from '@/components/copy-reference'
 import TranscriptCiteActivation from '@/components/transcript-cite-activation'
 import TranscriptReaderToolbar from '@/components/transcript-reader-toolbar'
@@ -107,8 +107,6 @@ export default function ACI17PreviewReader({
   sessionDate: string
   sessionPath: string
 }) {
-  const rootRef = useRef<HTMLDivElement | null>(null)
-  const [showJumpBack, setShowJumpBack] = useState(false)
   const [readerSize, setReaderSize] = useState<ReaderSize>('medium')
   const [showParagraphTimes, setShowParagraphTimes] = useState(false)
   const [preferencesLoaded, setPreferencesLoaded] = useState(false)
@@ -137,23 +135,8 @@ export default function ACI17PreviewReader({
     } catch {}
   }, [readerSize, showParagraphTimes, preferencesLoaded])
 
-  useEffect(() => {
-    function updateJumpBack() {
-      const root = rootRef.current
-      if (root) setShowJumpBack(root.getBoundingClientRect().top < -320)
-    }
-    updateJumpBack()
-    window.addEventListener('scroll', updateJumpBack, { passive: true })
-    window.addEventListener('resize', updateJumpBack)
-    return () => {
-      window.removeEventListener('scroll', updateJumpBack)
-      window.removeEventListener('resize', updateJumpBack)
-    }
-  }, [])
-
   return (
     <div
-      ref={rootRef}
       className={`timed-transcript-root aci17-timed-reader reader-size-${readerSize}${showParagraphTimes ? ' show-paragraph-times' : ''}`}
       style={{ scrollMarginTop: 96 }}
     >
@@ -239,12 +222,7 @@ export default function ACI17PreviewReader({
         })}
       </article>
 
-      {showJumpBack ? (
-        <div className="timed-transcript-jump-back" aria-label="Transcript navigation">
-          <button type="button" onClick={() => rootRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>↑ Transcript</button>
-          <button type="button" onClick={() => document.getElementById('recording')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>↑ Video</button>
-        </div>
-      ) : null}
+
     </div>
   )
 }

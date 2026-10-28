@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { usePathname } from 'next/navigation'
 
 type Point = {
   id: string
@@ -38,9 +39,14 @@ function scanTranscript() {
     paragraph.dataset.transcriptStart = String(seconds)
     timestamp.dataset.transcriptSeek = String(seconds)
     timestamp.classList.add('transcript-timestamp')
-    timestamp.setAttribute('role', 'button')
-    timestamp.setAttribute('tabindex', '0')
-    timestamp.setAttribute('aria-label', `Play recording from ${timestamp.textContent?.trim() ?? 'this timestamp'}`)
+    // Native buttons already handle keyboard activation; do not seek twice.
+    if (!(timestamp instanceof HTMLButtonElement)) {
+      timestamp.setAttribute('role', 'button')
+      timestamp.setAttribute('tabindex', '0')
+    }
+    if (!timestamp.hasAttribute('aria-label')) {
+      timestamp.setAttribute('aria-label', `Play recording from ${timestamp.textContent?.trim() ?? 'this timestamp'}`)
+    }
 
     points.push({ id, seconds, element: paragraph, timestamp })
   })
@@ -66,6 +72,7 @@ function activePoint(points: Point[], seconds: number) {
 }
 
 export default function TranscriptSync() {
+  const pathname = usePathname()
   const pointsRef = useRef<Point[]>([])
   const activeIdRef = useRef<string | null>(null)
   const followRef = useRef(false)
@@ -81,30 +88,42 @@ export default function TranscriptSync() {
   useEffect(() => {
     function updateTranscriptPresence() {
       const transcript = document.getElementById('transcript')
-      if (!transcript) {
+      // Inactive study tabs and unavailable transcripts must not show navigation.
+      if (!transcript || !transcript.querySelector('[data-library-transcript], [data-transcript-paragraph]') || transcript.getClientRects().length === 0) {
         setInTranscript(false)
         return
       }
       const rect = transcript.getBoundingClientRect()
-      setInTranscript(rect.top < window.innerHeight - 120 && rect.bottom > 120)
+      setInTranscript(rect.top < -200 && rect.bottom > 160)
     }
 
     updateTranscriptPresence()
     window.addEventListener('scroll', updateTranscriptPresence, { passive: true })
     window.addEventListener('resize', updateTranscriptPresence)
+    // React tab switches can change the visible transcript without scrolling.
+    const observer = new MutationObserver(updateTranscriptPresence)
+    observer.observe(document.body, { childList: true, subtree: true })
     return () => {
+      observer.disconnect()
       window.removeEventListener('scroll', updateTranscriptPresence)
       window.removeEventListener('resize', updateTranscriptPresence)
     }
-  }, [])
+  }, [pathname])
 
   useEffect(() => {
-    const active = available && inTranscript
-    document.body.classList.toggle('transcript-sync-active', active)
+    document.body.classList.toggle('transcript-sync-active', inTranscript)
     return () => document.body.classList.remove('transcript-sync-active')
-  }, [available, inTranscript])
+  }, [inTranscript])
 
   useEffect(() => {
+    // RootLayout survives client navigation: never carry Follow into a new class.
+    pointsRef.current = []
+    activeIdRef.current = null
+    followRef.current = false
+    recordingAvailableRef.current = false
+    setAvailable(false)
+    setFollow(false)
+
     function refreshPoints() {
       pointsRef.current = scanTranscript()
       if (!pointsRef.current.length) {
@@ -133,6 +152,7 @@ export default function TranscriptSync() {
 
     function onKeyDown(event: KeyboardEvent) {
       if (event.key !== 'Enter' && event.key !== ' ') return
+      if (event.target instanceof HTMLButtonElement) return
       if (seekFromElement(event.target)) event.preventDefault()
     }
 
@@ -190,34 +210,40 @@ export default function TranscriptSync() {
       activeIdRef.current = null
       recordingAvailableRef.current = false
     }
-  }, [])
+  }, [pathname])
 
   function jumpTo(id: 'recording' | 'transcript') {
+    // Visiting the player must not be undone by the next playback update.
+    if (id === 'recording') {
+      followRef.current = false
+      setFollow(false)
+    }
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
-  if (!available || pointsRef.current.length === 0) return null
+  // Navigation works for every transcript. Follow requires a timed, connected player.
+  if (!inTranscript) return null
+  const canFollow = available && pointsRef.current.length > 0
 
   return (
-    <div className={inTranscript ? "transcript-sync-floating is-in-transcript" : "transcript-sync-floating"} aria-label="Video and transcript controls">
-      <div className="transcript-sync-copy">
-        <strong>Video + transcript sync</strong>
-        <div className="meta">Click a timestamp to seek. Follow playback highlights the current passage.</div>
-      </div>
-
-      <div className="transcript-sync-mobile-nav" aria-label="Quick navigation">
-        <button type="button" onClick={() => jumpTo('recording')}>↑ Video</button>
-        <button type="button" onClick={() => jumpTo('transcript')}>↑ Transcript</button>
-      </div>
-
-      <button
-        className={follow ? 'button sage transcript-sync-follow' : 'button transcript-sync-follow'}
-        type="button"
-        onClick={() => setFollow((value) => !value)}
-        aria-pressed={follow}
-      >
-        {follow ? 'Following' : 'Follow'}
-      </button>
-    </div>
+    <nav
+      className={'transcript-sync-floating is-in-transcript' + (canFollow ? ' has-follow' : '')}
+      aria-label="Transcript and video navigation"
+    >
+      <button type="button" className="transcript-sync-transcript" onClick={() => jumpTo('transcript')}>↑ Transcript</button>
+      <button type="button" className="transcript-sync-video" onClick={() => jumpTo('recording')}>↑ Video</button>
+      {canFollow ? (
+        <button
+          className={'transcript-sync-follow' + (follow ? ' is-following' : '')}
+          type="button"
+          onClick={() => setFollow(value => !value)}
+          aria-pressed={follow}
+          aria-label={follow ? 'Turn off Follow playback' : 'Turn on Follow playback'}
+          title="Automatically scroll to the current passage while the recording plays"
+        >
+          {follow ? 'Follow on' : 'Follow off'}
+        </button>
+      ) : null}
+    </nav>
   )
 }
