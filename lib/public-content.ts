@@ -59,7 +59,12 @@ async function readApprovedSource(path: string): Promise<string | null> {
   const token = process.env.LIBRARY_CONTENT_GITHUB_TOKEN?.trim()
   if (!token) return null
 
-  const url = `https://api.github.com/repos/${CONTENT_REPO}/contents/published/${path}?ref=main`
+  // TEMP QA ONLY: use the private disposable branch on Netlify deploy previews.
+  // Netlify production and all other environments MUST keep the real main branch.
+  // Remove this branch switch after create/edit/delete validation finishes.
+  const contentRef = process.env.CONTEXT === 'deploy-preview'
+    ? 'qa-disposable-offering-2026-10-28' : 'main'
+  const url = `https://api.github.com/repos/${CONTENT_REPO}/contents/published/${path}?ref=${encodeURIComponent(contentRef)}`
   try {
     const response = await fetch(url, {
       // Cache the 11 ACI 17 source files briefly on the server so public search
