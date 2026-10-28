@@ -3,7 +3,6 @@ import LibrarySessionList from '@/components/library-session-list'
 import LibraryCourseHero from '@/components/library-course-hero'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 import rawCatalog from '@/content/classics/catalog.json'
-import rawMaterials from '@/content/classics/course-08/taiwan-2026/materials.json'
 
 type CourseSession = {
   id: string
@@ -40,22 +39,7 @@ type CourseData = {
   sessions: CourseSession[]
 }
 
-type CourseMaterial = {
-  id: string
-  title: string
-  kind: string
-  format: string
-  sourceFileName: string
-  sourceStatus: string
-  url: string | null
-  hostingStatus: string
-  note?: string
-}
-
-type MaterialsData = { materials: CourseMaterial[] }
-
 const courseData = rawCourseData as CourseData
-const materialsData = rawMaterials as MaterialsData
 const catalog = rawCatalog as Array<{ canonicalNumber: number; artwork?: string; artworkAlt?: string }>
 
 function sessionMarker(session: CourseSession) {
@@ -98,28 +82,6 @@ export default function Course8TaiwanPage() {
         subtitle={'with ' + offering.teachers.join(' and ')}
         facts={['Aug 18-22, 2026', offering.location, offering.languages.join(' · ')]}
       />
-
-      <section className="section" id="materials">
-        <div className="offering-section-head">
-          <div>
-            <div className="eyebrow">Course materials</div>
-            <h2>Reading</h2>
-            <p>The complete primary Course 8 reading has been recovered from the supplied project materials.</p>
-          </div>
-        </div>
-        <div className="grid two">
-          {materialsData.materials.map((material) => (
-            <div className="card" key={material.id}>
-              <div className="eyebrow">{material.kind} · {material.format}</div>
-              <h3>{material.title}</h3>
-              <p className="meta">Source: {material.sourceFileName}</p>
-              <div className="actions">
-                {material.url ? <a className="button sage" href={material.url} target="_blank" rel="noreferrer">Open reading ↗</a> : <span className="pill">Source recovered · link being connected</span>}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
 
       <section className="section">
         <div className="offering-section-head">

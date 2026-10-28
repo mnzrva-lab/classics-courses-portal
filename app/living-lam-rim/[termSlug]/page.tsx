@@ -36,7 +36,8 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
   const term = catalog.terms.find((item) => item.slug === termSlug)
   if (!term) notFound()
   const schedule = term.term === 7 ? await getTerm7Schedule() : null
-  const upcoming = schedule ? weeklyTermOccurrences(schedule, Date.now(), 6) : []
+  // Show the first ten *dates* in the announced Monday recurrence; no ending is implied.
+  const firstMondays = schedule ? weeklyTermOccurrences(schedule, 0, 10) : []
 
   return (
     <main className="container page living-lam-rim-term-page">
@@ -67,7 +68,7 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
           <div className="section-head">
             <div>
               <div className="eyebrow">Live course · Living Lam Rim Term 7</div>
-              <h2>Weekly live classes</h2>
+              <h2>First 10 Mondays</h2>
               <p>Every Monday · {formatArizonaTimeRange(schedule)} (UTC−7)</p>
               <p className="meta">{schedule.endDate ? `Through ${formatTermStartDate(schedule.endDate)}` : 'The final class date has not been announced.'}</p>
             </div>
@@ -76,14 +77,14 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
             <a className="button sage" href="/living-lam-rim/term-7/calendar">＋ Add weekly classes to calendar</a>
             <Link className="button" href="/calendar">View all upcoming classes</Link>
           </div>
-          <div className="llr-upcoming-dates" aria-label="Next Mondays in this weekly series">
-            {upcoming.map((session) => (
-              <div className="llr-upcoming-date" key={session.id}>
-                <strong>{formatArizonaDate(session.startsAt)}</strong>
-                <span>{formatArizonaTimeRange(schedule)}</span>
-              </div>
-            ))}
-          </div>
+          <LibrarySessionList rows={firstMondays.map((session, index) => ({
+            href: '/living-lam-rim/term-7/monday-' + session.date,
+            code: String(index + 1),
+            title: formatArizonaDate(session.startsAt),
+            meta: formatArizonaTimeRange(schedule),
+            status: 'Class details to be added',
+          }))} />
+          <p className="meta llr-calendar-note">These are the first ten dates generated from the announced weekly Monday schedule, not a confirmed ten-class limit. </p>
           <p className="meta llr-calendar-note">{schedule.endDate ? `The calendar series ends on ${formatTermStartDate(schedule.endDate)}.` : 'The calendar download repeats every Monday without an end date until the final date is confirmed.'}</p>
         </section>
       ) : null}

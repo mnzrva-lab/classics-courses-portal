@@ -18,6 +18,13 @@ assert.equal(coming[0].startsAt, '2026-11-02T14:00:00.000Z')
 assert.equal(coming[0].endsAt, '2026-11-02T15:15:00.000Z')
 assert.equal(weeklyTermOccurrences(data, Date.parse('2026-11-02T14:30:00Z'), 1)[0].date, '2026-11-02')
 assert.equal(weeklyTermOccurrences(data, Date.parse('2026-11-02T15:16:00Z'), 1)[0].date, '2026-11-09')
+const firstTen = weeklyTermOccurrences(data, 0, 10)
+assert.deepEqual(firstTen.map((event) => event.date), [
+  '2026-11-02', '2026-11-09', '2026-11-16', '2026-11-23', '2026-11-30',
+  '2026-12-07', '2026-12-14', '2026-12-21', '2026-12-28', '2027-01-04',
+])
+assert.equal(new Set(firstTen.map(event => event.date)).size, 10)
+assert.ok(firstTen.every(event => event.startsAt.endsWith('14:00:00.000Z')))
 const spring = weeklyTermOccurrences(data, Date.parse('2027-03-01T16:00:00Z'), 1)[0]
 assert.equal(spring.startsAt, '2027-03-08T14:00:00.000Z', 'Phoenix must not shift for DST')
 const finite = { ...data, endDate: '2026-11-16' }

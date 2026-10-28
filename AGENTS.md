@@ -22,3 +22,9 @@ This file is repository guidance for agents, maintainers and contributors. **Rea
 5. Confirm preview deployment ready and PR remains draft. Never report a live page while deployment is still pending.
 
 See `docs/page-design-standards.md` for the full specification and known exceptions.
+
+## Schedule-first class lists
+- Course 16: show ten individual verified class recording links directly on the course hub, sourced from the archived class JSON.
+- Course 18: split five paired teaching dates into ten individually linked class pages, but never split an unverified block time into invented class-specific times.
+- Living Lam Rim Term 7: list the first ten recurring Mondays as dated links, without implying an end date or an official class count. Schedule placeholders explicitly say materials are not yet available.
+- Keep unlinked Reading materials hidden until approved URLs are ready. Do not discard source PDFs or fabricate URLs.

@@ -33,6 +33,8 @@ jobs:
         run: node scripts/check-transcript-standards.mjs
       - name: Verify original course cover files and mappings
         run: node scripts/check-course-artworks.mjs
+      - name: Verify course lists and scheduled date links
+        run: node --experimental-strip-types scripts/test-course-lists.mjs
       - name: Build
         run: npm run build
       - name: Smoke test exact search, term hub, and program introduction
@@ -83,6 +85,11 @@ jobs:
           grep -Fq 'data-layout-standard="course-hero-v1"' /tmp/term7.html
           grep -Fq 'class="library-course-hero-artwork"' /tmp/term7.html
           grep -Fq "/images/living-lam-rim/term-7/BG.webp" /tmp/term7.html
+          grep -Fq "/living-lam-rim/term-7/monday-2026-11-02" /tmp/term7.html
+          grep -Fq "/living-lam-rim/term-7/monday-2027-01-04" /tmp/term7.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/living-lam-rim/term-7/monday-2026-11-02" -o /tmp/term7-monday.html
+          grep -Fq 'data-layout-standard="class-v1"' /tmp/term7-monday.html
+          grep -Fq "Monday, November 2, 2026" /tmp/term7-monday.html
           curl -fsS --max-time 10 "http://127.0.0.1:3199/images/living-lam-rim/term-7/BG.webp" -o /tmp/term7-cover.webp
           cmp -s public/images/living-lam-rim/term-7/BG.webp /tmp/term7-cover.webp
           printf "39e65a1dfae70d658063e33a220e729cf41e614d6ba71a6c0182b52d0339439a  public/images/living-lam-rim/term-7/BG.webp\n" | sha256sum -c -
@@ -106,13 +113,29 @@ jobs:
           curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-8/taiwan-2026" -o /tmp/course8-offering-page.html
           grep -Fq 'data-layout-standard="course-hero-v1"' /tmp/course8-offering-page.html
           grep -Fq '/images/classics/course-8/taiwan-2026.webp' /tmp/course8-offering-page.html
+          if grep -Fq 'Source recovered · link being connected' /tmp/course8-offering-page.html; then
+            echo "Unready Reading section still visible on Course 8"
+            exit 1
+          fi
           grep -Fq 'has-artwork' /tmp/course8-offering-page.html
           curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-16" -o /tmp/course16-page.html
           grep -Fq '/images/classics/course-16/arizona-2026.webp' /tmp/course16-page.html
+          grep -Fq 'Classes 1' /tmp/course16-page.html
+          grep -Fq '/archive/classics/course-16/archive-2025-2026/video-' /tmp/course16-page.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/archive/classics/course-16/archive-2025-2026/video-lGJZ3uBR3_Q" -o /tmp/course16-class1.html
+          grep -Fq 'data-layout-standard="class-v1"' /tmp/course16-class1.html
           curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-17/current-2026" -o /tmp/course17-page.html
           grep -Fq '/images/classics/course-17/arizona-2026.webp' /tmp/course17-page.html
           curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-18" -o /tmp/course18-page.html
           grep -Fq '/images/classics/course-18/arizona-2026.webp' /tmp/course18-page.html
+          grep -Fq '/courses/course-18/class-1' /tmp/course18-page.html
+          grep -Fq '/courses/course-18/class-10' /tmp/course18-page.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-18/class-1" -o /tmp/course18-class1.html
+          grep -Fq 'data-layout-standard="class-v1"' /tmp/course18-class1.html
+          grep -Fq 'Sunday, September 20, 2026' /tmp/course18-class1.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-18/class-10" -o /tmp/course18-class10.html
+          grep -Fq 'data-layout-standard="class-v1"' /tmp/course18-class10.html
+          grep -Fq 'Sunday, January 24, 2027' /tmp/course18-class10.html
           curl -fsS --max-time 10 "http://127.0.0.1:3199/living-lam-rim/term-1/class-1" -o /tmp/living-lam-rim-class.html
           grep -Fq 'data-layout-standard="class-v1"' /tmp/living-lam-rim-class.html
           grep -Fq 'id="recording"' /tmp/living-lam-rim-class.html
