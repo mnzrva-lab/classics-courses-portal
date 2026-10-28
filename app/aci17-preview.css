@@ -108,10 +108,12 @@
   min-width: 0;
 }
 /* Estimated timestamps have a quiet visual distinction and remain clickable. */
-.aci17-timed-reader .timed-transcript-time.aci17-estimated {
+.aci17-timed-reader .timed-transcript-time.aci17-estimated,
+.aci17-timed-reader .timed-chapter-time.aci17-estimated {
   border-style: dashed;
 }
-.aci17-timed-reader .timed-transcript-time.aci17-estimated::before {
+.aci17-timed-reader .timed-transcript-time.aci17-estimated::before,
+.aci17-timed-reader .timed-chapter-time.aci17-estimated::before {
   content: '~';
   margin-right: 2px;
   font-weight: 600;
