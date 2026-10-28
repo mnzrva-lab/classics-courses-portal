@@ -5,6 +5,11 @@ import { eyeOfCourageProgram } from '@/content/eye-of-courage/program'
 import { assumptionScenarios, beliefAreas, fourPowers, fourSteps } from './eye-of-courage-workshop-data'
 
 const KEY = 'eye-of-courage-workbook-v1'
+const oneWeekCommitments = [
+  ['commit-belief', 'The belief I will watch'],
+  ['commit-action', 'The different action I will practice'],
+  ['commit-good', 'The goodness I will deliberately rejoice in'],
+] as const
 type Answers = Record<string, string>
 type Checks = Record<string, string[]>
 type Saved = { answers: Answers; checks: Checks }
@@ -42,6 +47,7 @@ export default function EyeOfCourageWorkshop() {
       ...Object.keys(beliefAreas).map(area => 'own-' + area),
       ...fourPowers.map((_, i) => 'power-' + i),
       ...fourSteps.map((_, i) => 'step-' + i),
+      ...oneWeekCommitments.map(([id]) => id),
     ]
     const answers = activeIds.filter(id => data.answers[id]?.trim()).length
     const selections = Object.keys(beliefAreas).reduce((n, area) => n + (data.checks[area]?.length ?? 0), 0)
@@ -84,6 +90,8 @@ export default function EyeOfCourageWorkshop() {
       fourPowers.forEach(([name, q], i) => add(name + ': ' + q, data.answers['power-' + i] ?? ''))
       rows.push(new Paragraph({ text: 'The Four Steps', heading: HeadingLevel.HEADING_2 }))
       fourSteps.forEach(([name, q], i) => add(name + ': ' + q, data.answers['step-' + i] ?? ''))
+      section('My one-week commitment')
+      oneWeekCommitments.forEach(([id, question]) => add(question, data.answers[id] ?? ''))
       const docx = new Document({ sections: [{ children: rows }] })
       const blob = await Packer.toBlob(docx); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = 'The_Eye_of_Courage_My_Workbook_Answers.docx'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000)
     } finally { setExporting(false) }
@@ -128,6 +136,13 @@ export default function EyeOfCourageWorkshop() {
 
     <section className="eoc-workshop-section" id="repair"><Head n={3} eyebrow="Interrupt + replace" title="Repair quickly, then create a different future" copy="When the pattern appears, use a fast repair rather than feeding shame or replaying the story. Once you can see the old loop, plant deliberately."/><div className="eoc-practice-columns"><div className="card"><div className="eyebrow">The four powers</div><h3>Repair quickly</h3>{fourPowers.map(([name,q],i) => <Field key={name} id={`power-${i}`} label={`${i+1}. ${name} · ${q}`} value={data.answers[`power-${i}`] ?? ''} onChange={v => set(`power-${i}`,v)}/>)}</div><div className="card cream"><div className="eyebrow">The four steps</div><h3>Create a different future</h3>{fourSteps.map(([name,q],i) => <Field key={name} id={`step-${i}`} label={`${i+1}. ${name} · ${q}`} value={data.answers[`step-${i}`] ?? ''} onChange={v => set(`step-${i}`,v)}/>)}</div></div></section>
 
+    <div className="eoc-commitment" id="commitment">
+      <div className="eyebrow">My one-week commitment</div>
+      <h3>Keep it small enough to complete.</h3>
+      <div className="eoc-commitment-fields">
+        {oneWeekCommitments.map(([id, question]) => <Field key={id} id={id} label={question} rows={2} value={data.answers[id] ?? ''} onChange={value => set(id, value)} />)}
+      </div>
+    </div>
     <div className="eoc-workshop-finish card sage"><div><div className="eyebrow">Keep your work</div><h2>Download a copy before you leave.</h2><p>Your browser copy stays on this device. A DOCX export gives you a portable copy of everything you wrote.</p></div><div className="actions"><button className="button sage" onClick={downloadAnswers} disabled={exporting}>{exporting ? 'Preparing DOCX…' : 'Download my answers'}</button><a className="button" href="#assumptions">Return to the beginning</a></div></div>
   </div>
 }
