@@ -1,3 +1,4 @@
+import TranscriptSearchHighlights from '@/components/transcript-search-highlights'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -304,6 +305,7 @@ export default async function SessionPage({
           <div className="text-downloads"><span>Download</span><a href={`${downloadBase}?kind=transcript&format=txt`}>TXT</a><span>·</span><a href={`${downloadBase}?kind=transcript&format=docx`}>DOCX</a></div>
         </div>
         <div className="info-callout"><strong>About this transcript</strong><br />{transcript.disclaimer}</div>
+        <TranscriptSearchHighlights />
         <TranscriptControls chapters={transcriptChapterOptions} />
         {transcriptParagraphs.length > 0 ? <article className="transcript-v12-card">
           {renderLeadingTranscriptAssets()}
