@@ -1,55 +1,52 @@
-/* ACI 17 trial: small paragraph start-time rail, no word-by-word payload. */
-.aci17-preview-reader { padding-top: 8px; }
-.aci17-preview-chapter-top {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  border-top: 1px solid var(--line);
-  padding: 24px 12px 8px;
-  margin-top: 12px;
-}
-.aci17-preview-chapter:first-of-type .aci17-preview-chapter-top { border-top: 0; }
-.aci17-preview-chapter-top h3 { margin: 0; min-width: 0; }
-.aci17-preview-copy {
-  display: grid;
-  grid-template-columns: 66px minmax(0, 1fr);
-  gap: 12px;
-  min-width: 0;
-  align-items: start;
-}
-.aci17-preview-time-column { min-width: 0; padding-top: 4px; }
-.aci17-preview-spoken { min-width: 0; font-size: 17px; line-height: 1.7; }
-.aci17-preview-spoken > p { margin: 0; }
-.aci17-preview-time {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 31px;
-  padding: 6px 7px;
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  font-weight: 750;
-  line-height: 1;
-  border: 1px solid var(--sage-300);
-  border-radius: 999px;
-  background: var(--sage-050);
-  color: var(--sage-900);
-  white-space: nowrap;
-  cursor: pointer;
-}
-.aci17-preview-time:hover, .aci17-preview-time:focus-visible {
-  border-color: var(--sage-700);
-  background: var(--sage-100);
-}
-.aci17-preview-missing-time { color: var(--ink-soft); font-size: 11px; white-space: nowrap; }
+/* ACI 17 restores the original timed transcript reading system.
+ * Keep styling scoped to this preview. The original Class 10 reader is unchanged. */
 .aci17-preview-banner { margin: 12px 0 18px; }
 .aci17-preview-banner p { margin: 0; }
-.aci17-preview-paragraph.is-current { background: var(--sage-050); box-shadow: inset 3px 0 0 var(--sage-700); }
-@media (max-width: 700px) {
-  .aci17-preview-copy { grid-template-columns: 56px minmax(0,1fr); gap: 9px; }
-  .aci17-preview-spoken { font-size: 18px; }
-  .aci17-preview-chapter-top { padding-inline: 4px; align-items: flex-start; }
-  .aci17-preview-chapter-top h3 { font-size: 22px; }
-  .aci17-preview-time { font-size: 10px; min-height: 34px; }
+.aci17-timed-reader .aci17-timed-chapter-group:first-of-type .timed-transcript-chapter {
+  margin-top: 0;
+  border-top: 0;
+}
+.aci17-timed-reader .timed-transcript-html > div > p {
+  margin: 0 !important;
+  line-height: inherit !important;
+}
+.aci17-timed-reader .timed-transcript-html > div > p + p { margin-top: 8px !important; }
+.aci17-time-pending { color: var(--ink-soft); font-size: 11px; font-weight: 700; }
+.aci17-chapter-pending { padding: 7px 0; white-space: nowrap; }
+.aci17-timed-reader .aci17-untimed-paragraph {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding-top: 4px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+.aci17-timed-reader.show-paragraph-times .aci17-untimed-paragraph { display: inline-flex; }
+/* Citation controls are optional and invisible in the default reading layout. */
+.aci17-timed-reader .aci17-cite-row { display: none; justify-content: flex-end; margin-top: 4px; }
+.aci17-timed-reader .aci17-timed-paragraph:hover > .aci17-cite-row,
+.aci17-timed-reader .aci17-timed-paragraph:focus-within > .aci17-cite-row,
+.aci17-timed-reader .aci17-timed-paragraph[data-cite-active] > .aci17-cite-row {
+  display: flex;
+}
+.aci17-timed-reader .aci17-cite-row .citation-menu > summary {
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: var(--paper);
+  font-size: 11px;
+}
+.aci17-timed-reader .aci17-cite-row .citation-menu[open] .citation-menu-panel {
+  position: static !important;
+  inset: auto !important;
+  margin-top: 6px;
+  max-width: min(300px, calc(100vw - 40px));
+  max-height: none;
+}
+.aci17-timed-reader .aci17-cite-row .citation-menu-panel button { min-height: 40px; }
+@media (max-width: 720px) {
+  .aci17-timed-reader .aci17-chapter-pending { display: block; margin-bottom: 8px; }
+  .aci17-timed-reader .aci17-cite-row .citation-menu > summary { min-height: 44px; }
+  .aci17-timed-reader .aci17-cite-row .citation-menu-panel button { min-height: 44px; }
 }

@@ -3,7 +3,6 @@ import { notFound } from 'next/navigation'
 import RecordingPlayer from '@/components/recording-player'
 import TimedArchiveTranscript from '@/components/timed-archive-transcript'
 import ACI17PreviewReader from '@/components/aci17-preview-reader'
-import TranscriptControls from '@/components/transcript-controls'
 import { getACI17PreviewTranscript } from '@/lib/aci17-preview-transcript'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
@@ -69,7 +68,6 @@ export default async function ClassicsArchiveSessionPage({ params }: { params: P
         {previewTranscript ? (
           <>
             <div className="info-callout aci17-preview-banner"><p><strong>Preview · Unverified timecodes.</strong> This transcript was created with AI and should be checked against the original recording. Chapter and paragraph times are provisional SRT-derived starting points, not final verified video alignment. Missing times are deliberately left blank.</p></div>
-            <TranscriptControls chapters={previewTranscript.chapters.map((chapter) => ({ id: chapter.id, label: chapter.title }))} />
             <ACI17PreviewReader transcript={previewTranscript} sessionTitle={session.name} sessionDate={session.date ?? ''} sessionPath={`/archive/classics/${course.slug}/${offering.slug}/${sessionSlug}`} />
           </>
         ) : timedTranscript ? (
