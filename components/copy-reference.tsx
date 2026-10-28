@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type Props = {
   reference: string
   path: string
+  /** Include a user-selected exact quote when this control is in a transcript. */
+  quoteFromSelection?: boolean
 }
 
 function fallbackCopy(value: string) {
@@ -28,7 +30,8 @@ async function copy(value: string) {
   fallbackCopy(value)
 }
 
-export default function CopyReference({ reference, path }: Props) {
+export default function CopyReference({ reference, path, quoteFromSelection = false }: Props) {
+  const detailsRef = useRef<HTMLDetailsElement>(null)
   const [status, setStatus] = useState<'reference' | 'link' | 'citation' | null>(null)
 
   useEffect(() => {
@@ -50,12 +53,16 @@ export default function CopyReference({ reference, path }: Props) {
     setStatus('link')
   }
   async function copyCitation() {
-    await copy(`${reference}\n${absoluteUrl()}`)
+    const selectedText = quoteFromSelection
+      ? detailsRef.current?.closest<HTMLElement>('[data-transcript-paragraph]')?.dataset.citeSelectedQuote?.trim()
+      : null
+    const quote = selectedText ? `“${selectedText}”\n` : ''
+    await copy(`${quote}${reference}\n${absoluteUrl()}`)
     setStatus('citation')
   }
 
   return (
-    <details className="citation-menu">
+    <details className="citation-menu" ref={detailsRef}>
       <summary className="passage-action">Cite</summary>
       <div className="citation-menu-panel">
         <button type="button" onClick={copyReference}>{status === 'reference' ? 'Copied' : 'Reference'}</button>
