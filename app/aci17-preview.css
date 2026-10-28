@@ -94,3 +94,29 @@
   .aci17-timed-reader .aci17-cite-row .citation-menu > summary { min-height: 44px; }
   .aci17-timed-reader .aci17-cite-row .citation-menu-panel button { min-height: 44px; }
 }
+
+/* Always assign the spoken text to the wide track. This also protects
+   the layout if a future transcript contains a passage without a cue. */
+.aci17-timed-reader.show-paragraph-times .timed-transcript-copy {
+  grid-template-columns: 80px minmax(0, 1fr);
+}
+.aci17-timed-reader.show-paragraph-times .timed-transcript-copy > .timed-transcript-time {
+  grid-column: 1;
+}
+.aci17-timed-reader.show-paragraph-times .timed-transcript-copy > .timed-transcript-html {
+  grid-column: 2;
+  min-width: 0;
+}
+/* Estimated timestamps have a quiet visual distinction and remain clickable. */
+.aci17-timed-reader .timed-transcript-time.aci17-estimated {
+  border-style: dashed;
+}
+.aci17-timed-reader .timed-transcript-time.aci17-estimated::before {
+  content: '~';
+  margin-right: 2px;
+  font-weight: 600;
+}
+@media (max-width: 720px) {
+  .aci17-timed-reader.show-paragraph-times .timed-transcript-copy { display: block; }
+  .aci17-timed-reader.show-paragraph-times .timed-transcript-copy > .timed-transcript-html { grid-column: auto; }
+}

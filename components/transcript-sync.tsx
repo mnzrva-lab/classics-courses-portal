@@ -27,7 +27,11 @@ function scanTranscript() {
     const id = paragraph.id.replace(/^paragraph-/, '')
     const timestamp = paragraph.querySelector<HTMLElement>('.transcript-copy .transcript-timestamp, :scope > div .meta')
     if (!id || !timestamp) return
-    const seconds = parseTimestamp(timestamp.textContent ?? '')
+    const explicit = timestamp.getAttribute('data-transcript-seek')
+    const numeric = explicit === null ? null : Number(explicit)
+    const seconds = numeric !== null && Number.isFinite(numeric) && numeric >= 0
+      ? numeric
+      : parseTimestamp(timestamp.textContent ?? '')
     if (seconds == null) return
 
     paragraph.dataset.transcriptParagraph = id
