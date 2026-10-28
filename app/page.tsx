@@ -207,8 +207,6 @@ export default async function HomePage() {
 
   return (
     <main>
-      <section className="hero home-v12-hero"><div className="container"><div className="eyebrow">Teaching library</div><h1>Study the teachings.</h1><p>Browse Classics Courses, recordings, Study Notes, Reference Transcripts, meditations, and course materials in one calm study space.</p><div className="actions" style={{ marginTop: 22 }}><Link className="button sage" href="/courses">Browse Classics Courses</Link><Link className="button" href="/search">Search the Library</Link></div></div></section>
-
       <UpcomingCourses courses={upcomingCourses} />
 
       <section className="container section">
