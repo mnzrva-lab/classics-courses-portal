@@ -282,3 +282,42 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+
+
+/* Related word-form discovery is separate from exact search results. */
+.search-word-discovery {
+  margin: 3px 0 22px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--sage-050);
+}
+.search-word-discovery-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-bottom: 12px;
+}
+.search-word-discovery-heading strong { font-size: 15px; }
+.search-word-discovery-heading span { font-size: 12px; color: var(--ink-soft); }
+.search-word-discovery-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.search-word-discovery-link {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 9px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--sage-300);
+  border-radius: 12px;
+  background: var(--white);
+  text-decoration: none;
+}
+.search-word-discovery-link strong { color: var(--sage-900); font-size: 14px; }
+.search-word-discovery-link span { color: var(--ink-soft); font-size: 12px; }
+.search-word-discovery-link:hover { border-color: var(--sage-700); }
+@media (max-width: 600px) {
+  .search-word-discovery { padding: 13px; }
+  .search-word-discovery-link { max-width: 100%; }
+}
