@@ -3,6 +3,8 @@ import { notFound } from 'next/navigation'
 import LibraryClassHeader from '@/components/library-class-header'
 import LibraryClassSection from '@/components/library-class-section'
 import ClassSequenceNavigation from '@/components/class-sequence-navigation'
+import RecordingPlayer from '@/components/recording-player'
+import { course18RecordingFor } from '@/lib/course18-recordings'
 import { getCourse18Schedule } from '@/lib/course18-content'
 import { individualCourse18Classes, formatCourse18Date, formatCourse18ClassTime } from '@/lib/course18-individual-classes'
 
@@ -25,6 +27,7 @@ export default async function Course18ClassPage({
   const { block } = item
   const previous = classes[index - 1]
   const next = classes[index + 1]
+  const recording = course18RecordingFor(item.number)
 
   return (
     <main className="container page">
@@ -40,8 +43,12 @@ export default async function Course18ClassPage({
         meta={formatCourse18Date(block.startsAt) + ' · ' + formatCourse18ClassTime(item)}
       />
 
-      <LibraryClassSection id="recording" eyebrow="Recording" title="Recording not added yet">
-        <p className="meta">A recording for {item.title} has not yet been linked in the Library.</p>
+      <LibraryClassSection id="recording" eyebrow="Recording" title={recording ? 'Class recording' : 'Recording not added yet'}>
+        {recording ? (
+          <RecordingPlayer recordingUrl={recording.url} title={`Classics Course 18 · ${item.title}`} />
+        ) : (
+          <p className="meta">A recording for {item.title} has not yet been linked in the Library.</p>
+        )}
       </LibraryClassSection>
 
       <LibraryClassSection id="transcript" eyebrow="Reference Transcript" title="Transcript not added yet">

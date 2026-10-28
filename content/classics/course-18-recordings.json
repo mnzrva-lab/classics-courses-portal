@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "course": 18,
+  "playlistUrl": "https://www.youtube.com/playlist?list=PLGskEd2Fm5fk",
+  "recordings": [
+    {
+      "classNumber": 1,
+      "videoId": "oQYnS1wLe-k",
+      "url": "https://youtu.be/oQYnS1wLe-k?si=zKMJqo3muF4LmE7t"
+    },
+    {
+      "classNumber": 2,
+      "videoId": "d164rqeicds",
+      "url": "https://youtu.be/d164rqeicds?si=D0RfEN2vXQaADBlj"
+    },
+    {
+      "classNumber": 3,
+      "videoId": "SmiuED2Sjkk",
+      "url": "https://youtu.be/SmiuED2Sjkk?si=m463hQMQNMlCDU2G"
+    },
+    {
+      "classNumber": 4,
+      "videoId": "R90dFMwWU3k",
+      "url": "https://youtu.be/R90dFMwWU3k?si=CsLV30bMsaPqGFCQ"
+    }
+  ]
+}

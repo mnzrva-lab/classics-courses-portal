@@ -6,6 +6,7 @@ import { archiveSessionsFor } from '@/content/classics/archive-sessions'
 import { archiveSessionSlug } from '@/content/classics/archive-route'
 import { getCourse18Schedule } from '@/lib/course18-content'
 import { individualCourse18Classes, formatCourse18Date, formatCourse18ClassTime } from '@/lib/course18-individual-classes'
+import { course18PlaylistUrl, course18RecordingFor } from '@/lib/course18-recordings'
 import NextClassCountdown from '@/components/next-class-countdown'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
@@ -116,15 +117,18 @@ export default async function ClassicsCourseHub({ courseSlug }: { courseSlug: st
             <div>
               <div className="eyebrow">Course content · Arizona 2026–2027</div>
               <h2>Classes 1–10</h2>
-              <p>Ten classes across five teaching dates. Each date has two classes; recordings and study materials will be linked separately.</p>
+              <p>Ten classes across five teaching dates. Each date has two classes; recordings are available for Classes 1–4.</p>
             </div>
           </div>
           <NextClassCountdown sessions={detailedSchedule} />
+          <p className="meta" style={{ margin: '12px 0 16px' }}>
+            <a className="inline-library-link" href={course18PlaylistUrl} target="_blank" rel="noreferrer">Open ACI 18 playlist on YouTube ↗</a>
+          </p>
           <LibrarySessionList rows={course18Classes.map((item) => ({
             href: item.href,
             code: 'C' + item.number,
             title: item.title,
-            meta: formatCourse18Date(item.block.startsAt),
+            meta: formatCourse18Date(item.block.startsAt) + (course18RecordingFor(item.number) ? ' · Recording available' : ''),
             status: formatCourse18ClassTime(item),
           }))} />
         </section>
