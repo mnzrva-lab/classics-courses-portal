@@ -1,10 +1,14 @@
 import CopyReference from '@/components/copy-reference'
 import TranscriptCiteActivation from '@/components/transcript-cite-activation'
 import MarkdownContent from '@/components/markdown-content'
-import type { PerfectionTranscriptChapter } from '@/content/perfection-of-wisdom/transcripts'
+export type LibraryTranscriptChapter = {
+  id: string
+  title: string
+  paragraphs: Array<{ id: string; speaker?: string | null; text: string; startSeconds?: number | null }>
+}
 
 type Props = {
-  chapters: PerfectionTranscriptChapter[]
+  chapters: LibraryTranscriptChapter[]
   programTitle: string
   sessionTitle: string
   sessionDate: string
@@ -35,7 +39,7 @@ export default function LibraryTranscriptReader({
           <section key={chapter.id} id={chapter.id} style={{ scrollMarginTop: 96, marginBottom: 34 }}>
             <h3>{chapterTitle}</h3>
             {chapter.paragraphs.map((paragraph) => {
-              const announcedSpeaker = paragraph.speaker.trim().replace(/[:：]\s*$/, '')
+              const announcedSpeaker = (paragraph.speaker ?? '').trim().replace(/[:：]\s*$/, '')
               const newTurn = Boolean(announcedSpeaker) && announcedSpeaker !== currentSpeaker
               if (announcedSpeaker) currentSpeaker = announcedSpeaker
 
