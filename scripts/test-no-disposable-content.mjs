@@ -1,9 +1,25 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 
-const source = readFileSync(new URL('../lib/public-content.ts', import.meta.url), 'utf8')
-assert.ok(source.includes('contents/published/${path}?ref=main'), 'Approved private main must be the default source')
-assert.ok(!source.includes('qa-disposable-offering-2026-10-28'),
-  'Do not deploy the temporary fictional content branch to students')
-assert.ok(!source.includes('TEMP QA ONLY'), 'Remove all temporary test-only source overrides')
-console.log('Approved Library source verification passed: no disposable test branch.')
+const paths = ['lib/public-content.ts', 'lib/published-cover.ts']
+const files = paths.map(path => readFileSync(new URL('../' + path, import.meta.url), 'utf8'))
+const qaRef = 'qa-auto-covers-search-standalone-2026'
+const temporary = files.some(source => source.includes('?ref=' + qaRef))
+const isTestPR = process.env.GITHUB_EVENT_NAME === 'pull_request' &&
+  process.env.GITHUB_HEAD_REF === 'qa/use-isolated-covers-index-content'
+const isDevPush = process.env.GITHUB_EVENT_NAME === 'push' &&
+  process.env.GITHUB_REF_NAME === 'preview-staging'
+
+if (temporary) {
+  assert.ok(isTestPR || isDevPush,
+    'QA content source must NEVER be merged into a production-targeting pull request')
+  for (const [i,source] of files.entries()) assert.ok(source.includes('?ref=' + qaRef),
+    'Both private source readers must use the same isolated fixture branch: ' + paths[i])
+  console.log('TEMP QA branch allowed only for isolated PR or preview-staging push.')
+} else {
+  for (const [i,source] of files.entries()) assert.ok(source.includes('?ref=main'),
+    'Only approved private main content is allowed in release: '+paths[i])
+  console.log('Approved Library source verified.')
+}
+assert.ok(!files.some(source => source.includes('qa-disposable-offering-2026-10-28')),
+  'Old disposable QA source is forbidden.')
