@@ -19,7 +19,7 @@ const ACI17_TRANSCRIPT_FILES = [
   'classics/course-17/class-10/transcript.json',
 ] as const
 
-const PUBLISHED_FILES = {
+const PUBLISHED_FILES: Record<string, { kind: 'json' | 'markdown'; maxBytes: number }> = {
   'perfection-of-wisdom/overview.md': { kind: 'markdown', maxBytes: 20000 },
   'classics/course-18/schedule.json': { kind: 'json', maxBytes: 60000 },
   'living-lam-rim/term-7/schedule.json': { kind: 'json', maxBytes: 12000 },
@@ -34,7 +34,7 @@ export type PublishedJsonPath = 'classics/course-18/schedule.json' | 'living-lam
   | 'perfection-of-wisdom/introduction-q-a-2021/first-qa-winter-2021/transcript.json'
   | 'classics/course-17/manifest.json' | (typeof ACI17_TRANSCRIPT_FILES)[number]
 
-async function readApprovedSource(path: keyof typeof PUBLISHED_FILES): Promise<string | null> {
+async function readApprovedSource(path: PublishedMarkdownPath | PublishedJsonPath): Promise<string | null> {
   if (!Object.prototype.hasOwnProperty.call(PUBLISHED_FILES, path)) return null
 
   const token = process.env.LIBRARY_CONTENT_GITHUB_TOKEN?.trim()
