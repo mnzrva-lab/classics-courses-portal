@@ -90,7 +90,7 @@ CI verifies exact counts (Course 16 = 10 verified recordings; Course 18 = 10 pla
 
 ## 8. Recording and transcript navigation (one shared controller)
 
-`TranscriptSync` is mounted once in `app/layout.tsx`. Do not introduce another fixed navigation pill inside a class reader. Do not reintroduce `TranscriptQuickNav`, `timed-transcript-jump-back`, or the large "Video + transcript sync" explanation popup.
+`TranscriptSync` is mounted once in `app/layout.tsx`. **This compact popup is the default automatically on every existing and future class page when timestamped paragraphs are imported**, with no per-class enable switch. It also retains the two navigation actions on untimed transcripts, while withholding Follow until player synchronization is available. Do not introduce another fixed navigation pill inside a class reader. Do not reintroduce `TranscriptQuickNav`, `timed-transcript-jump-back`, or the large "Video + transcript sync" explanation popup.
 
 After a student scrolls into a visible Reference Transcript, one compact toolbar offers **↑ Transcript** (back to transcript top) and **↑ Video** (back to the recording). If, and only if, an embedded recording is available for synchronization with paragraph timestamps, the same toolbar also offers **Follow off / Follow on**. Follow is off when a class opens, and choosing ↑ Video switches it off. Timestamps seek playback and the current paragraph highlights regardless of Follow; only Follow on scrolls automatically.
 

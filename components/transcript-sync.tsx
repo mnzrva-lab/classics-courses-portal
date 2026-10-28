@@ -102,7 +102,14 @@ export default function TranscriptSync() {
     window.addEventListener('resize', updateTranscriptPresence)
     // React tab switches can change the visible transcript without scrolling.
     const observer = new MutationObserver(updateTranscriptPresence)
-    observer.observe(document.body, { childList: true, subtree: true })
+    // Some class study tabs toggle the hidden attribute without remounting.
+    // Observe those switches so a toolbar never stays over Study Notes.
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['hidden'],
+    })
     return () => {
       observer.disconnect()
       window.removeEventListener('scroll', updateTranscriptPresence)
@@ -166,16 +173,20 @@ export default function TranscriptSync() {
       setAvailable(true)
 
       const current = activePoint(pointsRef.current, seconds)
-      if (!current || current.id === activeIdRef.current) return
+      if (!current) return
 
-      for (const point of pointsRef.current) {
-        const isCurrent = point.id === current.id
-        point.element.classList.toggle('is-current', isCurrent)
-        if (isCurrent) point.element.setAttribute('aria-current', 'true')
-        else point.element.removeAttribute('aria-current')
+      if (current.id !== activeIdRef.current) {
+        for (const point of pointsRef.current) {
+          const isCurrent = point.id === current.id
+          point.element.classList.toggle('is-current', isCurrent)
+          if (isCurrent) point.element.setAttribute('aria-current', 'true')
+          else point.element.removeAttribute('aria-current')
+        }
+        activeIdRef.current = current.id
       }
-      activeIdRef.current = current.id
 
+      // When Follow is enabled, respect it even if playback stays in the
+      // same paragraph while the student has scrolled elsewhere.
       if (followRef.current) {
         const rect = current.element.getBoundingClientRect()
         const comfortablyVisible = rect.top >= 120 && rect.bottom <= window.innerHeight - 90
@@ -221,6 +232,22 @@ export default function TranscriptSync() {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
 
+  function toggleFollow() {
+    const next = !followRef.current
+    followRef.current = next
+    setFollow(next)
+    // If the student activates Follow after seeking, return to the passage
+    // already highlighted instead of waiting for the next timestamp.
+    if (!next) return
+    const current = pointsRef.current.find(point => point.id === activeIdRef.current)
+    if (current) {
+      const rect = current.element.getBoundingClientRect()
+      if (rect.top < 120 || rect.bottom > window.innerHeight - 90) {
+        current.element.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      }
+    }
+  }
+
   // Navigation works for every transcript. Follow requires a timed, connected player.
   if (!inTranscript) return null
   const canFollow = available && pointsRef.current.length > 0
@@ -236,7 +263,7 @@ export default function TranscriptSync() {
         <button
           className={'transcript-sync-follow' + (follow ? ' is-following' : '')}
           type="button"
-          onClick={() => setFollow(value => !value)}
+          onClick={toggleFollow}
           aria-pressed={follow}
           aria-label={follow ? 'Turn off Follow playback' : 'Turn on Follow playback'}
           title="Automatically scroll to the current passage while the recording plays"

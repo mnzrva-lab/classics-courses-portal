@@ -65,6 +65,23 @@ assert.ok(!read('app/eye-of-courage-refinement.css').includes('.transcript-quick
 assert.ok(!read('app/timed-transcript.css').includes('.timed-transcript-jump-back'), 'old timed nav CSS removed')
 assert.ok(read('app/transcript-reader-standard.css').includes('.transcript-sync-floating'), 'one navigation stylesheet')
 
+// The shared toolbar is the default whenever a class receives timestamped
+// paragraphs. Do not add a route-specific widget when importing timecodes.
+const recording = read('components/recording-player.tsx')
+assert.ok(recording.includes("new CustomEvent('recording-time'"), 'YouTube player must publish playback time')
+assert.ok(recording.includes("window.addEventListener('recording-seek'"), 'timestamp controls must seek YouTube')
+assert.ok(syncNavigation.includes("attributeFilter: ['hidden']"), 'toolbar must follow study tab visibility')
+assert.ok(syncNavigation.includes('function toggleFollow()'), 'Follow must work immediately after activation')
+for (const [name, source] of [['shared source reader', library], ['ACI 17 reader', aci17], ['archive timed reader', archive]]) {
+  assert.ok(source.includes('data-transcript-paragraph'), name + ' must publish paragraph anchors to the shared controller')
+  assert.ok(source.includes('data-transcript-seek'), name + ' must publish timestamp seeking for new timecoded content')
+  assert.ok(!source.includes('<TranscriptSync') && !source.includes('<TranscriptQuickNav'), name + ' must not mount a second controller')
+}
+for (const page of pages) {
+  assert.ok(!read(page).includes('<TranscriptSync') && !read(page).includes('<TranscriptQuickNav'), page + ' must inherit global class controls')
+}
+assert.ok(!read('app/timed-transcript.css').includes('.transcript-sync-floating'), 'legacy mobile CSS cannot override the shared toolbar')
+
 // ACI 17 has exactly ten class URLs, with transcript reader wired from one route.
 const archiveCatalog = JSON.parse(read('content/classics/archive-sessions/course-17.json'))
 const sessions = archiveCatalog.offerings?.['current-2026']?.sessions
