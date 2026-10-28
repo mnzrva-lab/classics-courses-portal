@@ -9,6 +9,8 @@ import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import { archiveSessionsFor } from '@/content/classics/archive-sessions'
 import { archiveSessionSlug } from '@/content/classics/archive-route'
 import { getACI17Manifest } from '@/lib/aci17-published-content'
+import { getManagedClassicsOffering } from '@/lib/classics-managed-content'
+import ManagedClassicsOfferingPage from '@/components/managed-classics-offering-page'
 
 type CanonicalCourse = { canonicalNumber: number; slug: string; title: string; artwork?: string; artworkAlt?: string }
 type ArchiveOffering = {
@@ -38,6 +40,9 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
   const { courseSlug, offeringSlug } = await params
   const course = catalog.find((item) => item.slug === courseSlug)
   if (!course) notFound()
+
+  const managed = await getManagedClassicsOffering(courseSlug, offeringSlug)
+  if (managed) return <ManagedClassicsOfferingPage course={course} offering={managed} />
 
   const archive = archiveCatalog.courses.find((item) => item.canonicalNumber === course.canonicalNumber)
   const offering = archive?.offerings?.find((item) => item.slug === offeringSlug)
