@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import SearchResultList from '@/components/search-result-list'
+import { searchScore, type MatchMode } from '@/lib/search-match'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 import { allArchiveSessions } from '@/content/classics/archive-sessions'
@@ -47,29 +48,6 @@ const lamRimSessionIndex = new Map<string, { term: LamRimTerm; session: LamRimSe
 for (const term of lamRimCatalog.terms) for (const session of term.sessions) lamRimSessionIndex.set(session.id, { term, session })
 const perfectionSessionIndex = new Map(perfectionGroups.flatMap((group) => group.sessions.map((session) => [session.id, { group, session }] as const)))
 
-function clip(text: string, length = 320) {'))
-  const regex = new RegExp(`(${escaped.join('|')})`, 'gi')
-  return text.split(regex).map((part, index) => terms.some((term) => part.toLocaleLowerCase() === term.toLocaleLowerCase())
-    ? <mark className="search-query-mark" key={index}>{part}</mark>
-    : <Fragment key={index}>{part}</Fragment>)
-}
-function clip(text: string, length = 320) {
-  const cleaned = text.replace(/\s+/g, ' ').replace(/[*_`]/g, '').trim()
-  return cleaned.length > length ? `${cleaned.slice(0, length).trim()}…` : cleaned
-}
-function normalize(value: string) { return value.toLocaleLowerCase().replace(/[“”‘’]/g, "'").replace(/[*_`]/g, '').replace(/\s+/g, ' ').trim() }
-function searchScore(text: string, query: string) {
-  const haystack = normalize(text)
-  const phrase = normalize(query)
-  const terms = phrase.split(' ').filter(Boolean)
-  if (!terms.length || !terms.every((term) => haystack.includes(term))) return 0
-  let score = haystack.includes(phrase) ? 50 : 0
-  for (const term of terms) {
-    let index = 0
-    while ((index = haystack.indexOf(term, index)) !== -1) { score += 1; index += term.length }
-  }
-  return score
-}
 function studyNoteSections(markdown: string) {
   const sections: Array<{ title: string; body: string }> = []
   let title = 'Study Notes'; let lines: string[] = []
@@ -98,7 +76,7 @@ function archiveKind(code: string, name: string) {
   return 'Class'
 }
 
-function buildResults(query: string) {
+function buildResults(query: string, mode: MatchMode) {
   if (!query) return [] as SearchResult[]
   const results: SearchResult[] = []
 
@@ -115,7 +93,7 @@ function buildResults(query: string) {
       item.date,
       item.sourceTitle,
     ].filter(Boolean).join('\n')
-    const score = searchScore(searchable, query)
+    const score = searchScore(searchable, query, mode)
     if (!score) continue
     const href = `/archive/classics/${course.slug}/${item.offeringSlug}/${archiveSessionSlug(item)}`
     const teacher = item.teacher ?? ''
@@ -139,7 +117,7 @@ function buildResults(query: string) {
   for (const [sessionId, chapters] of Object.entries(course8Transcripts)) {
     const session = course8Sessions.get(sessionId); if (!session) continue
     for (const chapter of chapters) for (const paragraph of chapter.paragraphs) {
-      const score = searchScore(`${chapter.title}\n${paragraph.speaker}\n${paragraph.text}`, query); if (!score) continue
+      const score = searchScore(`${chapter.title}\n${paragraph.speaker}\n${paragraph.text}`, query, mode); if (!score) continue
       const href = `/courses/course-8/taiwan-2026/${session.slug}#${paragraph.id}`
       results.push({ id: paragraph.id, sourceId: courseData.course.slug, sourceLabel: `Classics Course ${courseData.course.canonicalNumber} · ${courseData.course.title}`, contextLabel: courseData.offering.label, sessionLabel: session.label, sessionKind: session.kind, teacher: session.teacher, contentType: 'Transcript', chapter: chapter.title, speaker: paragraph.speaker, body: paragraph.text, href, score: score + 5, reference: `Course ${courseData.course.canonicalNumber} · ${courseData.offering.label} · ${session.label} · Transcript` })
     }
@@ -148,7 +126,7 @@ function buildResults(query: string) {
   for (const [sessionId, notes] of Object.entries(course8StudyNotes)) {
     const session = course8Sessions.get(sessionId); if (!session) continue
     studyNoteSections(notes.markdown).forEach((section, index) => {
-      const score = searchScore(`${section.title}\n${section.body}`, query); if (!score) return
+      const score = searchScore(`${section.title}\n${section.body}`, query, mode); if (!score) return
       const href = `/courses/course-8/taiwan-2026/${session.slug}#study-notes`
       results.push({ id: `${sessionId}-notes-${index + 1}`, sourceId: courseData.course.slug, sourceLabel: `Classics Course ${courseData.course.canonicalNumber} · ${courseData.course.title}`, contextLabel: courseData.offering.label, sessionLabel: session.label, sessionKind: session.kind, teacher: session.teacher, contentType: 'Study Notes', chapter: section.title, body: section.body.replace(/^[-*]\s+/gm, ''), href, score: score + 3, reference: `Course ${courseData.course.canonicalNumber} · ${courseData.offering.label} · ${session.label} · Study Notes` })
     })
@@ -158,7 +136,7 @@ function buildResults(query: string) {
     const entry = lamRimSessionIndex.get(sessionId); if (!entry) continue
     const { term, session } = entry
     for (const chapter of chapters) for (const paragraph of chapter.paragraphs) {
-      const score = searchScore(`${chapter.title}\n${paragraph.speaker}\n${paragraph.text}`, query); if (!score) continue
+      const score = searchScore(`${chapter.title}\n${paragraph.speaker}\n${paragraph.text}`, query, mode); if (!score) continue
       const href = `/living-lam-rim/${term.slug}/${session.slug}#${paragraph.id}`
       const termLabel = `Term ${term.term}${term.title ? ` · ${term.title}` : ''}`
       results.push({ id: paragraph.id, sourceId: lamRimCatalog.program.slug, sourceLabel: lamRimCatalog.program.title, contextLabel: termLabel, sessionLabel: session.label, sessionKind: session.kind, teacher: 'Timothy Lowenhaupt', contentType: 'Transcript', chapter: chapter.title, speaker: paragraph.speaker, body: paragraph.text, href, score: score + 5, reference: `${lamRimCatalog.program.title} · ${termLabel} · ${session.label} · Transcript` })
@@ -169,7 +147,7 @@ function buildResults(query: string) {
     const entry = perfectionSessionIndex.get(sessionId); if (!entry) continue
     const { group, session } = entry
     for (const chapter of chapters) for (const paragraph of chapter.paragraphs) {
-      const score = searchScore(`${chapter.title}\n${paragraph.speaker}\n${paragraph.text}`, query); if (!score) continue
+      const score = searchScore(`${chapter.title}\n${paragraph.speaker}\n${paragraph.text}`, query, mode); if (!score) continue
       const href = `/perfection-of-wisdom/${group.slug}/${session.slug}#${paragraph.id}`
       results.push({ id: paragraph.id, sourceId: perfectionProgram.slug, sourceLabel: perfectionProgram.title, contextLabel: group.title, sessionLabel: session.name, sessionKind: perfectionKind(session.name), teacher: session.teacher, contentType: 'Transcript', chapter: chapter.title.replace(/[*_`]/g, ''), speaker: paragraph.speaker, body: paragraph.text, href, score: score + 5, reference: `${perfectionProgram.title} · ${group.title} · ${session.code} · Transcript` })
     }
@@ -178,15 +156,16 @@ function buildResults(query: string) {
   return results.sort((a, b) => b.score - a.score || a.sourceLabel.localeCompare(b.sourceLabel))
 }
 
-export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string; course?: string; teacher?: string; type?: string }> }) {
+export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string; course?: string; teacher?: string; type?: string; match?: string }> }) {
   const params = await searchParams
   const query = (params.q ?? '').trim(); const courseFilter = (params.course ?? '').trim(); const teacherFilter = (params.teacher ?? '').trim(); const typeFilter = (params.type ?? '').trim()
-  const rawResults = buildResults(query)
+  const matchMode: MatchMode = params.match === 'all' ? 'all' : 'phrase'
+  const rawResults = buildResults(query, matchMode)
   const results = rawResults.filter((result) => (!courseFilter || result.sourceId === courseFilter) && (!teacherFilter || result.teacher === teacherFilter) && (!typeFilter || result.sessionKind === typeFilter))
   const courseOptions = Array.from(new Map(rawResults.map((result) => [result.sourceId, result.sourceLabel] as const))).sort((a, b) => a[1].localeCompare(b[1]))
   const teacherOptions = Array.from(new Set(rawResults.map((result) => result.teacher).filter(Boolean))).sort()
   const typeOptions = Array.from(new Set(rawResults.map((result) => result.sessionKind).filter(Boolean))).sort()
-  const advancedActive = Boolean(courseFilter || teacherFilter || typeFilter)
+  const advancedActive = Boolean(courseFilter || teacherFilter || typeFilter || matchMode === 'all')
 
   return <main className="container page search-page-simple">
     <div className="eyebrow">Search</div><h1>Search the teachings</h1>
@@ -195,13 +174,14 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
     {query ? <>
       <details className="advanced-search" open={advancedActive}><summary>Advanced search</summary><form action="/search" method="get" className="advanced-search-form">
         <input type="hidden" name="q" value={query} />
+        <label>Match<select name="match" defaultValue={matchMode}><option value="phrase">Exact phrase</option><option value="all">All words (any order)</option></select></label>
         <label>Archive<select name="course" defaultValue={courseFilter}><option value="">All available archives</option>{courseOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
         <label>Teacher<select name="teacher" defaultValue={teacherFilter}><option value="">All teachers</option>{teacherOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
         <label>Session type<select name="type" defaultValue={typeFilter}><option value="">All session types</option>{typeOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
         <div className="actions"><button className="button sage" type="submit">Apply filters</button>{advancedActive ? <Link className="button" href={`/search?q=${encodeURIComponent(query)}`}>Clear filters</Link> : null}</div>
       </form></details>
       <section className="section search-results-simple"><div className="section-head"><div><h2>{results.length} result{results.length === 1 ? '' : 's'} for “{query}”</h2></div></div>
-        {results.length ? <SearchResultList results={results} query={query} /> : <p className="meta">No teaching material matched this search.</p>}
+        {results.length ? <SearchResultList results={results} query={query} mode={matchMode} /> : <p className="meta">No matching passages were found. Try All words (any order) in Advanced search for a broader search.</p>}
       </section>
     </> : <section className="section search-empty"><p className="meta">Search includes the migrated Classics recording archives, Course 8 Study Notes and transcripts, Living Lam Rim transcripts, and Perfection of Wisdom transcripts. More transcript text will appear as it is added to the Library.</p></section>}
   </main>
