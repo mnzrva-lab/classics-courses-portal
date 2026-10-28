@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import NextClassCountdown from '@/components/next-class-countdown'
+import { weeklyTermOccurrences, type WeeklyTermSchedule } from '@/lib/weekly-term-schedule'
 
 type UpcomingSession = {
   id: string
@@ -13,7 +14,9 @@ type UpcomingSession = {
 }
 
 type UpcomingCourse = {
-  courseNumber: number
+  courseNumber?: number
+  programLabel?: string
+  recurrence?: WeeklyTermSchedule
   title: string
   href: string
   artwork?: string | null
@@ -53,22 +56,32 @@ export default function UpcomingCourses({ courses }: { courses: UpcomingCourse[]
     return () => window.clearInterval(timer)
   }, [])
 
-  const featured = useMemo(() => {
+  const upcoming = useMemo(() => {
     const candidates = courses.flatMap((course) => {
-      const nextSession = course.sessions
+      const candidateSessions: UpcomingSession[] = course.recurrence
+        ? weeklyTermOccurrences(course.recurrence, now, 3)
+        : course.sessions
+      const nextSession = candidateSessions
         .filter((session) => sessionEnd(session) > now)
         .sort((a, b) => sessionStart(a) - sessionStart(b))[0]
 
-      return nextSession ? [{ course, nextSession, startsAt: sessionStart(nextSession) }] : []
+      return nextSession ? [{
+        course,
+        candidateSessions,
+        nextSession,
+        startsAt: sessionStart(nextSession),
+      }] : []
     })
 
-    return candidates.sort((a, b) => a.startsAt - b.startsAt)[0] ?? null
+    return candidates.sort((a, b) => a.startsAt - b.startsAt)
   }, [courses, now])
 
+  const featured = upcoming[0] ?? null
   if (!featured) return null
 
-  const { course, nextSession } = featured
-  const exactSessions = course.sessions
+  const { course, nextSession, candidateSessions } = featured
+  const courseLabel = course.programLabel ?? (course.courseNumber ? `Classics Course ${course.courseNumber}` : 'Upcoming course')
+  const exactSessions = candidateSessions
     .filter((session): session is UpcomingSession & { startsAt: string; endsAt: string } => Boolean(session.startsAt && session.endsAt))
     .map((session) => ({ id: session.id, label: session.label, startsAt: session.startsAt, endsAt: session.endsAt }))
 
@@ -84,6 +97,7 @@ export default function UpcomingCourses({ courses }: { courses: UpcomingCourse[]
           <h2>Study live next</h2>
           <p>The nearest scheduled course appears here automatically from the Library schedule.</p>
         </div>
+        <Link className="inline-library-link" href="/calendar">View live calendar →</Link>
       </div>
 
       <article className="upcoming-feature-card">
@@ -91,17 +105,17 @@ export default function UpcomingCourses({ courses }: { courses: UpcomingCourse[]
           className={course.artwork ? 'upcoming-feature-artwork has-artwork' : 'upcoming-feature-artwork placeholder'}
           href={course.href}
           style={artworkStyle}
-          aria-label={`Open Classics Course ${course.courseNumber}: ${course.title}`}
+          aria-label={`Open ${courseLabel}: ${course.title}`}
         >
           <div className="upcoming-feature-artwork-copy">
-            <div className="upcoming-feature-course-label">Classics Course {course.courseNumber}</div>
+            <div className="upcoming-feature-course-label">{courseLabel}</div>
             <h3>{course.title}</h3>
             <span>Live teaching schedule</span>
           </div>
         </Link>
 
         <div className="upcoming-feature-mobile-title">
-          <div className="eyebrow">Classics Course {course.courseNumber}</div>
+          <div className="eyebrow">{courseLabel}</div>
           <h3>{course.title}</h3>
         </div>
 
@@ -129,6 +143,19 @@ export default function UpcomingCourses({ courses }: { courses: UpcomingCourse[]
           </Link>
         </div>
       </article>
+      {upcoming.length > 1 ? (
+        <div className="upcoming-more-courses" aria-label="Other upcoming courses">
+          <div className="eyebrow">Also coming up</div>
+          {upcoming.slice(1, 4).map(({ course: item, nextSession: session }) => (
+            <Link className="upcoming-more-row" href={item.href} key={item.href}>
+              <span>{item.programLabel ?? (item.courseNumber ? `Classics Course ${item.courseNumber}` : 'Course')}</span>
+              <strong>{item.title}</strong>
+              <span>{formatDate(session.date)}</span>
+              <span aria-hidden="true">→</span>
+            </Link>
+          ))}
+        </div>
+      ) : null}
     </section>
   )
 }
