@@ -12,6 +12,8 @@ type ArchiveOffering = {
   slug: string
   label: string
   sourceLabel: string
+  artwork?: string
+  artworkAlt?: string
   playlistUrl?: string
   recordingCount?: number
   internalHref?: string
@@ -39,6 +41,8 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
   if (!offering) notFound()
 
   const sessions = archiveSessionsFor(course.canonicalNumber, offering.slug)
+  const artworkSrc = offering.artwork ?? course.artwork
+  const artworkAlt = offering.artworkAlt ?? course.artworkAlt ?? course.title
 
   if (offering.internalHref) {
     return (
@@ -48,7 +52,7 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
           eyebrow="Course Offering"
           title={course.title}
           subtitle={offering.label}
-          artwork={course.artwork ? { src: course.artwork, alt: course.artworkAlt ?? course.title, width: 1920, height: 1080 } : undefined}
+          artwork={artworkSrc ? { src: artworkSrc, alt: artworkAlt, width: 1920, height: 1080 } : undefined}
         >
           <Link className="inline-library-link" href={offering.internalHref}>Open course →</Link>
         </LibraryCourseHero>
@@ -64,7 +68,7 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
         eyebrow={'Classics Course ' + course.canonicalNumber + ' · Course Offering'}
         title={course.title}
         subtitle={offering.label}
-        artwork={course.artwork ? { src: course.artwork, alt: course.artworkAlt ?? course.title, width: 1920, height: 1080 } : undefined}
+        artwork={artworkSrc ? { src: artworkSrc, alt: artworkAlt, width: 1920, height: 1080 } : undefined}
       >
         {offering.playlistUrl ? (
           <a className="inline-library-link" href={offering.playlistUrl} target="_blank" rel="noreferrer">Open playlist on YouTube ↗</a>

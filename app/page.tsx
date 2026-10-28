@@ -9,7 +9,11 @@ import { getTerm7Schedule } from '@/lib/term7-content'
 import type { WeeklyTermSchedule } from '@/lib/weekly-term-schedule'
 
 type CatalogCourse = { canonicalNumber: number; slug: string; title: string; artwork?: string | null }
-type ArchiveCourse = { canonicalNumber: number; schedule?: Array<{ label: string; date: string }> }
+type ArchiveCourse = {
+  canonicalNumber: number
+  offerings?: Array<{ slug: string; internalHref?: string; artwork?: string | null }>
+  schedule?: Array<{ label: string; date: string }>
+}
 type ArchiveCatalog = { courses: ArchiveCourse[] }
 type LatestCourse = {
   sortDate: string
@@ -180,8 +184,9 @@ const fallbackLatestCourses: LatestCourse[] = [
     eyebrow: 'Classics Course 7 · Taiwan 2026',
     title: 'The Bodhisattva Vows',
     detail: 'Timothy Lowenhaupt',
-    href: '/courses/course-7',
+    href: '/courses/course-7/taiwan-march-april-2026',
     courseNumber: 7,
+    artwork: '/images/classics/course-7/taiwan-2026.webp',
   },
   {
     sortDate: '2026-03-22',
@@ -219,9 +224,16 @@ export default async function HomePage() {
           {latestCourses.map((course) => {
             // GitHub-controlled originals take precedence over older remote metadata.
             // Preserve remote artwork as the fallback for courses not yet assigned local images.
+            const canonical = course.courseNumber ? courseByNumber.get(course.courseNumber) : undefined
+            const offerings = course.courseNumber
+              ? archiveCatalog.courses.find((item) => item.canonicalNumber === course.courseNumber)?.offerings ?? []
+              : []
+            const offering = canonical
+              ? offerings.find((item) => (item.internalHref ?? `/courses/${canonical.slug}/${item.slug}`) === course.href)
+              : undefined
             const localArtwork = course.href === '/other-programs/eye-of-courage'
               ? eyeOfCourageProgram.coverPath
-              : (course.courseNumber ? courseByNumber.get(course.courseNumber)?.artwork : null)
+              : offering?.artwork ?? canonical?.artwork ?? null
             const artwork = localArtwork ?? course.artwork ?? null
             return (
               <Link className="home-milestone-row" href={course.href} key={`${course.sortDate}-${course.title}`}>
