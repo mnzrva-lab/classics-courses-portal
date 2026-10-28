@@ -1,52 +1,98 @@
-# Private content management in the existing Library
+# File-based teaching publishing
 
-## Student navigation
+## One public Library
 
-There is **one** public Library, with its existing Classics Courses, Living Lam Rim, Perfection of Wisdom and Other Programs sections. Publishing through private GitHub never creates another public section or duplicate course page.
+Private GitHub is the content editor behind our **existing** Library. It does not create a new public Library section or additional student-facing navigation. Ordinary content edits do not require a Netlify website deployment.
 
-For Classics Courses, students continue to use:
+- Classics Course N (1–18): existing `/courses/course-N` offering list; its classes use existing `/archive/classics/course-N/<offering>/<session>` links.
+- Standalone teaching: existing **Other Programs** section and one `/other-programs/<teaching-slug>` page. No invented term or class.
+- Existing ACI 17 material, Course 18 ongoing records and Course 8 Taiwan's current transcripts retain their separate legacy sources until deliberately migrated.
 
-- `/courses` (the existing 18-course grid)
-- `/courses/course-17` (the existing course and its Arizona, Kyoto, Taiwan, etc. offerings)
-- `/courses/course-17/kyoto-2027` (an offering when published)
-- `/archive/classics/course-17/kyoto-2027/class-1` (a class when published)
+### To add or update a Classics offering
 
-Previously shared development-only `/library` links redirect to the original Classics hierarchy. The small numbered badge in `LibrarySessionList` is only for class codes such as C1, never long course titles.
+Create or edit files in the **approved** private content repository:
 
-## Internal content files
+```text
+published/library/classics-course-17/
+  cover.webp                            optional shared course image
+  kyoto-2027/
+    manifest.json                       required offering and class information
+    cover.webp                          optional offering-specific image
+    class-1/
+      transcript.json                   optional when manifest says transcript:true
+      study-notes.md                    optional when manifest says studyNotes:true
+```
 
-The private GitHub repository contains `published/library/index.json`, an internal publishing registry, **not** a new website. Existing ACI 17 is registered as `source: existing-aci17` and continues to use its original, approved ten transcripts and canonical links.
+A sample shape (replace all placeholder values with approved material):
 
-A **new or updated Classics offering** can use `source: managed-v1` with:
+```json
+{
+  "schemaVersion": 1,
+  "programSlug": "classics-course-17",
+  "offeringSlug": "kyoto-2027",
+  "programTitle": "VERIFIED COURSE TITLE",
+  "offeringLabel": "VERIFIED OFFERING LABEL",
+  "kind": "Classics Course",
+  "sessions": [
+    {
+      "slug": "class-1",
+      "code": "C1",
+      "title": "VERIFIED CLASS TITLE",
+      "recordingUrl": "https://www.youtube.com/watch?v=VERIFIED_VIDEO_ID",
+      "transcript": false,
+      "studyNotes": false
+    }
+  ]
+}
+```
 
-- Index entry: `{ "programSlug": "classics-course-17", "offeringSlug": "kyoto-2027", "source": "managed-v1" }`
-- `published/library/classics-course-17/kyoto-2027/manifest.json`
-- Optional `published/library/classics-course-17/kyoto-2027/class-1/transcript.json`
-- Optional `published/library/classics-course-17/kyoto-2027/class-1/study-notes.md`
+Set `transcript: true` or `studyNotes: true` only when the corresponding file exists and passes validation. Recordings, dates, teacher fields, source links and titles are never invented automatically.
 
-The manifest has `schemaVersion: 1`, matching `programSlug`/`offeringSlug`, verified `programTitle`, `offeringLabel`, `kind`, and ordered `sessions`. A session has required `slug`, `code`, `title`; optional `date`, `teacher`, `duration`, HTTPS `recordingUrl`, `transcript`, `studyNotes` and approved HTTPS `materials`. The schema and files are validated on upload.
+### To publish a standalone teaching
 
-The same offering slug is inserted once in the course's existing offering list, preserving its position if it was already present. Adding a session to the manifest creates the class in the *existing* archive URL. Students do not see the registry, file types, or approval statuses. Nothing requires an additional editorial approval.
+Use the same approved private repository, in an Other Programs folder:
 
-## Constraints
+```text
+published/library/other-programs/harmony-for-health/
+  manifest.json
+  cover.webp              optional
+  transcript.json         optional
+  study-notes.md          optional
+```
 
-- ACI 17 originals, timestamps, citation anchors and live page design are preserved; Course 18 remains ongoing; Course 8 Taiwan transcript replacement is deferred.
-- This currently integrates *new managed offerings* into the existing 18 Classics Courses. Other program families must be wired into their respective existing sections, not a new Library.
-- New generic offerings use the standard class reader, transcript notice, timed/untimed transcript rendering, TXT/DOCX downloads, Study Notes and materials. Generic full-text search and Tibetan glossary integration still require the unified content-index task; ACI 17 is already indexed.
-- Images/PDFs must have an already public URL; a file in the private content repository is not automatically a public file.
-- The website refreshes published files on a short server cache, approximately 60 seconds. No new build should be needed for valid file-only updates, subject to an end-to-end content-only verification.
-- Source availability problems retain the original local offerings as a fallback where present, and unregistered or invalid new routes do not become public.
+Standalone manifest has `schemaVersion:1`, `teachingSlug` matching its folder, and required `title`. Optional fields: `subtitle`, `teacher`, `date`, `description`, `recordingUrl`, `transcript`, `studyNotes`, `artwork`, `artworkAlt`, `materials` (approved HTTPS links). No artificial class or term folder. The example folder above is **not** populated with real Harmony for Health material; publish it only once the approved source files are supplied.
 
-## End-to-end disposable publishing verification (October 28, 2026)
+### Automatic covers, with no empty placeholders
 
-A private **test-only content branch** hosted a fictional two-class offering under ACI 17. The approved private `main` collection never received the fictitious content, and the website's production `main` never changed.
+- An offering's `cover.webp` is used first.
+- If absent, Classics may use `classics-course-N/cover.webp`.
+- If neither file exists, existing explicitly configured website artwork can be used; otherwise the course has a properly styled **text-only** hero with no blank image column.
+- A standalone teaching uses its own `cover.webp`, its explicitly configured artwork, or text-only layout.
+- The private cover route serves only registered published WebP images, validates the header and file size (max **4 MB**), never reveals the private GitHub token, and refreshes after changes. Replace or delete the binary file to update the displayed image. The site response cache makes refresh approximate, not instantaneous.
 
-The actual deploy preview passed three HTTP-based GitHub Actions checks:
+### Automatic Library registration and Search
 
-- **Create:** [successful run](https://github.com/mnzrva-lab/classics-library-content/actions/runs/40740755724). Verified original Course 17 listing, offering and two class URLs, existing image and sample YouTube link, placeholder transcript and Study Notes, and all four TXT/DOCX downloads.
-- **Edit:** [successful run](https://github.com/mnzrva-lab/classics-library-content/actions/runs/40741066035). Changed title, cover reference, recording URL, transcript and Study Notes entirely in private GitHub. Verified new content and absence of old markers in pages and downloads without any Netlify website redeployment.
-- **Delete:** [successful run](https://github.com/mnzrva-lab/classics-library-content/actions/runs/40741257807). Removed the fictional manifest, transcript, notes and catalog entry. Verified the offering disappeared, temporary URLs returned HTTP 404, and real ACI 17 remained available, again without a Netlify redeployment.
+The private GitHub workflow runs after content commits on `main`:
 
-The private test branch's current index is byte-for-byte identical to private `main`, with zero remaining fictional offering files. After testing, the temporary code override that read the test branch was removed byte-for-byte from `lib/public-content.ts`; the development preview and production both return to reading approved `main`.
+1. Discover valid supported manifest folders. It generates `published/library/index.json` automatically, keeping the original ACI 17 alias. An editor **does not edit the index manually**.
+2. Validate manifests, images, transcript timing claims, stable paragraph IDs and notes. A missing file flagged as available is an error.
+3. Generate `published/search/manifest.json` and immutable `published/search/parts/*.json` shards from the **same validated source files**. Students' exact searches, related-word suggestions and source-marked Tibetan glossary references use these generated shards plus existing legacy sources.
+4. Commit the generated index and shards in the same private GitHub commit. No Netlify website build is necessary for ordinary content changes.
 
-**Limits:** This test demonstrates content changes for an offering **inside the 18 Classics Courses**, not an independent Harmony for Health/Other Programs page. Artwork was swapped between already-hosted website images; uploading a brand-new image through private GitHub was **not** tested or enabled. Automatic Search/Tibetan indexing of future generic offerings remains a separate development task. The one-minute refresh policy is approximate and was verified by retries, not assumed to be instantaneous.
+**Deleting a published folder** removes its offering and search records from the generated registry on the next workflow. Existing shared URLs then return 404 for deleted managed content. The content repository history remains as an audit trail.
+
+Do not hand-edit generated `published/library/index.json` or `published/search/` files. Automatic generation runs on GitHub Actions; uploading source files is not instantaneous publication. Expect the GitHub job plus the website's normal caching/revalidation interval.
+
+### Safety and release
+
+- Approved-on-upload policy remains: no second editorial approval. Validation checks technical correctness, not whether the teaching is approved.
+- Only use material cleared for public display. Keep drafts, student data, tokens and unfinished Living Lam Rim transcript replacements out of `published/`.
+- Production still needs a secure, server-only, read-only private-content token in its **production Netlify environment** before the final website release. Do not put secrets in GitHub source files.
+- Preview was tested using **fictional private-branch** content. Restore the preview source to private `main`, verify source guards, and keep website production PR #2 draft until a production release is explicitly authorized.
+
+## Verified QA (October 28, 2026)
+
+- Successfully created a fictional Classics offering from a manifest and an uploaded WebP cover.
+- Successfully created a fictional standalone teaching inside Other Programs with a text-only hero.
+- Live Search, Tibetan source links and TXT/DOCX downloads were checked on the actual Netlify development preview.
+- See the private QA workflow history for edit and deletion results. No fictional material belongs in approved private `main`.
