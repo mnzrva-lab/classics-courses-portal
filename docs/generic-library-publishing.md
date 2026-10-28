@@ -36,3 +36,17 @@ The same offering slug is inserted once in the course's existing offering list, 
 - Images/PDFs must have an already public URL; a file in the private content repository is not automatically a public file.
 - The website refreshes published files on a short server cache, approximately 60 seconds. No new build should be needed for valid file-only updates, subject to an end-to-end content-only verification.
 - Source availability problems retain the original local offerings as a fallback where present, and unregistered or invalid new routes do not become public.
+
+## End-to-end disposable publishing verification (October 28, 2026)
+
+A private **test-only content branch** hosted a fictional two-class offering under ACI 17. The approved private `main` collection never received the fictitious content, and the website's production `main` never changed.
+
+The actual deploy preview passed three HTTP-based GitHub Actions checks:
+
+- **Create:** [successful run](https://github.com/mnzrva-lab/classics-library-content/actions/runs/40740755724). Verified original Course 17 listing, offering and two class URLs, existing image and sample YouTube link, placeholder transcript and Study Notes, and all four TXT/DOCX downloads.
+- **Edit:** [successful run](https://github.com/mnzrva-lab/classics-library-content/actions/runs/40741066035). Changed title, cover reference, recording URL, transcript and Study Notes entirely in private GitHub. Verified new content and absence of old markers in pages and downloads without any Netlify website redeployment.
+- **Delete:** [successful run](https://github.com/mnzrva-lab/classics-library-content/actions/runs/40741257807). Removed the fictional manifest, transcript, notes and catalog entry. Verified the offering disappeared, temporary URLs returned HTTP 404, and real ACI 17 remained available, again without a Netlify redeployment.
+
+The private test branch's current index is byte-for-byte identical to private `main`, with zero remaining fictional offering files. After testing, the temporary code override that read the test branch was removed byte-for-byte from `lib/public-content.ts`; the development preview and production both return to reading approved `main`.
+
+**Limits:** This test demonstrates content changes for an offering **inside the 18 Classics Courses**, not an independent Harmony for Health/Other Programs page. Artwork was swapped between already-hosted website images; uploading a brand-new image through private GitHub was **not** tested or enabled. Automatic Search/Tibetan indexing of future generic offerings remains a separate development task. The one-minute refresh policy is approximate and was verified by retries, not assumed to be instantaneous.
