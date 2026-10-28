@@ -69,7 +69,7 @@ async function readApprovedSource(path: string): Promise<string | null> {
   const token = process.env.LIBRARY_CONTENT_GITHUB_TOKEN?.trim()
   if (!token) return null
 
-  const url = `https://api.github.com/repos/${CONTENT_REPO}/contents/published/${path}?ref=main`
+  const url = `https://api.github.com/repos/${CONTENT_REPO}/contents/published/${path}?ref=qa-auto-covers-search-standalone-2026`
   try {
     const response = await fetch(url, {
       // Cache the 11 ACI 17 source files briefly on the server so public search
