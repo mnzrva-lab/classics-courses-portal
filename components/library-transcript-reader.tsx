@@ -1,4 +1,5 @@
 import CopyReference from '@/components/copy-reference'
+import TranscriptSearchHighlights from '@/components/transcript-search-highlights'
 import TranscriptCiteActivation from '@/components/transcript-cite-activation'
 import MarkdownContent from '@/components/markdown-content'
 export type LibraryTranscriptChapter = {
@@ -30,6 +31,7 @@ export default function LibraryTranscriptReader({
   return (
     <article className="transcript-v12-card library-transcript-reader" aria-label="Reference transcript" data-library-transcript="true">
       <TranscriptCiteActivation />
+      <TranscriptSearchHighlights />
       <p className="library-cite-touch-hint">Tap a paragraph to cite it. Select words to include them in the citation.</p>
       {chapters.map((chapter) => {
         let currentSpeaker = ''
