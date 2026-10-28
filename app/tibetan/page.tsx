@@ -16,7 +16,7 @@ export default async function TibetanPage({ searchParams }: { searchParams: Prom
       <div className="eyebrow">Tibetan</div>
       <h1>Tibetan glossary</h1>
       <p className="lead">Terms currently marked in square brackets in the migrated transcripts, with a short excerpt from the class where each term appears.</p>
-      <p className="meta">This is a transcript-derived study index for now, not yet a reviewed dictionary. Open any card to return to the exact source passage.</p>
+      <p className="meta">Only explicitly marked Tibetan or uppercase Wylie terms are collected automatically. Meanings are not guessed or presented as verified definitions. Open a term to explore its source passages.</p>
 
       <section className="section">
         {visible.length ? (
@@ -27,6 +27,7 @@ export default async function TibetanPage({ searchParams }: { searchParams: Prom
                 <p className="tibetan-term-context">{item.context}</p>
                 <div className="tibetan-term-source">{item.source}</div>
                 <div className="tibetan-term-count">{item.occurrences.length} source passage{item.occurrences.length === 1 ? '' : 's'}</div>
+                <Link href={`/tibetan/source/${encodeURIComponent(item.term)}`}>View term hub and citations →</Link>
                 {item.occurrences.length === 1 ? (
                   <Link href={item.href}>Open passage →</Link>
                 ) : (
