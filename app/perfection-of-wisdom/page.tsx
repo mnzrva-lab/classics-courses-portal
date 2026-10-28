@@ -7,14 +7,16 @@ export const dynamic = 'force-dynamic'
 
 export default async function PerfectionOfWisdomPage() {
   const externalIntro = await readPublishedMarkdown('perfection-of-wisdom/overview.md')
-  const intro = externalIntro ?? perfectionProgram.intro
+  // Editable GitHub Markdown owns every paragraph between the fixed title
+  // and playlist link. Local fallback stays complete if GitHub is unavailable.
+  const fallbackIntro = [perfectionProgram.subtitle, perfectionProgram.intro.replace(/^Root text\b/, '**Root text**')].join('\n\n')
+  const intro = externalIntro ?? fallbackIntro
 
   return (
     <main className="container page perfection-page">
       <header className="compact-page-head">
         <div className="eyebrow">{perfectionProgram.eyebrow}</div>
         <h1>{perfectionProgram.title}</h1>
-        <p className="lead">{perfectionProgram.subtitle}</p>
         <div className="perfection-intro-markdown" data-content-origin={externalIntro ? 'private-github' : 'local'}>
           <MarkdownContent content={intro} />
         </div>
