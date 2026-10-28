@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import LibrarySessionList from '@/components/library-session-list'
 import rawCatalog from '@/content/living-lam-rim/catalog.json'
+import { getTerm7Schedule } from '@/lib/term7-content'
+import { weeklyTermOccurrences, formatArizonaDate, formatArizonaTimeRange } from '@/lib/weekly-term-schedule'
 
 type Session = {
   id: string
@@ -26,10 +28,14 @@ type Catalog = { terms: Term[] }
 
 const catalog = rawCatalog as Catalog
 
+export const dynamic = 'force-dynamic'
+
 export default async function LivingLamRimTermPage({ params }: { params: Promise<{ termSlug: string }> }) {
   const { termSlug } = await params
   const term = catalog.terms.find((item) => item.slug === termSlug)
   if (!term) notFound()
+  const schedule = term.term === 7 ? await getTerm7Schedule() : null
+  const upcoming = schedule ? weeklyTermOccurrences(schedule, Date.now(), 6) : []
 
   return (
     <main className="container page living-lam-rim-term-page">
@@ -37,11 +43,38 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
 
       <header className="compact-page-head">
         <div className="eyebrow">Term {term.term}</div>
-        <h1>{term.title ?? `Term ${term.term}`}</h1>
-        <p className="lead">{term.range}</p>
+        <h1>{schedule?.title ?? (term.title ?? `Term ${term.term}`)}</h1>
+        <p className="lead">{schedule ? `Weekly Mondays from ${formatArizonaDate(schedule.startDate + 'T14:00:00Z')}` : term.range}</p>
         {term.note ? <p className="meta">{term.note}</p> : null}
       </header>
 
+      {schedule ? (
+        <section className="section compact-section llr-live-term">
+          <div className="section-head">
+            <div>
+              <div className="eyebrow">Live course · Living Lam Rim Term 7</div>
+              <h2>Weekly live classes</h2>
+              <p>Every Monday · {formatArizonaTimeRange(schedule)} · Arizona time (UTC−7)</p>
+              <p className="meta">The final class date has not been announced.</p>
+            </div>
+          </div>
+          <div className="actions llr-live-actions">
+            <a className="button sage" href="/living-lam-rim/term-7/calendar">＋ Add weekly classes to calendar</a>
+            <Link className="button" href="/calendar">View all upcoming classes</Link>
+          </div>
+          <div className="llr-upcoming-dates" aria-label="Next Mondays in this weekly series">
+            {upcoming.map((session) => (
+              <div className="llr-upcoming-date" key={session.id}>
+                <strong>{formatArizonaDate(session.startsAt)}</strong>
+                <span>{formatArizonaTimeRange(schedule)}</span>
+              </div>
+            ))}
+          </div>
+          <p className="meta llr-calendar-note">The calendar download repeats every Monday without an end date until the final date is confirmed.</p>
+        </section>
+      ) : null}
+
+      {term.sessions.length ? (
       <section className="section compact-section">
         <div className="section-head"><div><div className="eyebrow">Course content</div><h2>Classes &amp; review</h2></div></div>
         <LibrarySessionList rows={term.sessions.map((session) => ({
@@ -52,6 +85,7 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
           status: session.transcriptSource ? 'Recording · Transcript' : 'Recording',
         }))} />
       </section>
+      ) : null}
     </main>
   )
 }
