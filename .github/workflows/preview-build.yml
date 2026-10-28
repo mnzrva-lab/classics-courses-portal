@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - preview-staging
+      - feature/search-related-word-forms
+  pull_request:
+    branches:
+      - preview-staging
   workflow_dispatch:
 
 jobs:
