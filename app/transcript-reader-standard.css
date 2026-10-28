@@ -1,0 +1,64 @@
+/* Shared ACI 17 reading experience for every source-based class transcript. */
+/* The existing course/class layout and transcript source text remain unchanged. */
+.unified-transcript-reader .library-transcript-reader {
+  overflow: visible;
+}
+.unified-transcript-reader .library-standard-chapter .timed-transcript-chapter {
+  margin: 30px 0 10px;
+  border-top: 1px solid var(--line);
+}
+.unified-transcript-reader .library-standard-chapter:first-of-type .timed-transcript-chapter {
+  margin-top: 0;
+  border-top: 0;
+}
+.unified-transcript-reader .library-standard-chapter .library-untimed-chapter {
+  display: block;
+  grid-template-columns: none;
+}
+.unified-transcript-reader .library-transcript-reader .timed-transcript-copy > .timed-transcript-html {
+  min-width: 0;
+  font-size: var(--timed-reader-size);
+  line-height: var(--timed-reader-line);
+}
+.unified-transcript-reader .library-transcript-reader .timed-transcript-html > div > p {
+  margin: 0 !important;
+  line-height: inherit !important;
+}
+.unified-transcript-reader .library-transcript-reader .timed-transcript-html > div > p + p {
+  margin-top: 8px !important;
+}
+.unified-transcript-reader.show-paragraph-times .library-transcript-reader .timed-transcript-copy {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: start;
+}
+.unified-transcript-reader.show-paragraph-times .library-transcript-reader .timed-transcript-copy > .timed-transcript-time {
+  grid-column: 1;
+}
+.unified-transcript-reader.show-paragraph-times .library-transcript-reader .timed-transcript-copy > .timed-transcript-html {
+  grid-column: 2;
+  min-width: 0;
+}
+/* An untimed paragraph never falls into a narrow time badge column. */
+.unified-transcript-reader.show-paragraph-times .library-transcript-reader .timed-transcript-copy:not(:has(.timed-transcript-time)) > .timed-transcript-html {
+  grid-column: 2;
+}
+.unified-transcript-reader .library-transcript-reader .transcript-paragraph-v12:hover,
+.unified-transcript-reader .library-transcript-reader .transcript-paragraph-v12:target,
+.unified-transcript-reader .library-transcript-reader .transcript-paragraph-v12.is-current,
+.unified-transcript-reader .library-transcript-reader .transcript-paragraph-v12[data-cite-active] {
+  background: var(--sage-050);
+  box-shadow: none !important;
+}
+@media (max-width: 720px) {
+  .unified-transcript-reader.show-paragraph-times .library-transcript-reader .timed-transcript-copy {
+    display: block;
+  }
+  .unified-transcript-reader.show-paragraph-times .library-transcript-reader .timed-transcript-copy > .timed-transcript-html {
+    grid-column: auto;
+  }
+  .unified-transcript-reader .library-standard-chapter .timed-transcript-chapter {
+    margin-top: 28px;
+  }
+}

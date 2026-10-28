@@ -3,10 +3,10 @@ import { notFound } from 'next/navigation'
 import ClassSequenceNavigation from '@/components/class-sequence-navigation'
 import LibraryClassHeader from '@/components/library-class-header'
 import LibraryClassSection from '@/components/library-class-section'
+import TranscriptNotice from '@/components/transcript-notice'
 import ContentDownloadLinks from '@/components/content-download-links'
 import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
-import TranscriptControls from '@/components/transcript-controls'
 import LibraryTranscriptReader from '@/components/library-transcript-reader'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 import { course8StudyNotesForSession } from '@/content/classics/course-08/taiwan-2026/study-notes'
@@ -98,12 +98,7 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
         {transcriptChapters.length > 0 ? (
           <>
             <ContentDownloadLinks collection="course8" sessionId={session.id} content="transcript" />
-            <div className="info-callout">
-              <strong>About this transcript</strong><br />
-              This transcript was created by a student with AI and should be used for reference only. Please check it against the video and audio for accuracy of content.
-            </div>
-
-            <TranscriptControls chapters={transcriptChapters.map((chapter) => ({ id: chapter.id, label: chapter.title }))} />
+            <TranscriptNotice />
 
             <LibraryTranscriptReader chapters={transcriptChapters} programTitle={courseData.course.fullTitle} sessionTitle={session.label} sessionDate={session.date} sessionPath={`/courses/course-8/taiwan-2026/${session.slug}`} />
           </>

@@ -29,6 +29,8 @@ jobs:
         run: node --experimental-strip-types scripts/test-weekly-term7.mjs
       - name: Verify public page design standards
         run: node scripts/check-page-standards.mjs
+      - name: Verify shared transcript reading standards
+        run: node scripts/check-transcript-standards.mjs
       - name: Verify original course cover files and mappings
         run: node scripts/check-course-artworks.mjs
       - name: Build

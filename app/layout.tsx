@@ -34,6 +34,7 @@ import './eye-of-courage-refinement.css'
 import './timed-transcript.css'
 import './aci17-preview.css'
 import './library-page-standards.css'
+import './transcript-reader-standard.css'
 
 export const metadata: Metadata = {
   title: 'Classics Courses with Timothy Lowenhaupt',

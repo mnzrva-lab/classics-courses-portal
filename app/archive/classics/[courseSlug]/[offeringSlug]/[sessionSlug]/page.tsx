@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import LibraryClassHeader from '@/components/library-class-header'
 import LibraryClassSection from '@/components/library-class-section'
+import TranscriptNotice from '@/components/transcript-notice'
 import ClassSequenceNavigation from '@/components/class-sequence-navigation'
 import { notFound } from 'next/navigation'
 import RecordingPlayer from '@/components/recording-player'
@@ -64,12 +65,18 @@ export default async function ClassicsArchiveSessionPage({ params }: { params: P
       </LibraryClassSection>
 
       <LibraryClassSection id="transcript" className="transcript-section-v12" eyebrow="Reference Transcript" title={previewTranscript || timedTranscript ? 'Reference Transcript' : 'Transcript not added yet'}>
+        {previewTranscript || timedTranscript ? <TranscriptNotice /> : null}
         {previewTranscript ? (
           <>
             <ACI17PreviewReader transcript={previewTranscript} sessionTitle={session.name} sessionDate={session.date ?? ''} sessionPath={`/archive/classics/${course.slug}/${offering.slug}/${sessionSlug}`} />
           </>
         ) : timedTranscript ? (
-          <TimedArchiveTranscript transcript={timedTranscript} />
+          <TimedArchiveTranscript
+            transcript={timedTranscript}
+            sessionTitle={session.name}
+            sessionDate={session.date ?? ''}
+            sessionPath={`/archive/classics/${course.slug}/${offering.slug}/${sessionSlug}`}
+          />
         ) : (
           <>
             <p className="meta">The verified recording is available, but a Reference Transcript has not been added to the Library for this class yet.</p>

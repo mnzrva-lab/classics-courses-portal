@@ -58,3 +58,21 @@ The GitHub Actions workflow also builds the app and checks live rendered preview
 - Collection index pages and page delegates are **not individual course/class details**; their role is recorded in the registry, and the delegated components are validated.
 
 To introduce another exception, document its rationale in the registry and in the relevant PR. Never silently disable a failing standard.
+
+## 6. Transcript reader standard (ACI 17 reference)
+
+All active, source-backed class sessions share ACI 17's Reference Transcript reading experience: a source-preserving transcript; the same A− / A / A+ toolbar and saved browser preference; transcript search; chapter navigation; clickable passage citations with a floating Cite menu; and a soft, borderless current/selected passage highlight. Recording, study notes and materials remain specific to each class.
+
+**Approved notice, shown once above every available reference transcript:**
+
+> **About this transcript**
+>
+> This transcript was created by a student with AI and should be used for reference only. Please check it against the video and audio for accuracy of content.
+
+This is the entire approved notice. Never append an extra warning about SRTs, alignment, AI accuracy, estimates, or preview status. Changes to the text require explicit editorial approval. Only show the notice when the transcript actually exists.
+
+When source data includes paragraph start times, show chapter start times and offer the Show/Hide paragraph times toggle with clickable video-seek badges. When timestamps do not exist, preserve the same reader, text sizing, search, chapter navigation, and citation UI, but do not show time badges or an empty/disabled toggle. Never invent timestamps. A chapter start uses its first paragraph's verified or labeled estimated timestamp when available.
+
+The source-based reader uses `components/library-transcript-reader.tsx` inside `components/transcript-reader-shell.tsx`; ACI 17 and legacy timed readers use the same `TranscriptReaderToolbar`. The shared `TranscriptNotice` is reused by the archive, Course 8 Taiwan, Living Lam Rim, Perfection of Wisdom, and The Eye of Courage class templates. The legacy Supabase route remains the previously documented exception; do not re-enable or extend Supabase to fulfill this standard.
+
+Run `node scripts/check-transcript-standards.mjs` and `npm run build` before preview handoff. Both checks also run in preview CI. Browser review must cover text-size persistence, search, chapter jumps, Cite overlay, showing/hiding times, mobile reflow and video seeking where timestamps exist.

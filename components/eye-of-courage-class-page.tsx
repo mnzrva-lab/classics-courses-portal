@@ -1,12 +1,12 @@
 import Link from 'next/link'
 import LibraryClassHeader from '@/components/library-class-header'
 import LibraryClassSection from '@/components/library-class-section'
+import TranscriptNotice from '@/components/transcript-notice'
 import ClassSequenceNavigation from '@/components/class-sequence-navigation'
 import EyeOfCourageTabs from '@/components/eye-of-courage-tabs'
 import EyeOfCourageWorkshopShell from '@/components/eye-of-courage-workshop-shell'
 import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
-import TranscriptControls from '@/components/transcript-controls'
 import TranscriptQuickNav from '@/components/transcript-quick-nav'
 import LibraryTranscriptReader from '@/components/library-transcript-reader'
 import {
@@ -31,12 +31,8 @@ export default function EyeOfCourageClassPage({ sessionSlug }: { sessionSlug: 'c
     <div id="transcript" style={{ scrollMarginTop: 96 }}>
       <div className="eyebrow">Reference Transcript</div>
       <h2>Reference Transcript</h2>
-      <div className="info-callout">
-        <strong>About this transcript</strong><br />
-        This transcript was created by a student with AI and should be used for reference only. Please check it against the video and audio for accuracy of content.
-      </div>
       {transcript.length ? <>
-        <TranscriptControls chapters={transcript.map((chapter) => ({ id: chapter.id, label: chapter.title }))} />
+        <TranscriptNotice />
         <LibraryTranscriptReader chapters={transcript} programTitle={eyeOfCourageProgram.title} sessionTitle={session.label} sessionDate={session.date} sessionPath={`/other-programs/eye-of-courage/${session.slug}`} />
         <TranscriptQuickNav />
       </> : <p className="meta">Transcript not added yet.</p>}

@@ -3,14 +3,12 @@ import { notFound } from 'next/navigation'
 import ClassSequenceNavigation from '@/components/class-sequence-navigation'
 import LibraryClassHeader from '@/components/library-class-header'
 import LibraryClassSection from '@/components/library-class-section'
+import TranscriptNotice from '@/components/transcript-notice'
 import ContentDownloadLinks from '@/components/content-download-links'
 import LibraryTranscriptReader from '@/components/library-transcript-reader'
 import RecordingPlayer from '@/components/recording-player'
-import TranscriptControls from '@/components/transcript-controls'
 import { perfectionGroups, perfectionProgram, perfectionSessionBySlug } from '@/content/perfection-of-wisdom/catalog'
 import { getPerfectionTranscriptChapters } from '@/lib/perfection-transcript-source'
-
-const transcriptDisclaimer = 'This transcript was created by a student with AI and should be used for reference only. Please check it against the video and audio for accuracy of content.'
 
 export default async function PerfectionSessionPage({ params }: { params: Promise<{ groupSlug: string; sessionSlug: string }> }) {
   const { groupSlug, sessionSlug } = await params
@@ -46,8 +44,7 @@ export default async function PerfectionSessionPage({ params }: { params: Promis
         {transcriptChapters.length ? (
           <>
             <ContentDownloadLinks collection="perfection" sessionId={session.id} content="transcript" />
-            <div className="info-callout"><strong>About this transcript</strong><br />{transcriptDisclaimer}</div>
-            <TranscriptControls chapters={transcriptChapters.map((chapter) => ({ id: chapter.id, label: chapter.title.replace(/[*_`]/g, '') }))} />
+            <TranscriptNotice />
             <LibraryTranscriptReader
               chapters={transcriptChapters}
               programTitle={perfectionProgram.title}

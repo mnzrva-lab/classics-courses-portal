@@ -21,7 +21,7 @@ function parseTimestamp(value: string) {
 
 function scanTranscript() {
   const points: Point[] = []
-  const paragraphs = document.querySelectorAll<HTMLElement>('#transcript [id^="paragraph-"]')
+  const paragraphs = document.querySelectorAll<HTMLElement>('#transcript [data-transcript-paragraph]')
 
   paragraphs.forEach((paragraph) => {
     const id = paragraph.id.replace(/^paragraph-/, '')

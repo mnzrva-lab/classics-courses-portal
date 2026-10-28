@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import CopyReference from '@/components/copy-reference'
 import TranscriptCiteActivation from '@/components/transcript-cite-activation'
+import TranscriptReaderToolbar from '@/components/transcript-reader-toolbar'
 import TranscriptControls from '@/components/transcript-controls'
 import TranscriptSearchHighlights from '@/components/transcript-search-highlights'
 import MarkdownContent from '@/components/markdown-content'
@@ -156,24 +157,13 @@ export default function ACI17PreviewReader({
       className={`timed-transcript-root aci17-timed-reader reader-size-${readerSize}${showParagraphTimes ? ' show-paragraph-times' : ''}`}
       style={{ scrollMarginTop: 96 }}
     >
-      <div className="timed-reader-toolbar" aria-label="Transcript reading settings">
-        <div className="timed-reader-size">
-          <span className="timed-reader-label">Text</span>
-          <div className="timed-reader-segment" role="group" aria-label="Transcript text size">
-            <button type="button" className={readerSize === 'small' ? 'active' : ''} onClick={() => setReaderSize('small')} aria-pressed={readerSize === 'small'} aria-label="Smaller transcript text">A−</button>
-            <button type="button" className={readerSize === 'medium' ? 'active' : ''} onClick={() => setReaderSize('medium')} aria-pressed={readerSize === 'medium'} aria-label="Default transcript text">A</button>
-            <button type="button" className={readerSize === 'large' ? 'active' : ''} onClick={() => setReaderSize('large')} aria-pressed={readerSize === 'large'} aria-label="Larger transcript text">A+</button>
-          </div>
-        </div>
-        <button
-          className={showParagraphTimes ? 'timed-reader-times active' : 'timed-reader-times'}
-          type="button"
-          onClick={() => setShowParagraphTimes(value => !value)}
-          aria-pressed={showParagraphTimes}
-        >
-          {showParagraphTimes ? 'Hide paragraph times' : 'Show paragraph times'}
-        </button>
-      </div>
+      <TranscriptReaderToolbar
+        size={readerSize}
+        onSizeChange={setReaderSize}
+        hasTimes={true}
+        showTimes={showParagraphTimes}
+        onToggleTimes={() => setShowParagraphTimes(value => !value)}
+      />
 
       <TranscriptControls chapters={chapters} />
 
