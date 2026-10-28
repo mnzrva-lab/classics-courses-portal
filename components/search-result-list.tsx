@@ -13,7 +13,7 @@ export type TeachingSearchResult = {
   sessionLabel: string
   sessionKind: string
   teacher: string
-  contentType: 'Transcript' | 'Study Notes' | 'Recording'
+  contentType: 'Transcript' | 'Study Notes' | 'Recording' | 'Overview'
   chapter?: string
   speaker?: string
   body: string
@@ -64,11 +64,11 @@ export default function SearchResultList({ results, query, mode }: { results: Te
   return <>
     {results.slice(0, count).map((result) => {
       const [base, anchor] = result.href.split('#')
-      const path = result.contentType === 'Recording' ? result.href : `${base}${base.includes('?') ? '&' : '?'}highlight=${encodeURIComponent(query)}${mode === 'all' ? '&match=all' : ''}${anchor ? `#${anchor}` : ''}`
+      const path = result.contentType === 'Recording' || result.contentType === 'Overview' ? result.href : `${base}${base.includes('?') ? '&' : '?'}highlight=${encodeURIComponent(query)}${mode === 'all' ? '&match=all' : ''}${anchor ? `#${anchor}` : ''}`
       return <article className="search-result-row" key={`${result.sourceId}-${result.contentType}-${result.id}`}>
         <div className="meta"><span className="search-result-source">{highlight(result.sourceLabel, query, mode)}</span> · {highlight(result.contextLabel, query, mode)} · {highlight(result.sessionLabel, query, mode)} · {result.contentType}{result.chapter ? <> · {highlight(result.chapter, query, mode)}</> : null}</div>
         <div className="search-result-copy">{result.speaker ? <strong>{highlight(result.speaker, query, mode)}: </strong> : null}{highlight(excerpt(result.body, query, mode), query, mode)}</div>
-        <div className="actions"><Link className="button" href={path}>Open {result.contentType === 'Transcript' ? 'passage' : result.contentType === 'Study Notes' ? 'Study Notes' : 'recording'}</Link><CopyReference reference={result.reference} path={result.href} /></div>
+        <div className="actions"><Link className="button" href={path}>Open {result.contentType === 'Transcript' ? 'passage' : result.contentType === 'Study Notes' ? 'Study Notes' : result.contentType === 'Overview' ? 'class' : 'recording'}</Link><CopyReference reference={result.reference} path={result.href} /></div>
       </article>
     })}
     {count < results.length ? <div ref={sentinel} className="search-result-count-note">Showing {Math.min(count, results.length)} of {results.length} results. <button className="button" type="button" onClick={() => setCount((current) => Math.min(current + PAGE_SIZE, results.length))}>Show more</button></div> : null}
