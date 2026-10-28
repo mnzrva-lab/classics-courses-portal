@@ -35,9 +35,26 @@ export type PublishedJsonPath = 'classics/course-18/schedule.json' | 'living-lam
   | 'classics/course-17/manifest.json' | (typeof ACI17_TRANSCRIPT_FILES)[number]
 
 function publishedLibraryFile(path: string): { kind: 'json' | 'markdown'; maxBytes: number } | null {
+  // Each accepted path is a fixed file under a validated program/offering/session.
+  // There is no generic GitHub fetch endpoint and no unvalidated user path.
   const slug = '[a-z0-9]+(?:-[a-z0-9]+)*'
   if (path === 'library/index.json') return { kind: 'json', maxBytes: 15000 }
-  if (new RegExp('^library/' + slug + '/' + slug + '/manifest\\.json
+  if (new RegExp('^library/' + slug + '/' + slug + '/manifest\\.json$').test(path)) {
+    return { kind: 'json', maxBytes: 60000 }
+  }
+  if (new RegExp('^library/' + slug + '/' + slug + '/' + slug + '/transcript\\.json$').test(path)) {
+    return { kind: 'json', maxBytes: 125000 }
+  }
+  if (new RegExp('^library/' + slug + '/' + slug + '/' + slug + '/study-notes\\.md$').test(path)) {
+    return { kind: 'markdown', maxBytes: 80000 }
+  }
+  return null
+}
+
+async function readApprovedSource(path: string): Promise<string | null> {
+  const config = Object.prototype.hasOwnProperty.call(PUBLISHED_FILES, path)
+    ? PUBLISHED_FILES[path] : publishedLibraryFile(path)
+  if (!config) return null
 
   const token = process.env.LIBRARY_CONTENT_GITHUB_TOKEN?.trim()
   if (!token) return null
@@ -94,214 +111,18 @@ export async function readPublishedJSON<T>(
     return null
   }
 }
-).test(path)) {
-    return { kind: 'json', maxBytes: 60000 }
-  }
-  if (new RegExp('^library/' + slug + '/' + slug + '/' + slug + '/transcript\\.json
-
-  const token = process.env.LIBRARY_CONTENT_GITHUB_TOKEN?.trim()
-  if (!token) return null
-
-  const url = `https://api.github.com/repos/${CONTENT_REPO}/contents/published/${path}?ref=main`
-  try {
-    const response = await fetch(url, {
-      // Cache the 11 ACI 17 source files briefly on the server so public search
-      // and glossary traffic do not trigger 11 private GitHub API calls each time.
-      // Approved edits are picked up without redeployment (within 60 seconds).
-      ...(path.startsWith('classics/course-17/')
-        ? { next: { revalidate: 60 } }
-        : { cache: 'no-store' as const }),
-      headers: {
-        Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${token}`,
-        'X-GitHub-Api-Version': '2022-11-28',
-        'User-Agent': 'classics-courses-portal',
-      },
-      signal: AbortSignal.timeout(5000),
-    })
-    if (!response.ok) return null
-
-    const payload: unknown = await response.json()
-    if (!payload || typeof payload !== 'object') return null
-    const file = payload as { type?: unknown; encoding?: unknown; content?: unknown }
-    if (file.type !== 'file' || file.encoding !== 'base64' || typeof file.content !== 'string') return null
-
-    const buffer = Buffer.from(file.content.replace(/\s/g, ''), 'base64')
-    if (buffer.byteLength === 0 || buffer.byteLength > PUBLISHED_FILES[path].maxBytes) return null
-    const decoded = buffer.toString('utf8')
-    return decoded.trim() ? decoded : null
-  } catch {
-    // Keep the published teaching page available when GitHub is unreachable.
-    return null
-  }
-}
-
-export async function readPublishedMarkdown(path: PublishedMarkdownPath): Promise<string | null> {
-  return readApprovedSource(path)
-}
-
-export async function readPublishedJSON<T>(
-  path: PublishedJsonPath,
-  validate: (candidate: unknown) => candidate is T,
-): Promise<T | null> {
-  const raw = await readApprovedSource(path)
-  if (!raw) return null
-
-  try {
-    const data: unknown = JSON.parse(raw)
-    return validate(data) ? data : null
-  } catch {
-    return null
-  }
-}
-).test(path)) {
-    return { kind: 'json', maxBytes: 125000 }
-  }
-  if (new RegExp('^library/' + slug + '/' + slug + '/' + slug + '/study-notes\\.md
-
-  const token = process.env.LIBRARY_CONTENT_GITHUB_TOKEN?.trim()
-  if (!token) return null
-
-  const url = `https://api.github.com/repos/${CONTENT_REPO}/contents/published/${path}?ref=main`
-  try {
-    const response = await fetch(url, {
-      // Cache the 11 ACI 17 source files briefly on the server so public search
-      // and glossary traffic do not trigger 11 private GitHub API calls each time.
-      // Approved edits are picked up without redeployment (within 60 seconds).
-      ...(path.startsWith('classics/course-17/')
-        ? { next: { revalidate: 60 } }
-        : { cache: 'no-store' as const }),
-      headers: {
-        Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${token}`,
-        'X-GitHub-Api-Version': '2022-11-28',
-        'User-Agent': 'classics-courses-portal',
-      },
-      signal: AbortSignal.timeout(5000),
-    })
-    if (!response.ok) return null
-
-    const payload: unknown = await response.json()
-    if (!payload || typeof payload !== 'object') return null
-    const file = payload as { type?: unknown; encoding?: unknown; content?: unknown }
-    if (file.type !== 'file' || file.encoding !== 'base64' || typeof file.content !== 'string') return null
-
-    const buffer = Buffer.from(file.content.replace(/\s/g, ''), 'base64')
-    if (buffer.byteLength === 0 || buffer.byteLength > PUBLISHED_FILES[path].maxBytes) return null
-    const decoded = buffer.toString('utf8')
-    return decoded.trim() ? decoded : null
-  } catch {
-    // Keep the published teaching page available when GitHub is unreachable.
-    return null
-  }
-}
-
-export async function readPublishedMarkdown(path: PublishedMarkdownPath): Promise<string | null> {
-  return readApprovedSource(path)
-}
-
-export async function readPublishedJSON<T>(
-  path: PublishedJsonPath,
-  validate: (candidate: unknown) => candidate is T,
-): Promise<T | null> {
-  const raw = await readApprovedSource(path)
-  if (!raw) return null
-
-  try {
-    const data: unknown = JSON.parse(raw)
-    return validate(data) ? data : null
-  } catch {
-    return null
-  }
-}
-).test(path)) {
-    return { kind: 'markdown', maxBytes: 80000 }
-  }
-  return null
-}
-
-async function readApprovedSource(path: string): Promise<string | null> {
-  // Protect the server-only token from arbitrary file paths, encoded slashes
-  // and repository paths not explicitly part of the approved schema.
-  const config = Object.prototype.hasOwnProperty.call(PUBLISHED_FILES, path)
-    ? PUBLISHED_FILES[path] : publishedLibraryFile(path)
-  if (!config) return null
-
-  const token = process.env.LIBRARY_CONTENT_GITHUB_TOKEN?.trim()
-  if (!token) return null
-
-  const url = `https://api.github.com/repos/${CONTENT_REPO}/contents/published/${path}?ref=main`
-  try {
-    const response = await fetch(url, {
-      // Cache the 11 ACI 17 source files briefly on the server so public search
-      // and glossary traffic do not trigger 11 private GitHub API calls each time.
-      // Approved edits are picked up without redeployment (within 60 seconds).
-      ...(path.startsWith('classics/course-17/')
-        ? { next: { revalidate: 60 } }
-        : { cache: 'no-store' as const }),
-      headers: {
-        Accept: 'application/vnd.github+json',
-        Authorization: `Bearer ${token}`,
-        'X-GitHub-Api-Version': '2022-11-28',
-        'User-Agent': 'classics-courses-portal',
-      },
-      signal: AbortSignal.timeout(5000),
-    })
-    if (!response.ok) return null
-
-    const payload: unknown = await response.json()
-    if (!payload || typeof payload !== 'object') return null
-    const file = payload as { type?: unknown; encoding?: unknown; content?: unknown }
-    if (file.type !== 'file' || file.encoding !== 'base64' || typeof file.content !== 'string') return null
-
-    const buffer = Buffer.from(file.content.replace(/\s/g, ''), 'base64')
-    if (buffer.byteLength === 0 || buffer.byteLength > PUBLISHED_FILES[path].maxBytes) return null
-    const decoded = buffer.toString('utf8')
-    return decoded.trim() ? decoded : null
-  } catch {
-    // Keep the published teaching page available when GitHub is unreachable.
-    return null
-  }
-}
-
-export async function readPublishedMarkdown(path: PublishedMarkdownPath): Promise<string | null> {
-  return readApprovedSource(path)
-}
-
-export async function readPublishedJSON<T>(
-  path: PublishedJsonPath,
-  validate: (candidate: unknown) => candidate is T,
-): Promise<T | null> {
-  const raw = await readApprovedSource(path)
-  if (!raw) return null
-
-  try {
-    const data: unknown = JSON.parse(raw)
-    return validate(data) ? data : null
-  } catch {
-    return null
-  }
-}
 
 
-/**
- * Read one file from the controlled managed-library namespace. Identifiers
- * always derive from the validated approved catalog and manifest, never from
- * a public request path alone.
- */
 export async function readManagedJSON<T>(
-  path: string,
-  validate: (candidate: unknown) => candidate is T,
+  path: string, validate: (candidate: unknown) => candidate is T,
 ): Promise<T | null> {
   if (publishedLibraryFile(path)?.kind !== 'json') return null
-  const text = await readApprovedSource(path)
-  if (!text) return null
+  const raw = await readApprovedSource(path)
+  if (!raw) return null
   try {
-    const candidate: unknown = JSON.parse(text)
+    const candidate: unknown = JSON.parse(raw)
     return validate(candidate) ? candidate : null
-  } catch {
-    return null
-  }
+  } catch { return null }
 }
 
 export async function readManagedMarkdown(path: string): Promise<string | null> {
