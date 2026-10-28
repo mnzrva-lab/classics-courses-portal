@@ -245,7 +245,7 @@
 }
 
 /* Search controls must shrink before adjacent filters, even at intermediate widths. */
-.search-page-simple .advanced-search-form { min-width: 0; }
+.search-page-simple .advanced-search-form { min-width: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .search-page-simple .advanced-search-form > label { min-width: 0; }
 .search-page-simple .advanced-search-form select { display: block; width: 100%; min-width: 0; max-width: 100%; }
 .search-result-source { font-weight: 800; color: var(--sage-900); }
