@@ -6,6 +6,7 @@ import {
   type SourceEntry,
 } from '@/content/tibetan/transcript-glossary'
 import { getACI17Corpus } from '@/lib/aci17-published-content'
+import { getPublishedSearchRecords } from '@/lib/published-search-index'
 
 /**
  * Include source-marked Tibetan terms from the same published class JSON that
@@ -13,7 +14,7 @@ import { getACI17Corpus } from '@/lib/aci17-published-content'
  * needs manual edits or website redeployments after a transcript correction.
  */
 export const getPublishedGlossaryTerms = cache(async () => {
-  const corpus = await getACI17Corpus()
+  const [corpus, published] = await Promise.all([getACI17Corpus(), getPublishedSearchRecords()])
   const additions: SourceEntry[] = corpus.items.flatMap(({ session, transcript, index }) =>
     transcript ? [{
       label: 'Classics Course 17 · ' + session.code + ' · ' + corpus.manifest.offering.label,
@@ -21,5 +22,23 @@ export const getPublishedGlossaryTerms = cache(async () => {
       chapters: transcript.chapters,
     }] : [],
   )
-  return transcriptGlossaryTerms(additions)
+  // The same generated paragraph index powers Search and Tibetan discovery.
+  // Scan only verbatim source-marked transcript text, retaining exact anchors.
+  const bySource = new Map<string, SourceEntry>()
+  for (const item of published) {
+    if (item.contentType !== 'Transcript' || !item.glossarySource) continue
+    const paragraphId = item.href.split('#')[1]
+    if (!paragraphId) continue
+    let entry = bySource.get(item.glossarySource)
+    if (!entry) {
+      entry = {
+        label: item.sourceLabel + ' · ' + item.sessionLabel,
+        hrefBase: item.glossarySource,
+        chapters: [{ paragraphs: [] }],
+      }
+      bySource.set(item.glossarySource, entry)
+    }
+    entry.chapters[0].paragraphs.push({ id: paragraphId, text: item.body })
+  }
+  return transcriptGlossaryTerms([...additions, ...bySource.values()])
 })
