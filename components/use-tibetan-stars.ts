@@ -39,18 +39,18 @@ export function useTibetanStars() {
   }, [])
 
   const toggle = useCallback((id: string) => {
-    const next = new Set(readStars())
+    const next = new Set(ids)
     if (next.has(id)) next.delete(id)
     else next.add(id)
     const updated = [...next]
+    setIds(updated)
     try {
       window.localStorage.setItem(KEY, JSON.stringify(updated))
       window.dispatchEvent(new Event(CHANGE))
     } catch {
-      // Keep the current session usable even when browser storage is unavailable.
-      setIds(updated)
+      // The button still works in this tab, but refresh persistence needs localStorage.
     }
-  }, [])
+  }, [ids])
 
   return { ids, idSet: useMemo(() => new Set(ids), [ids]), ready, toggle }
 }
