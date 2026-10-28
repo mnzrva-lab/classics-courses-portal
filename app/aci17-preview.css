@@ -122,3 +122,15 @@
   .aci17-timed-reader.show-paragraph-times .timed-transcript-copy { display: block; }
   .aci17-timed-reader.show-paragraph-times .timed-transcript-copy > .timed-transcript-html { grid-column: auto; }
 }
+
+/* ACI 17: one consistent borderless passage highlight. The previous global
+   styles use inset shadows to draw a vertical stripe for playback-current
+   and anchor-target paragraphs, but hovered passages had no stripe. */
+.aci17-timed-reader .aci17-timed-paragraph:hover,
+.aci17-timed-reader .aci17-timed-paragraph:target,
+.aci17-timed-reader .aci17-timed-paragraph.is-current,
+.aci17-timed-reader .aci17-timed-paragraph[data-cite-active] {
+  background: var(--sage-050);
+  box-shadow: none !important;
+}
+/* Selection/focus remains visible on the individual accessible controls. */

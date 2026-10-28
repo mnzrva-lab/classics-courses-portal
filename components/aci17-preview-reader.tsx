@@ -37,7 +37,10 @@ function approximateParagraphTimes(transcript: ACI17PreviewTranscript): Map<stri
   for (let index = 0; index < paragraphs.length; index += 1) {
     const paragraph = paragraphs[index]
     if (paragraph.startSeconds !== null) {
-      result.set(paragraph.id, { seconds: paragraph.startSeconds, estimated: false })
+      result.set(paragraph.id, {
+        seconds: paragraph.startSeconds,
+        estimated: paragraph.timingSource === 'estimated',
+      })
       continue
     }
 

@@ -10,6 +10,9 @@ export type ACI17Paragraph = {
   speaker: string
   text: string
   startSeconds: number | null
+  /** Optional provenance for a caption-derived or interpolated anchor. */
+  timingSource?: 'youtube-caption' | 'estimated'
+  youtubeCueLine?: number
 }
 
 export type ACI17Chapter = {
@@ -23,7 +26,7 @@ export type ACI17PreviewTranscript = {
   schemaVersion: 1
   sessionId: string
   youtubeVideoId: string
-  timingStatus: 'unverified'
+  timingStatus: 'unverified' | 'youtube-caption-aligned'
   chapters: ACI17Chapter[]
 }
 
@@ -41,7 +44,8 @@ function isTranscript(value: unknown, sessionId: string, videoId: string): value
   if (!value || typeof value !== 'object') return false
   const doc = value as Record<string, unknown>
   if (doc.schemaVersion !== 1 || doc.sessionId !== sessionId ||
-      doc.youtubeVideoId !== videoId || doc.timingStatus !== 'unverified' ||
+      doc.youtubeVideoId !== videoId ||
+      (doc.timingStatus !== 'unverified' && doc.timingStatus !== 'youtube-caption-aligned') ||
       !Array.isArray(doc.chapters) || doc.chapters.length === 0 || doc.chapters.length > 60) return false
 
   const chapterIds = new Set<string>()
@@ -67,6 +71,16 @@ function isTranscript(value: unknown, sessionId: string, videoId: string): value
           paragraph.speaker.length > 160 || typeof paragraph.text !== 'string' ||
           !paragraph.text.trim() || paragraph.text.length > 25000 ||
           !isTime(paragraph.startSeconds)) return false
+
+      if (doc.timingStatus === 'youtube-caption-aligned') {
+        if (typeof paragraph.startSeconds !== 'number' ||
+            (paragraph.timingSource !== 'youtube-caption' && paragraph.timingSource !== 'estimated')) return false
+        if (paragraph.timingSource === 'youtube-caption' &&
+            (!Number.isInteger(paragraph.youtubeCueLine) ||
+             (paragraph.youtubeCueLine as number) < 1 ||
+             (paragraph.youtubeCueLine as number) > 100000)) return false
+        if (paragraph.timingSource === 'estimated' && paragraph.youtubeCueLine != null) return false
+      }
       if (typeof paragraph.startSeconds === 'number') {
         if (paragraph.startSeconds < priorTime) return false
         priorTime = paragraph.startSeconds
