@@ -1,13 +1,13 @@
 type Props = {
-  programSlug: string
+  courseSlug: string
   offeringSlug: string
   sessionSlug: string
   content: 'transcript' | 'notes'
 }
 export default function ManagedLibraryDownloadLinks({
-  programSlug, offeringSlug, sessionSlug, content,
+  courseSlug, offeringSlug, sessionSlug, content,
 }: Props) {
-  const base = '/library/' + programSlug + '/' + offeringSlug + '/' + sessionSlug + '/download'
+  const base = '/archive/classics/' + courseSlug + '/' + offeringSlug + '/' + sessionSlug + '/download'
   const href = (format: 'txt' | 'docx') =>
     base + '?' + new URLSearchParams({ content, format }).toString()
   return (
