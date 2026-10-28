@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { Fragment } from 'react'
 import CopyReference from '@/components/copy-reference'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
@@ -47,6 +48,15 @@ const lamRimSessionIndex = new Map<string, { term: LamRimTerm; session: LamRimSe
 for (const term of lamRimCatalog.terms) for (const session of term.sessions) lamRimSessionIndex.set(session.id, { term, session })
 const perfectionSessionIndex = new Map(perfectionGroups.flatMap((group) => group.sessions.map((session) => [session.id, { group, session }] as const)))
 
+function highlight(text: string, query: string) {
+  const terms = Array.from(new Set(query.trim().split(/\s+/).filter(Boolean))).sort((a, b) => b.length - a.length)
+  if (!terms.length) return text
+  const escaped = terms.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\function clip(text: string, length = 320) {'))
+  const regex = new RegExp(`(${escaped.join('|')})`, 'gi')
+  return text.split(regex).map((part, index) => terms.some((term) => part.toLocaleLowerCase() === term.toLocaleLowerCase())
+    ? <mark className="search-query-mark" key={index}>{part}</mark>
+    : <Fragment key={index}>{part}</Fragment>)
+}
 function clip(text: string, length = 320) {
   const cleaned = text.replace(/\s+/g, ' ').replace(/[*_`]/g, '').trim()
   return cleaned.length > length ? `${cleaned.slice(0, length).trim()}…` : cleaned
@@ -169,7 +179,7 @@ function buildResults(query: string) {
     }
   }
 
-  return results.sort((a, b) => b.score - a.score || a.sourceLabel.localeCompare(b.sourceLabel)).slice(0, 150)
+  return results.sort((a, b) => b.score - a.score || a.sourceLabel.localeCompare(b.sourceLabel))
 }
 
 export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string; course?: string; teacher?: string; type?: string }> }) {
@@ -196,9 +206,9 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
       </form></details>
       <section className="section search-results-simple"><div className="section-head"><div><h2>{results.length} result{results.length === 1 ? '' : 's'} for “{query}”</h2></div></div>
         {results.length ? results.map((result) => <article className="search-result-row" key={`${result.sourceId}-${result.contentType}-${result.id}`}>
-          <div className="meta">{result.sourceLabel} · {result.contextLabel} · {result.sessionLabel} · {result.contentType}{result.chapter ? ` · ${result.chapter}` : ''}</div>
-          <div className="search-result-copy">{result.speaker ? <strong>{result.speaker}: </strong> : null}{clip(result.body)}</div>
-          <div className="actions"><Link className="button" href={result.href}>Open {result.contentType === 'Transcript' ? 'passage' : result.contentType === 'Study Notes' ? 'Study Notes' : 'recording'}</Link><CopyReference reference={result.reference} path={result.href} /></div>
+          <div className="meta"><span className="search-result-source">{highlight(result.sourceLabel, query)}</span> · {highlight(result.contextLabel, query)} · {highlight(result.sessionLabel, query)} · {result.contentType}{result.chapter ? <> · {highlight(result.chapter, query)}</> : null}</div>
+          <div className="search-result-copy">{result.speaker ? <strong>{highlight(result.speaker, query)}: </strong> : null}{highlight(clip(result.body), query)}</div>
+          <div className="actions"><Link className="button" href={result.contentType === 'Recording' ? result.href : `${result.href}${result.href.includes('?') ? '&' : '?'}highlight=${encodeURIComponent(query)}`}>Open {result.contentType === 'Transcript' ? 'passage' : result.contentType === 'Study Notes' ? 'Study Notes' : 'recording'}</Link><CopyReference reference={result.reference} path={result.href} /></div>
         </article>) : <p className="meta">No teaching material matched this search.</p>}
       </section>
     </> : <section className="section search-empty"><p className="meta">Search includes the migrated Classics recording archives, Course 8 Study Notes and transcripts, Living Lam Rim transcripts, and Perfection of Wisdom transcripts. More transcript text will appear as it is added to the Library.</p></section>}
