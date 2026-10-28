@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import LibrarySessionList from '@/components/library-session-list'
 import rawCatalog from '@/content/living-lam-rim/catalog.json'
 import { getTerm7Schedule } from '@/lib/term7-content'
-import { weeklyTermOccurrences, formatArizonaDate, formatArizonaTimeRange } from '@/lib/weekly-term-schedule'
+import { weeklyTermOccurrences, formatArizonaDate, formatArizonaTimeRange, formatTermStartDate } from '@/lib/weekly-term-schedule'
 
 type Session = {
   id: string
@@ -54,8 +54,8 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
             <div>
               <div className="eyebrow">Live course · Living Lam Rim Term 7</div>
               <h2>Weekly live classes</h2>
-              <p>Every Monday · {formatArizonaTimeRange(schedule)} · Arizona time (UTC−7)</p>
-              <p className="meta">The final class date has not been announced.</p>
+              <p>Every Monday · {formatArizonaTimeRange(schedule)} (UTC−7)</p>
+              <p className="meta">{schedule.endDate ? `Through ${formatTermStartDate(schedule.endDate)}` : 'The final class date has not been announced.'}</p>
             </div>
           </div>
           <div className="actions llr-live-actions">
@@ -70,7 +70,7 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
               </div>
             ))}
           </div>
-          <p className="meta llr-calendar-note">The calendar download repeats every Monday without an end date until the final date is confirmed.</p>
+          <p className="meta llr-calendar-note">{schedule.endDate ? `The calendar series ends on ${formatTermStartDate(schedule.endDate)}.` : 'The calendar download repeats every Monday without an end date until the final date is confirmed.'}</p>
         </section>
       ) : null}
 
