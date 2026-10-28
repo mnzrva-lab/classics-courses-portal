@@ -28,7 +28,7 @@ export const eyeOfCourageSessions: EyeOfCourageSession[] = [
     label: 'Class 1',
     date: 'September 11, 2026',
     teacher: 'Timothy Lowenhaupt',
-    recordingUrl: 'https://drive.google.com/file/d/11mtGJeGwlgBjkfq0PzCQV1uhHL17lyFM/view?usp=sharing',
+    recordingUrl: 'https://youtu.be/x6AY_fEKo-0?si=kOQ5hSVvCtIPMTlU',
     hasWorkshop: false,
   },
   {
@@ -37,7 +37,7 @@ export const eyeOfCourageSessions: EyeOfCourageSession[] = [
     label: 'Class 2',
     date: 'September 12, 2026',
     teacher: 'Timothy Lowenhaupt',
-    recordingUrl: 'https://drive.google.com/file/d/100qYlnJFPK9FUJ9cl55A1D7PhR8xpgiS/view?usp=sharing',
+    recordingUrl: 'https://youtu.be/P-vLWp8EtnY?si=uL2FUvlxWFnY0QNx',
     hasWorkshop: true,
   },
 ]
