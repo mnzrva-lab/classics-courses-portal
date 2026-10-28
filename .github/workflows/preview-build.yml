@@ -27,6 +27,8 @@ jobs:
         run: npm install
       - name: Search matching tests
         run: node --experimental-strip-types scripts/test-search-match.mjs
+      - name: Managed Library schema tests
+        run: node --experimental-strip-types scripts/test-managed-library-schema.mjs
       - name: Tibetan term search tests
         run: node --experimental-strip-types scripts/test-tibetan-term-search.mjs
       - name: Living Lam Rim Term 7 schedule tests

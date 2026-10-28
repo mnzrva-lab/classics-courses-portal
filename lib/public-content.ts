@@ -34,8 +34,27 @@ export type PublishedJsonPath = 'classics/course-18/schedule.json' | 'living-lam
   | 'perfection-of-wisdom/introduction-q-a-2021/first-qa-winter-2021/transcript.json'
   | 'classics/course-17/manifest.json' | (typeof ACI17_TRANSCRIPT_FILES)[number]
 
-async function readApprovedSource(path: PublishedMarkdownPath | PublishedJsonPath): Promise<string | null> {
-  if (!Object.prototype.hasOwnProperty.call(PUBLISHED_FILES, path)) return null
+function publishedLibraryFile(path: string): { kind: 'json' | 'markdown'; maxBytes: number } | null {
+  // Each accepted path is a fixed file under a validated program/offering/session.
+  // There is no generic GitHub fetch endpoint and no unvalidated user path.
+  const slug = '[a-z0-9]+(?:-[a-z0-9]+)*'
+  if (path === 'library/index.json') return { kind: 'json', maxBytes: 15000 }
+  if (new RegExp('^library/' + slug + '/' + slug + '/manifest\\.json$').test(path)) {
+    return { kind: 'json', maxBytes: 60000 }
+  }
+  if (new RegExp('^library/' + slug + '/' + slug + '/' + slug + '/transcript\\.json$').test(path)) {
+    return { kind: 'json', maxBytes: 125000 }
+  }
+  if (new RegExp('^library/' + slug + '/' + slug + '/' + slug + '/study-notes\\.md$').test(path)) {
+    return { kind: 'markdown', maxBytes: 80000 }
+  }
+  return null
+}
+
+async function readApprovedSource(path: string): Promise<string | null> {
+  const config = Object.prototype.hasOwnProperty.call(PUBLISHED_FILES, path)
+    ? PUBLISHED_FILES[path] : publishedLibraryFile(path)
+  if (!config) return null
 
   const token = process.env.LIBRARY_CONTENT_GITHUB_TOKEN?.trim()
   if (!token) return null
@@ -46,7 +65,7 @@ async function readApprovedSource(path: PublishedMarkdownPath | PublishedJsonPat
       // Cache the 11 ACI 17 source files briefly on the server so public search
       // and glossary traffic do not trigger 11 private GitHub API calls each time.
       // Approved edits are picked up without redeployment (within 60 seconds).
-      ...(path.startsWith('classics/course-17/')
+      ...(path.startsWith('classics/course-17/') || path.startsWith('library/')
         ? { next: { revalidate: 60 } }
         : { cache: 'no-store' as const }),
       headers: {
@@ -65,7 +84,7 @@ async function readApprovedSource(path: PublishedMarkdownPath | PublishedJsonPat
     if (file.type !== 'file' || file.encoding !== 'base64' || typeof file.content !== 'string') return null
 
     const buffer = Buffer.from(file.content.replace(/\s/g, ''), 'base64')
-    if (buffer.byteLength === 0 || buffer.byteLength > PUBLISHED_FILES[path].maxBytes) return null
+    if (buffer.byteLength === 0 || buffer.byteLength > config.maxBytes) return null
     const decoded = buffer.toString('utf8')
     return decoded.trim() ? decoded : null
   } catch {
@@ -91,4 +110,22 @@ export async function readPublishedJSON<T>(
   } catch {
     return null
   }
+}
+
+
+export async function readManagedJSON<T>(
+  path: string, validate: (candidate: unknown) => candidate is T,
+): Promise<T | null> {
+  if (publishedLibraryFile(path)?.kind !== 'json') return null
+  const raw = await readApprovedSource(path)
+  if (!raw) return null
+  try {
+    const candidate: unknown = JSON.parse(raw)
+    return validate(candidate) ? candidate : null
+  } catch { return null }
+}
+
+export async function readManagedMarkdown(path: string): Promise<string | null> {
+  if (publishedLibraryFile(path)?.kind !== 'markdown') return null
+  return readApprovedSource(path)
 }
