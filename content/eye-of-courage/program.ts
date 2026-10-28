@@ -17,7 +17,7 @@ export const eyeOfCourageProgram = {
   dates: 'September 11–12, 2026',
   description:
     'A two-evening teaching on automatic scripts, limiting beliefs, the conditions that let good seeds ripen, and the way leadership becomes more natural as old patterns weaken.',
-  coverPath: '/eye-of-courage/cover.jpg',
+  coverPath: '/images/other-programs/eye-of-courage/2026.webp',
   workbookPdfPath: 'https://drive.google.com/file/d/1jopJ4M44cvZokJ3E1815sl5PAinVOqaX/view?usp=sharing',
 }
 

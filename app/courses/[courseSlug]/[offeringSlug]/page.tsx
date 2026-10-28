@@ -7,7 +7,7 @@ import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import { archiveSessionsFor } from '@/content/classics/archive-sessions'
 import { archiveSessionSlug } from '@/content/classics/archive-route'
 
-type CanonicalCourse = { canonicalNumber: number; slug: string; title: string }
+type CanonicalCourse = { canonicalNumber: number; slug: string; title: string; artwork?: string; artworkAlt?: string }
 type ArchiveOffering = {
   slug: string
   label: string
@@ -44,7 +44,12 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
     return (
       <main className="container page">
         <div className="offering-breadcrumbs"><Link href="/courses">Classics Courses</Link><span>/</span><Link href={`/courses/${course.slug}`}>Course {course.canonicalNumber}</Link><span>/</span><span>{offering.label}</span></div>
-        <LibraryCourseHero eyebrow="Course Offering" title={course.title} subtitle={offering.label}>
+        <LibraryCourseHero
+          eyebrow="Course Offering"
+          title={course.title}
+          subtitle={offering.label}
+          artwork={course.artwork ? { src: course.artwork, alt: course.artworkAlt ?? course.title, width: 1920, height: 1080 } : undefined}
+        >
           <Link className="inline-library-link" href={offering.internalHref}>Open course →</Link>
         </LibraryCourseHero>
       </main>
@@ -59,6 +64,7 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
         eyebrow={'Classics Course ' + course.canonicalNumber + ' · Course Offering'}
         title={course.title}
         subtitle={offering.label}
+        artwork={course.artwork ? { src: course.artwork, alt: course.artworkAlt ?? course.title, width: 1920, height: 1080 } : undefined}
       >
         {offering.playlistUrl ? (
           <a className="inline-library-link" href={offering.playlistUrl} target="_blank" rel="noreferrer">Open playlist on YouTube ↗</a>

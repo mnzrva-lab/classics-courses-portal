@@ -15,7 +15,7 @@ The shared course hero:
 - Below the hero: use the actual source-driven class list, course materials, or future schedule, with heading eyebrow and H2. Each entry links to the proper class.
 - Data belongs in catalogs or the approved private content repository where already configured. Design components must not hardcode invented lesson or teacher details.
 
-Examples: `/living-lam-rim/term-7` uses the original WebP in `public/images/living-lam-rim/term-7/BG.webp`; `/other-programs/eye-of-courage` uses its cover; Classics offerings and Perfection of Wisdom use text-only variants until their own artwork is provided.
+Examples: `/living-lam-rim/term-7` uses the original WebP in `public/images/living-lam-rim/term-7/BG.webp`; `/other-programs/eye-of-courage` uses the supplied Eye of Courage WebP; Classics Courses 8 (Taiwan 2026), 16, 17 and 18 use their verified original covers from `public/images/classics/`. Pages without supplied covers, such as Perfection of Wisdom, remain text-only. Do not substitute generated images.
 
 ## 2. Class / session detail
 

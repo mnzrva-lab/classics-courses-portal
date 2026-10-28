@@ -2,6 +2,7 @@ import Link from 'next/link'
 import LibrarySessionList from '@/components/library-session-list'
 import LibraryCourseHero from '@/components/library-course-hero'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
+import rawCatalog from '@/content/classics/catalog.json'
 import rawMaterials from '@/content/classics/course-08/taiwan-2026/materials.json'
 
 type CourseSession = {
@@ -55,6 +56,7 @@ type MaterialsData = { materials: CourseMaterial[] }
 
 const courseData = rawCourseData as CourseData
 const materialsData = rawMaterials as MaterialsData
+const catalog = rawCatalog as Array<{ canonicalNumber: number; artwork?: string; artworkAlt?: string }>
 
 function sessionMarker(session: CourseSession) {
   const match = session.label.match(/(\d+)$/)
@@ -74,6 +76,7 @@ function availability(session: CourseSession) {
 
 export default function Course8TaiwanPage() {
   const { course, offering, sessions } = courseData
+  const courseArtwork = catalog.find((item) => item.canonicalNumber === course.canonicalNumber)
 
   return (
     <main className="container page">
@@ -86,6 +89,12 @@ export default function Course8TaiwanPage() {
       <LibraryCourseHero
         eyebrow={'Classics Course ' + course.canonicalNumber + ' · ' + offering.label}
         title={course.title}
+        artwork={courseArtwork?.artwork ? {
+          src: courseArtwork.artwork,
+          alt: courseArtwork.artworkAlt ?? course.title,
+          width: 1920,
+          height: 1080,
+        } : undefined}
         subtitle={'with ' + offering.teachers.join(' and ')}
         facts={['Aug 18-22, 2026', offering.location, offering.languages.join(' · ')]}
       />

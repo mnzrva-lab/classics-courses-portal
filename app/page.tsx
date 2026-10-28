@@ -151,7 +151,7 @@ const fallbackLatestCourses: LatestCourse[] = [
     title: 'The Eye of Courage: Blindspots & Leadership',
     detail: 'Timothy Lowenhaupt · Guadalajara',
     href: '/other-programs/eye-of-courage',
-    artwork: '/eye-of-courage/cover.jpg',
+    artwork: '/images/other-programs/eye-of-courage/2026.webp',
   },
   {
     sortDate: '2026-08-22',
@@ -161,6 +161,7 @@ const fallbackLatestCourses: LatestCourse[] = [
     detail: 'Timothy Lowenhaupt & Brian Mendoza · Online from Taiwan',
     href: '/courses/course-8/taiwan-2026',
     courseNumber: 8,
+    artwork: '/images/classics/course-8/taiwan-2026.webp',
   },
   {
     sortDate: '2026-08-23',
@@ -170,6 +171,7 @@ const fallbackLatestCourses: LatestCourse[] = [
     detail: 'Timothy Lowenhaupt',
     href: '/courses/course-17/current-2026',
     courseNumber: 17,
+    artwork: '/images/classics/course-17/arizona-2026.webp',
   },
   {
     sortDate: '2026-04-05',
@@ -188,6 +190,7 @@ const fallbackLatestCourses: LatestCourse[] = [
     detail: 'Timothy Lowenhaupt',
     href: '/courses/course-16',
     courseNumber: 16,
+    artwork: '/images/classics/course-16/arizona-2026.webp',
   },
 ].sort((a, b) => b.sortDate.localeCompare(a.sortDate)).slice(0, 5)
 

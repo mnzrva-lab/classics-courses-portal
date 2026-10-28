@@ -7,7 +7,7 @@ import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import rawCourse18Schedule from '@/content/classics/course-18-schedule.json'
 
-type CanonicalCourse = { canonicalNumber: number; slug: string; title: string }
+type CanonicalCourse = { canonicalNumber: number; slug: string; title: string; artwork?: string; artworkAlt?: string }
 type ArchiveOffering = {
   slug: string
   label: string
@@ -59,7 +59,16 @@ export default function ClassicsCourseHub({ courseSlug }: { courseSlug: string }
     <main className="container page compact-course-hub">
       <div className="offering-breadcrumbs"><Link href="/courses">Classics Courses</Link><span>/</span><span>Course {course.canonicalNumber}</span></div>
 
-      <LibraryCourseHero eyebrow={'Classics Course ' + course.canonicalNumber} title={course.title} />
+      <LibraryCourseHero
+        eyebrow={'Classics Course ' + course.canonicalNumber}
+        title={course.title}
+        artwork={course.artwork ? {
+          src: course.artwork,
+          alt: course.artworkAlt ?? course.title,
+          width: 1920,
+          height: 1080,
+        } : undefined}
+      />
 
       {offerings.length ? (
         <section className="section compact-section">
