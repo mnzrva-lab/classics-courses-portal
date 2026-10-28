@@ -3,20 +3,13 @@ import UpcomingCourses from '@/components/upcoming-courses'
 import { readPublishedJSON } from '@/lib/public-content'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
-import rawCourse18Schedule from '@/content/classics/course-18-schedule.json'
+import { getCourse18Schedule, type Course18Schedule } from '@/lib/course18-content'
+import { getTerm7Schedule } from '@/lib/term7-content'
+import type { WeeklyTermSchedule } from '@/lib/weekly-term-schedule'
 
 type CatalogCourse = { canonicalNumber: number; slug: string; title: string; artwork?: string | null }
 type ArchiveCourse = { canonicalNumber: number; schedule?: Array<{ label: string; date: string }> }
 type ArchiveCatalog = { courses: ArchiveCourse[] }
-type DetailedSession = { id: string; label: string; startsAt: string; endsAt: string; rebroadcastAt?: string }
-type DetailedSchedule = {
-  schemaVersion: number
-  course: number
-  sourceTimezone: string
-  sourceLabel: string
-  sessions: DetailedSession[]
-}
-
 type LatestCourse = {
   sortDate: string
   dates: string
@@ -73,33 +66,7 @@ function isLatestCoursesFile(candidate: unknown): candidate is LatestCoursesFile
 
 const catalog = rawCatalog as CatalogCourse[]
 const archiveCatalog = rawArchiveCatalog as ArchiveCatalog
-const fallbackCourse18Schedule = rawCourse18Schedule as DetailedSchedule
 const courseByNumber = new Map(catalog.map((course) => [course.canonicalNumber, course]))
-
-function isCourse18Schedule(candidate: unknown): candidate is DetailedSchedule {
-  if (!candidate || typeof candidate !== 'object') return false
-  const schedule = candidate as Partial<DetailedSchedule>
-  if (schedule.schemaVersion !== 1 || schedule.course !== 18) return false
-  if (schedule.sourceTimezone !== 'America/Phoenix' || typeof schedule.sourceLabel !== 'string') return false
-  if (!Array.isArray(schedule.sessions) || schedule.sessions.length === 0 || schedule.sessions.length > 30) return false
-
-  const ids = new Set<string>()
-  for (const value of schedule.sessions as unknown[]) {
-    if (!value || typeof value !== 'object') return false
-    const session = value as Partial<DetailedSession>
-    if (typeof session.id !== 'string' || !session.id.trim() || ids.has(session.id)) return false
-    if (typeof session.label !== 'string' || !session.label.trim()) return false
-    if (typeof session.startsAt !== 'string' || !session.startsAt.endsWith('Z')) return false
-    if (typeof session.endsAt !== 'string' || !session.endsAt.endsWith('Z')) return false
-    const start = Date.parse(session.startsAt)
-    const end = Date.parse(session.endsAt)
-    if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) return false
-    if (session.rebroadcastAt !== undefined &&
-        (typeof session.rebroadcastAt !== 'string' || !Number.isFinite(Date.parse(session.rebroadcastAt)))) return false
-    ids.add(session.id)
-  }
-  return true
-}
 
 function arizonaDate(iso: string) {
   const formatted = new Intl.DateTimeFormat('en-US', {
@@ -117,15 +84,17 @@ type FeaturedUpcomingSession = {
   endsAt: string | null
 }
 type FeaturedUpcomingCourse = {
-  courseNumber: number
+  courseNumber?: number
+  programLabel?: string
   title: string
   href: string
   artwork: string | null
   sessions: FeaturedUpcomingSession[]
+  recurrence?: WeeklyTermSchedule
 }
 
-function getUpcomingCourses(course18Schedule: DetailedSchedule): FeaturedUpcomingCourse[] {
-  return archiveCatalog.courses.flatMap((archive): FeaturedUpcomingCourse[] => {
+function getUpcomingCourses(course18Schedule: Course18Schedule, term7Schedule: WeeklyTermSchedule): FeaturedUpcomingCourse[] {
+  const classics = archiveCatalog.courses.flatMap((archive): FeaturedUpcomingCourse[] => {
     const course = courseByNumber.get(archive.canonicalNumber)
     if (!course) return []
 
@@ -164,6 +133,14 @@ function getUpcomingCourses(course18Schedule: DetailedSchedule): FeaturedUpcomin
       sessions,
     }]
   })
+  return [...classics, {
+    programLabel: 'Living Lam Rim · Term 7',
+    title: term7Schedule.title,
+    href: '/living-lam-rim/term-7',
+    artwork: null,
+    sessions: [],
+    recurrence: term7Schedule,
+  }]
 }
 
 const fallbackLatestCourses: LatestCourse[] = [
@@ -217,11 +194,12 @@ const fallbackLatestCourses: LatestCourse[] = [
 export const dynamic = 'force-dynamic'
 
 export default async function HomePage() {
-  const [remoteSchedule, remoteLatest] = await Promise.all([
-    readPublishedJSON('classics/course-18/schedule.json', isCourse18Schedule),
+  const [course18Schedule, term7Schedule, remoteLatest] = await Promise.all([
+    getCourse18Schedule(),
+    getTerm7Schedule(),
     readPublishedJSON('home/latest-courses.json', isLatestCoursesFile),
   ])
-  const upcomingCourses = getUpcomingCourses(remoteSchedule ?? fallbackCourse18Schedule)
+  const upcomingCourses = getUpcomingCourses(course18Schedule, term7Schedule)
   const latestCourses = (remoteLatest?.items ?? fallbackLatestCourses)
     .slice()
     .sort((a, b) => b.sortDate.localeCompare(a.sortDate))
