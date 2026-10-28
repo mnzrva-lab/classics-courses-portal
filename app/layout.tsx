@@ -32,6 +32,7 @@ import './live-calendar.css'
 import './eye-of-courage.css'
 import './eye-of-courage-refinement.css'
 import './timed-transcript.css'
+import './aci17-preview.css'
 
 export const metadata: Metadata = {
   title: 'Classics Courses with Timothy Lowenhaupt',

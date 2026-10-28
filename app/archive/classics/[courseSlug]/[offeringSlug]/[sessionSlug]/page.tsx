@@ -2,6 +2,9 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import RecordingPlayer from '@/components/recording-player'
 import TimedArchiveTranscript from '@/components/timed-archive-transcript'
+import ACI17PreviewReader from '@/components/aci17-preview-reader'
+import TranscriptControls from '@/components/transcript-controls'
+import { getACI17PreviewTranscript } from '@/lib/aci17-preview-transcript'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import { archiveSessionBySlug, archiveSessionSlug } from '@/content/classics/archive-route'
@@ -36,6 +39,9 @@ export default async function ClassicsArchiveSessionPage({ params }: { params: P
   const previous = index > 0 ? sessions[index - 1] : null
   const next = index < sessions.length - 1 ? sessions[index + 1] : null
   const timedTranscript = timedTranscriptFor(course.canonicalNumber, offeringSlug, session.code)
+  const previewTranscript = course.canonicalNumber === 17 && offeringSlug === 'current-2026'
+    ? await getACI17PreviewTranscript(session.code, session.videoId)
+    : null
 
   return (
     <main className="container page">
@@ -59,8 +65,14 @@ export default async function ClassicsArchiveSessionPage({ params }: { params: P
 
       <section className="section transcript-section-v12" id="transcript" style={{ scrollMarginTop: 96 }}>
         <div className="eyebrow">Reference Transcript</div>
-        <h2>{timedTranscript ? 'Reference Transcript' : 'Transcript not added yet'}</h2>
-        {timedTranscript ? (
+        <h2>{previewTranscript || timedTranscript ? 'Reference Transcript' : 'Transcript not added yet'}</h2>
+        {previewTranscript ? (
+          <>
+            <div className="info-callout aci17-preview-banner"><p><strong>Preview · Unverified timecodes.</strong> This transcript was created with AI and should be checked against the original recording. Chapter and paragraph times are provisional SRT-derived starting points, not final verified video alignment. Missing times are deliberately left blank.</p></div>
+            <TranscriptControls chapters={previewTranscript.chapters.map((chapter) => ({ id: chapter.id, label: chapter.title }))} />
+            <ACI17PreviewReader transcript={previewTranscript} sessionTitle={session.name} sessionDate={session.date ?? ''} sessionPath={`/archive/classics/${course.slug}/${offering.slug}/${sessionSlug}`} />
+          </>
+        ) : timedTranscript ? (
           <TimedArchiveTranscript transcript={timedTranscript} />
         ) : (
           <>
