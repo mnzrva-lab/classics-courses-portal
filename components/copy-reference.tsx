@@ -44,6 +44,31 @@ export default function CopyReference({ reference, path, quoteFromSelection = fa
     return new URL(path, window.location.origin).toString()
   }
 
+  // In the pilot transcript, options float relative to the original Cite
+  // button. If the viewport has too little room below, flip them above.
+  // Other existing Cite menus retain their current layout.
+  function positionCitationPopover() {
+    const details = detailsRef.current
+    if (!quoteFromSelection || !details) return
+    if (!details.open) {
+      details.removeAttribute('data-popup-placement')
+      return
+    }
+
+    const summary = details.querySelector('summary')
+    const menu = details.querySelector<HTMLElement>('.citation-menu-panel')
+    if (!summary || !menu) return
+
+    details.dataset.popupPlacement = 'below'
+    const anchor = summary.getBoundingClientRect()
+    const menuHeight = menu.getBoundingClientRect().height
+    const roomBelow = window.innerHeight - anchor.bottom
+    const roomAbove = anchor.top
+
+    details.dataset.popupPlacement =
+      roomBelow < menuHeight + 16 && roomAbove > roomBelow ? 'above' : 'below'
+  }
+
   async function copyReference() {
     await copy(reference)
     setStatus('reference')
@@ -62,7 +87,7 @@ export default function CopyReference({ reference, path, quoteFromSelection = fa
   }
 
   return (
-    <details className="citation-menu" ref={detailsRef}>
+    <details className="citation-menu" ref={detailsRef} onToggle={positionCitationPopover}>
       <summary className="passage-action">Cite</summary>
       <div className="citation-menu-panel">
         <button type="button" onClick={copyReference}>{status === 'reference' ? 'Copied' : 'Reference'}</button>
