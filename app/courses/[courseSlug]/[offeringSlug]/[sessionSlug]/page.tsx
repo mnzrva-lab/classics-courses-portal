@@ -326,7 +326,7 @@ export default async function SessionPage({
             const passagePath = `${publicReturnPath}#paragraph-${paragraph.id}`
             return <div key={paragraph.id} id={`paragraph-${paragraph.id}`} data-transcript-paragraph data-transcript-speaker={citationSpeaker} className="transcript-paragraph-v12">
               {showHeading ? <h3>{section?.title}</h3> : null}
-              <div className="transcript-copy">{timestamp ? <span className="transcript-timestamp">{timestamp}</span> : null}{paragraph.speaker ? <strong>{paragraph.speaker}: </strong> : null}<span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.body}</span></div>
+              <div className="transcript-copy">{timestamp ? <span className="transcript-timestamp">{timestamp}</span> : null}{paragraph.speaker?.trim().replace(/[:：]\s*$/, '') ? <strong>{paragraph.speaker.trim().replace(/[:：]\s*$/, '')}: </strong> : null}<span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.body}</span></div>
               <PassageStudyTools paragraphId={paragraph.id} sessionId={session.id} returnPath={returnPath} bookmarked={userId ? bookmarked : false} canSaveBookmarks={Boolean(userId && canSaveBookmarks)} canSaveNotes={Boolean(userId && canSaveNotes)} noteCount={userId ? noteCount : 0} reference={reference} passagePath={passagePath} />
               {renderTranscriptAssets(paragraph)}
             </div>
