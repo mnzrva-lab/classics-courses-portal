@@ -54,7 +54,11 @@ jobs:
             exit 1
           fi
           curl -fsS --max-time 10 "http://127.0.0.1:3199/search?q=OG%20MIN" -o /tmp/search-results.html
-          grep -F "Open passage" /tmp/search-results.html > /dev/null
+          if ! grep -Fq 'class="search-result-row"' /tmp/search-results.html; then
+            echo "Search returned no result rows. First 2400 bytes:"
+            head -c 2400 /tmp/search-results.html
+            exit 1
+          fi
           curl -fsS --max-time 10 "http://127.0.0.1:3199/perfection-of-wisdom" -o /tmp/perfection-intro.html
           grep -F "String of White Lotuses" /tmp/perfection-intro.html > /dev/null
           grep -F "Root text" /tmp/perfection-intro.html > /dev/null
