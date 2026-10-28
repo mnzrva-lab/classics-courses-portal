@@ -1,5 +1,6 @@
 import 'server-only'
 import { cache } from 'react'
+import { verifiedGithubCover, type GitHubCoverEntry } from '@/lib/approved-cover-payload'
 
 const repo = 'mnzrva-lab/classics-library-content'
 const slug = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
@@ -19,34 +20,29 @@ export const readApprovedCover = cache(async (
   const token = process.env.LIBRARY_CONTENT_GITHUB_TOKEN?.trim()
   if (!token) return null
   try {
-    const response = await fetch(
-      'https://api.github.com/repos/' + repo + '/contents/published/' + path + '?ref=main',
-      {
-        headers: {
-          Accept: 'application/vnd.github+json',
-          Authorization: 'Bearer ' + token,
-          'X-GitHub-Api-Version': '2022-11-28',
-          'User-Agent': 'classics-courses-portal',
-        },
-        next: { revalidate: 60 },
-        signal: AbortSignal.timeout(7000),
-      },
-    )
-    if (!response.ok) return null
-    const entry: unknown = await response.json()
-    if (!entry || typeof entry !== 'object') return null
-    const file = entry as { type?: unknown; encoding?: unknown; content?: unknown; size?: unknown; sha?: unknown }
-    if (file.type !== 'file' || file.encoding !== 'base64' ||
-        typeof file.content !== 'string' || typeof file.size !== 'number' ||
-        file.size < 16 || file.size > 4_000_000) return null
-    const buffer = Buffer.from(file.content.replace(/\s/g, ''), 'base64')
-    if (buffer.byteLength !== file.size ||
-        buffer.toString('ascii', 0, 4) !== 'RIFF' ||
-        buffer.toString('ascii', 8, 12) !== 'WEBP') return null
-    return {
-      bytes: new Uint8Array(buffer),
-      etag: typeof file.sha === 'string' ? file.sha : '',
+    const url = 'https://api.github.com/repos/' + repo + '/contents/published/' + path + '?ref=main'
+    const sharedHeaders = {
+      Authorization: 'Bearer ' + token,
+      'X-GitHub-Api-Version': '2022-11-28',
+      'User-Agent': 'classics-courses-portal',
     }
+    // GitHub supplies metadata and base64 content for normal small WebP files.
+    const response = await fetch(url, {
+      headers: { ...sharedHeaders, Accept: 'application/vnd.github.object+json' },
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(7000),
+    })
+    if (!response.ok) return null
+    const payload: unknown = await response.json()
+    if (!payload || typeof payload !== 'object') return null
+
+    // For WebP files above 1 MB GitHub returns encoding "none" rather
+    // than inline base64; fetch the documented raw representation instead.
+    return verifiedGithubCover(payload as GitHubCoverEntry, () => fetch(url, {
+      headers: { ...sharedHeaders, Accept: 'application/vnd.github.raw+json' },
+      next: { revalidate: 60 },
+      signal: AbortSignal.timeout(7000),
+    }))
   } catch { return null }
 })
 
