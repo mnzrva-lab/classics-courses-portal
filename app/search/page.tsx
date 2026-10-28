@@ -1,6 +1,5 @@
 import Link from 'next/link'
-import { Fragment } from 'react'
-import CopyReference from '@/components/copy-reference'
+import SearchResultList from '@/components/search-result-list'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 import { allArchiveSessions } from '@/content/classics/archive-sessions'
@@ -48,28 +47,6 @@ const lamRimSessionIndex = new Map<string, { term: LamRimTerm; session: LamRimSe
 for (const term of lamRimCatalog.terms) for (const session of term.sessions) lamRimSessionIndex.set(session.id, { term, session })
 const perfectionSessionIndex = new Map(perfectionGroups.flatMap((group) => group.sessions.map((session) => [session.id, { group, session }] as const)))
 
-function highlight(text: string, query: string) {
-  const terms = Array.from(new Set(query.trim().split(/\s+/).filter(Boolean))).sort((a, b) => b.length - a.length)
-  if (!terms.length) return text
-  const tokens: Array<{ text: string; match: boolean }> = []
-  const lower = text.toLocaleLowerCase()
-  let pos = 0
-  while (pos < text.length) {
-    const term = terms.find((item) => lower.startsWith(item.toLocaleLowerCase(), pos))
-    if (term) {
-      tokens.push({ text: text.slice(pos, pos + term.length), match: true })
-      pos += term.length
-    } else {
-      const start = pos
-      pos++
-      while (pos < text.length && !terms.some((item) => lower.startsWith(item.toLocaleLowerCase(), pos))) pos++
-      tokens.push({ text: text.slice(start, pos), match: false })
-    }
-  }
-  return tokens.map((token, index) => token.match
-    ? <mark className="search-query-mark" key={index}>{token.text}</mark>
-    : <Fragment key={index}>{token.text}</Fragment>)
-}
 function clip(text: string, length = 320) {'))
   const regex = new RegExp(`(${escaped.join('|')})`, 'gi')
   return text.split(regex).map((part, index) => terms.some((term) => part.toLocaleLowerCase() === term.toLocaleLowerCase())
@@ -224,11 +201,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
         <div className="actions"><button className="button sage" type="submit">Apply filters</button>{advancedActive ? <Link className="button" href={`/search?q=${encodeURIComponent(query)}`}>Clear filters</Link> : null}</div>
       </form></details>
       <section className="section search-results-simple"><div className="section-head"><div><h2>{results.length} result{results.length === 1 ? '' : 's'} for “{query}”</h2></div></div>
-        {results.length ? results.map((result) => <article className="search-result-row" key={`${result.sourceId}-${result.contentType}-${result.id}`}>
-          <div className="meta"><span className="search-result-source">{highlight(result.sourceLabel, query)}</span> · {highlight(result.contextLabel, query)} · {highlight(result.sessionLabel, query)} · {result.contentType}{result.chapter ? <> · {highlight(result.chapter, query)}</> : null}</div>
-          <div className="search-result-copy">{result.speaker ? <strong>{highlight(result.speaker, query)}: </strong> : null}{highlight(clip(result.body), query)}</div>
-          <div className="actions"><Link className="button" href={result.contentType === 'Recording' ? result.href : `${result.href.split('#')[0]}?highlight=${encodeURIComponent(query)}${result.href.includes('#') ? `#${result.href.split('#')[1]}` : ''}`}>Open {result.contentType === 'Transcript' ? 'passage' : result.contentType === 'Study Notes' ? 'Study Notes' : 'recording'}</Link><CopyReference reference={result.reference} path={result.href} /></div>
-        </article>) : <p className="meta">No teaching material matched this search.</p>}
+        {results.length ? <SearchResultList results={results} query={query} /> : <p className="meta">No teaching material matched this search.</p>}
       </section>
     </> : <section className="section search-empty"><p className="meta">Search includes the migrated Classics recording archives, Course 8 Study Notes and transcripts, Living Lam Rim transcripts, and Perfection of Wisdom transcripts. More transcript text will appear as it is added to the Library.</p></section>}
   </main>
