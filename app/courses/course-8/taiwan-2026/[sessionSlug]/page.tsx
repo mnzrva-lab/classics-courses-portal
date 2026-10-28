@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ClassSequenceNavigation from '@/components/class-sequence-navigation'
+import LibraryClassHeader from '@/components/library-class-header'
+import LibraryClassSection from '@/components/library-class-section'
 import ContentDownloadLinks from '@/components/content-download-links'
 import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
@@ -50,17 +52,15 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
         <span>{session.label}</span>
       </div>
 
-      <section className="section">
-        <div className="eyebrow">Classics Course 8 · Taiwan 2026</div>
-        <h1>{session.label}</h1>
-        <p className="lead">{session.date}{session.teacher ? ` · ${session.teacher}` : ''}</p>
-      </section>
+      <LibraryClassHeader
+        eyebrow="Classics Course 8 · Taiwan 2026"
+        title={session.label}
+        meta={session.date + (session.teacher ? ' · ' + session.teacher : '')}
+      />
 
-      <section className="section" id="recording">
-        <div className="eyebrow">Recording</div>
-        <h2>{session.recordingUrl ? 'Class recording' : 'Recording not added yet'}</h2>
+      <LibraryClassSection id="recording" eyebrow="Recording" title={session.recordingUrl ? 'Class recording' : 'Recording not added yet'}>
         <RecordingPlayer recordingUrl={session.recordingUrl} title={`${courseData.course.fullTitle} · ${session.label}`} />
-      </section>
+      </LibraryClassSection>
 
       {studyNotes ? (
         <section className="section" id="study-notes" style={{ scrollMarginTop: 96 }}>
@@ -93,9 +93,7 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
         </section>
       ) : null}
 
-      <section className="section transcript-section-v12" id="transcript" style={{ scrollMarginTop: 96 }}>
-        <div className="eyebrow">Reference Transcript</div>
-        <h2>{transcriptRecovered ? 'Reference Transcript' : 'Transcript not added yet'}</h2>
+      <LibraryClassSection id="transcript" className="transcript-section-v12" eyebrow="Reference Transcript" title={transcriptRecovered ? 'Reference Transcript' : 'Transcript not added yet'}>
 
         {transcriptChapters.length > 0 ? (
           <>
@@ -114,7 +112,7 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
         ) : (
           <p>No transcript source is currently attached to this session. We will add it when the source material is provided.</p>
         )}
-      </section>
+      </LibraryClassSection>
 
       <ClassSequenceNavigation
         previous={previous ? { href: `/courses/course-8/taiwan-2026/${previous.slug}`, label: previous.label } : null}

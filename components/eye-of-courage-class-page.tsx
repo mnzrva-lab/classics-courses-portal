@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import LibraryClassHeader from '@/components/library-class-header'
+import LibraryClassSection from '@/components/library-class-section'
 import ClassSequenceNavigation from '@/components/class-sequence-navigation'
 import EyeOfCourageTabs from '@/components/eye-of-courage-tabs'
 import EyeOfCourageWorkshopShell from '@/components/eye-of-courage-workshop-shell'
@@ -69,17 +71,16 @@ export default function EyeOfCourageClassPage({ sessionSlug }: { sessionSlug: 'c
     <main className="container page eoc-class-page">
       <div className="offering-breadcrumbs"><Link href="/other-programs">Other Programs</Link><span>/</span><Link href="/other-programs/eye-of-courage">{eyeOfCourageProgram.title}</Link><span>/</span><span>{session.label}</span></div>
 
-      <header className="compact-page-head eoc-class-head">
-        <div className="eyebrow">{eyeOfCourageProgram.title} · {eyeOfCourageProgram.subtitle}</div>
-        <h1>{session.label}</h1>
-        <p className="lead">{session.date} · {session.teacher}</p>
-      </header>
+      <LibraryClassHeader
+        className="eoc-class-head"
+        eyebrow={eyeOfCourageProgram.title + ' · ' + eyeOfCourageProgram.subtitle}
+        title={session.label}
+        meta={session.date + ' · ' + session.teacher}
+      />
 
-      <section className="section eoc-recording-section" id="recording">
-        <div className="eyebrow">Recording</div>
-        <h2>Class recording</h2>
+      <LibraryClassSection id="recording" className="eoc-recording-section" eyebrow="Recording" title="Class recording">
         <RecordingPlayer recordingUrl={session.recordingUrl} title={`${eyeOfCourageProgram.title} · ${session.label}`} />
-      </section>
+      </LibraryClassSection>
 
       <EyeOfCourageTabs transcript={transcriptPanel} studyNotes={notesPanel} workshop={workshopPanel} />
 

@@ -1,4 +1,7 @@
 import Link from 'next/link'
+import LibraryClassHeader from '@/components/library-class-header'
+import LibraryClassSection from '@/components/library-class-section'
+import ClassSequenceNavigation from '@/components/class-sequence-navigation'
 import { notFound } from 'next/navigation'
 import RecordingPlayer from '@/components/recording-player'
 import TimedArchiveTranscript from '@/components/timed-archive-transcript'
@@ -50,21 +53,17 @@ export default async function ClassicsArchiveSessionPage({ params }: { params: P
         <span>{session.code}</span>
       </div>
 
-      <section className="section">
-        <div className="eyebrow">Classics Course {course.canonicalNumber} · {offering.label}</div>
-        <h1>{session.name}</h1>
-        <p className="lead">{[session.date, teacher, session.duration].filter(Boolean).join(' · ') || offering.sourceLabel}</p>
-      </section>
+      <LibraryClassHeader
+        eyebrow={'Classics Course ' + course.canonicalNumber + ' · ' + offering.label}
+        title={session.name}
+        meta={[session.date, teacher, session.duration].filter(Boolean).join(' · ') || offering.sourceLabel}
+      />
 
-      <section className="section" id="recording" style={{ scrollMarginTop: 96 }}>
-        <div className="eyebrow">Recording</div>
-        <h2>Class recording</h2>
+      <LibraryClassSection id="recording" eyebrow="Recording" title="Class recording">
         <RecordingPlayer recordingUrl={session.url} title={`Classics Course ${course.canonicalNumber} · ${offering.label} · ${session.name}`} />
-      </section>
+      </LibraryClassSection>
 
-      <section className="section transcript-section-v12" id="transcript" style={{ scrollMarginTop: 96 }}>
-        <div className="eyebrow">Reference Transcript</div>
-        <h2>{previewTranscript || timedTranscript ? 'Reference Transcript' : 'Transcript not added yet'}</h2>
+      <LibraryClassSection id="transcript" className="transcript-section-v12" eyebrow="Reference Transcript" title={previewTranscript || timedTranscript ? 'Reference Transcript' : 'Transcript not added yet'}>
         {previewTranscript ? (
           <>
             <ACI17PreviewReader transcript={previewTranscript} sessionTitle={session.name} sessionDate={session.date ?? ''} sessionPath={`/archive/classics/${course.slug}/${offering.slug}/${sessionSlug}`} />
@@ -77,15 +76,20 @@ export default async function ClassicsArchiveSessionPage({ params }: { params: P
             {offering.note ? <p className="meta" style={{ marginTop: 12 }}>{offering.note}</p> : null}
           </>
         )}
-      </section>
+      </LibraryClassSection>
 
-      <nav className="section" aria-label="Archive session navigation">
-        <div className="actions" style={{ justifyContent: 'space-between' }}>
-          <div>{previous ? <Link className="button" href={`/archive/classics/${course.slug}/${offering.slug}/${archiveSessionSlug(previous, index - 1)}`}>← {previous.code || 'Previous'}</Link> : null}</div>
-          <Link className="button" href={`/courses/${course.slug}/${offering.slug}`}>All classes</Link>
-          <div>{next ? <Link className="button" href={`/archive/classics/${course.slug}/${offering.slug}/${archiveSessionSlug(next, index + 1)}`}>{next.code || 'Next'} →</Link> : null}</div>
-        </div>
-      </nav>
+      <ClassSequenceNavigation
+        previous={previous ? {
+          href: '/archive/classics/' + course.slug + '/' + offering.slug + '/' + archiveSessionSlug(previous, index - 1),
+          label: previous.code || 'Previous',
+        } : null}
+        next={next ? {
+          href: '/archive/classics/' + course.slug + '/' + offering.slug + '/' + archiveSessionSlug(next, index + 1),
+          label: next.code || 'Next',
+        } : null}
+        allHref={'/courses/' + course.slug + '/' + offering.slug}
+        allLabel="All classes"
+      />
     </main>
   )
 }

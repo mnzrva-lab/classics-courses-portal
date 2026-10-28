@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ClassSequenceNavigation from '@/components/class-sequence-navigation'
+import LibraryClassHeader from '@/components/library-class-header'
+import LibraryClassSection from '@/components/library-class-section'
 import ContentDownloadLinks from '@/components/content-download-links'
 import RecordingPlayer from '@/components/recording-player'
 import TranscriptControls from '@/components/transcript-controls'
@@ -54,21 +56,17 @@ export default async function LivingLamRimSessionPage({ params }: { params: Prom
         <span>{session.label}</span>
       </div>
 
-      <section className="section">
-        <div className="eyebrow">Living Lam Rim · Term {term.term}</div>
-        <h1>{session.label}</h1>
-        <p className="lead">{session.date} · Timothy Lowenhaupt · {session.duration}</p>
-      </section>
+      <LibraryClassHeader
+        eyebrow={'Living Lam Rim · Term ' + term.term}
+        title={session.label}
+        meta={session.date + ' · Timothy Lowenhaupt · ' + session.duration}
+      />
 
-      <section className="section" id="recording">
-        <div className="eyebrow">Recording</div>
-        <h2>Class recording</h2>
+      <LibraryClassSection id="recording" eyebrow="Recording" title="Class recording">
         <RecordingPlayer recordingUrl={session.recordingUrl} title={`${catalog.program.title} · Term ${term.term} · ${session.label}`} />
-      </section>
+      </LibraryClassSection>
 
-      <section className="section transcript-section-v12" id="transcript" style={{ scrollMarginTop: 96 }}>
-        <div className="eyebrow">Reference Transcript</div>
-        <h2>{transcriptChapters.length ? 'Reference Transcript' : 'Transcript not added yet'}</h2>
+      <LibraryClassSection id="transcript" className="transcript-section-v12" eyebrow="Reference Transcript" title={transcriptChapters.length ? 'Reference Transcript' : 'Transcript not added yet'}>
 
         {transcriptChapters.length ? (
           <>
@@ -83,7 +81,7 @@ export default async function LivingLamRimSessionPage({ params }: { params: Prom
         ) : (
           <p className="meta">The recording is available, but a Reference Transcript has not been added to the Library for this session yet.</p>
         )}
-      </section>
+      </LibraryClassSection>
 
       <ClassSequenceNavigation
         previous={previous ? { href: `/living-lam-rim/${term.slug}/${previous.slug}`, label: previous.label } : null}

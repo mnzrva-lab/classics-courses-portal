@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ClassSequenceNavigation from '@/components/class-sequence-navigation'
+import LibraryClassHeader from '@/components/library-class-header'
+import LibraryClassSection from '@/components/library-class-section'
 import ContentDownloadLinks from '@/components/content-download-links'
 import LibraryTranscriptReader from '@/components/library-transcript-reader'
 import RecordingPlayer from '@/components/recording-player'
@@ -29,21 +31,17 @@ export default async function PerfectionSessionPage({ params }: { params: Promis
         <span>{session.code}</span>
       </div>
 
-      <section className="section">
-        <div className="eyebrow">{perfectionProgram.eyebrow} · {group.title}</div>
-        <h1>{session.name}</h1>
-        <p className="lead">{session.date} · {session.teacher} · {session.duration}</p>
-      </section>
+      <LibraryClassHeader
+        eyebrow={perfectionProgram.eyebrow + ' · ' + group.title}
+        title={session.name}
+        meta={[session.date, session.teacher, session.duration].filter(Boolean).join(' · ')}
+      />
 
-      <section className="section" id="recording">
-        <div className="eyebrow">Recording</div>
-        <h2>Session recording</h2>
+      <LibraryClassSection id="recording" eyebrow="Recording" title="Session recording">
         <RecordingPlayer recordingUrl={session.recordingUrl} title={`${perfectionProgram.title} · ${session.name}`} />
-      </section>
+      </LibraryClassSection>
 
-      <section className="section transcript-section-v12" id="transcript" style={{ scrollMarginTop: 96 }}>
-        <div className="eyebrow">Reference Transcript</div>
-        <h2>{transcriptChapters.length ? 'Reference Transcript' : 'Transcript not added yet'}</h2>
+      <LibraryClassSection id="transcript" className="transcript-section-v12" eyebrow="Reference Transcript" title={transcriptChapters.length ? 'Reference Transcript' : 'Transcript not added yet'}>
 
         {transcriptChapters.length ? (
           <>
@@ -61,7 +59,7 @@ export default async function PerfectionSessionPage({ params }: { params: Promis
         ) : (
           <p className="meta">The recording is available, but a Reference Transcript has not been added to the Library for this session yet.</p>
         )}
-      </section>
+      </LibraryClassSection>
 
       <ClassSequenceNavigation
         previous={previous ? { href: `/perfection-of-wisdom/${previous.period.slug}/${previous.session.slug}`, label: previous.session.name } : null}
