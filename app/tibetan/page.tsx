@@ -22,11 +22,26 @@ export default async function TibetanPage({ searchParams }: { searchParams: Prom
         {visible.length ? (
           <div className="tibetan-term-grid">
             {visible.map((item) => (
-              <Link className="tibetan-term-card" href={item.href} key={item.term.toLocaleLowerCase()}>
+              <article className="tibetan-term-card" key={item.term.toLocaleLowerCase()}>
                 <h2><strong>{item.term}</strong></h2>
                 <p className="tibetan-term-context">{item.context}</p>
-                <div className="tibetan-term-source">{item.source} →</div>
-              </Link>
+                <div className="tibetan-term-source">{item.source}</div>
+                <div className="tibetan-term-count">{item.occurrences.length} source passage{item.occurrences.length === 1 ? '' : 's'}</div>
+                {item.occurrences.length === 1 ? (
+                  <Link href={item.href}>Open passage →</Link>
+                ) : (
+                  <details className="tibetan-mentions">
+                    <summary>Browse all {item.occurrences.length} mentions</summary>
+                    {item.occurrences.map((mention) => (
+                      <div className="tibetan-mention" key={mention.href}>
+                        <strong>{mention.source}</strong>
+                        <p>{mention.context}</p>
+                        <Link href={mention.href}>Open exact passage →</Link>
+                      </div>
+                    ))}
+                  </details>
+                )}
+              </article>
             ))}
           </div>
         ) : (
