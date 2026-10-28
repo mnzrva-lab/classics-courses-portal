@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useEffect, useRef, useState } from 'react'
+import { Fragment, useEffect, useRef, useState, type ReactNode } from 'react'
 import Link from 'next/link'
 import CopyReference from '@/components/copy-reference'
 import { matchRanges, type MatchMode } from '@/lib/search-match'
@@ -36,7 +36,7 @@ function excerpt(text: string, query: string, mode: MatchMode, length = 340) {
 function highlight(text: string, query: string, mode: MatchMode) {
   const ranges = matchRanges(text, query, mode)
   if (!ranges.length) return text
-  const nodes: React.ReactNode[] = []
+  const nodes: ReactNode[] = []
   let from = 0
   ranges.forEach((range, index) => {
     if (range.start > from) nodes.push(<Fragment key={'text-' + index}>{text.slice(from, range.start)}</Fragment>)
