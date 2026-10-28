@@ -254,3 +254,87 @@
   }
   .transcript-quick-nav button { padding: 0 10px; }
 }
+
+
+/* Three-part Eye of Courage workbook: sentence-completion cards and always-visible belief areas. */
+.eoc-assumption-list {
+  display: grid;
+  gap: 16px;
+}
+.eoc-assumption-card {
+  min-width: 0;
+  padding: clamp(18px, 2.3vw, 26px);
+  border: 1px solid var(--line);
+  border-radius: 21px;
+  background: var(--white);
+  box-shadow: var(--shadow-sm);
+}
+.eoc-assumption-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 17px;
+}
+.eoc-assumption-index {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--eoc-gold-soft);
+  color: var(--eoc-rust);
+  font-weight: 850;
+}
+.eoc-assumption-heading h3 {
+  margin: 0;
+  color: var(--eoc-blue-dark);
+  font-size: clamp(19px, 2.3vw, 23px);
+}
+.eoc-assumption-prompts {
+  display: grid;
+  gap: 19px;
+}
+.eoc-assumption-prompts .eoc-field > span {
+  font-size: clamp(15px, 1.5vw, 17px);
+  font-weight: 700;
+  line-height: 1.45;
+}
+.eoc-assumption-prompts textarea {
+  min-height: 68px;
+  font-size: 16px;
+  background: var(--paper);
+}
+.eoc-assumption-hint {
+  margin: 14px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+.eoc-area-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 17px 20px;
+  color: var(--eoc-blue-dark);
+  font-size: 20px;
+  line-height: 1.3;
+}
+.eoc-area-title small {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.eoc-workshop #areas .eoc-area-body {
+  padding-top: 18px;
+}
+@media (max-width: 540px) {
+  .eoc-assumption-heading { margin-bottom: 14px; }
+  .eoc-assumption-card { padding: 18px 16px; }
+  .eoc-assumption-prompts { gap: 16px; }
+  .eoc-area-title { padding: 16px; font-size: 19px; }
+  .eoc-workshop #areas .eoc-area-body { padding: 15px 16px; }
+  .eoc-workshop-section { scroll-margin-top: 100px; margin-top: 40px; }
+}
