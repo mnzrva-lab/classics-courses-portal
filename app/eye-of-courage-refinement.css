@@ -338,3 +338,15 @@
   .eoc-workshop #areas .eoc-area-body { padding: 15px 16px; }
   .eoc-workshop-section { scroll-margin-top: 100px; margin-top: 40px; }
 }
+
+/* Reinstated one-week commitment: three compact, readable answer blocks. */
+.eoc-commitment-fields {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+.eoc-commitment-fields .eoc-field { min-width: 0; }
+@media (max-width: 920px) {
+  .eoc-commitment-fields { grid-template-columns: 1fr; }
+}
