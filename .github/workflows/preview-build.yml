@@ -97,6 +97,7 @@ jobs:
           grep -Fq '/images/classics/course-8/taiwan-2026.webp' /tmp/upcoming-home.html
           grep -Fq '/images/classics/course-16/arizona-2026.webp' /tmp/upcoming-home.html
           grep -Fq '/images/classics/course-17/arizona-2026.webp' /tmp/upcoming-home.html
+          grep -Fq '/images/other-programs/eye-of-courage/2026.webp' /tmp/upcoming-home.html
           curl -fsS --max-time 10 "http://127.0.0.1:3199/other-programs/eye-of-courage" -o /tmp/eye-of-courage-page.html
           grep -Fq 'data-layout-standard="course-hero-v1"' /tmp/eye-of-courage-page.html
           grep -Fq '/images/other-programs/eye-of-courage/2026.webp' /tmp/eye-of-courage-page.html

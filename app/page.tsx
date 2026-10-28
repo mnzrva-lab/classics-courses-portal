@@ -3,6 +3,7 @@ import UpcomingCourses from '@/components/upcoming-courses'
 import { readPublishedJSON } from '@/lib/public-content'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
+import { eyeOfCourageProgram } from '@/content/eye-of-courage/program'
 import { getCourse18Schedule, type Course18Schedule } from '@/lib/course18-content'
 import { getTerm7Schedule } from '@/lib/term7-content'
 import type { WeeklyTermSchedule } from '@/lib/weekly-term-schedule'
@@ -216,7 +217,12 @@ export default async function HomePage() {
         <div className="section-head"><div><div className="eyebrow">Recently taught</div><h2>Latest courses</h2><p>Newest first, based on the final teaching date.</p></div></div>
         <div className="home-milestones">
           {latestCourses.map((course) => {
-            const artwork = course.artwork ?? (course.courseNumber ? courseByNumber.get(course.courseNumber)?.artwork : null)
+            // GitHub-controlled originals take precedence over older remote metadata.
+            // Preserve remote artwork as the fallback for courses not yet assigned local images.
+            const localArtwork = course.href === '/other-programs/eye-of-courage'
+              ? eyeOfCourageProgram.coverPath
+              : (course.courseNumber ? courseByNumber.get(course.courseNumber)?.artwork : null)
+            const artwork = localArtwork ?? course.artwork ?? null
             return (
               <Link className="home-milestone-row" href={course.href} key={`${course.sortDate}-${course.title}`}>
                 <div

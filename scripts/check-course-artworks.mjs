@@ -29,6 +29,8 @@ for (const cover of covers) {
 }
 assert.ok(homepage.includes("artwork: '/images/other-programs/eye-of-courage/2026.webp'"),
   'Homepage local fallback must use the new Eye of Courage cover')
+assert.ok(homepage.includes("eyeOfCourageProgram.coverPath"),
+  'Homepage must use GitHub Eye of Courage artwork even when remote metadata is stale')
 assert.ok(homepage.includes("artwork: course.artwork ?? null"),
   'Upcoming Courses must continue to use catalog artwork, including Course 18')
 for (const course of [8, 16, 17]) {
