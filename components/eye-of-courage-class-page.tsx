@@ -6,6 +6,7 @@ import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
 import TranscriptControls from '@/components/transcript-controls'
 import TranscriptQuickNav from '@/components/transcript-quick-nav'
+import LibraryTranscriptReader from '@/components/library-transcript-reader'
 import {
   eyeOfCourageProgram,
   eyeOfCourageSession,
@@ -34,18 +35,7 @@ export default function EyeOfCourageClassPage({ sessionSlug }: { sessionSlug: 'c
       </div>
       {transcript.length ? <>
         <TranscriptControls chapters={transcript.map((chapter) => ({ id: chapter.id, label: chapter.title }))} />
-        <article className="transcript-v12-card eoc-transcript-card">
-          {transcript.map((chapter) => (
-            <section key={chapter.id} id={chapter.id} style={{ scrollMarginTop: 96, marginBottom: 34 }}>
-              <h3>{chapter.title}</h3>
-              {chapter.paragraphs.map((paragraph) => (
-                <div className="transcript-paragraph-v12" data-transcript-paragraph id={paragraph.id} key={paragraph.id} style={{ scrollMarginTop: 96 }}>
-                  <div className="transcript-copy"><strong>{paragraph.speaker}: </strong><span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.text}</span></div>
-                </div>
-              ))}
-            </section>
-          ))}
-        </article>
+        <LibraryTranscriptReader chapters={transcript} programTitle={eyeOfCourageProgram.title} sessionTitle={session.label} sessionDate={session.date} sessionPath={`/other-programs/eye-of-courage/${session.slug}`} />
         <TranscriptQuickNav />
       </> : <p className="meta">Transcript not added yet.</p>}
     </div>
