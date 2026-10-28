@@ -11,6 +11,8 @@ import NextClassCountdown from '@/components/next-class-countdown'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import { getACI17Manifest } from '@/lib/aci17-published-content'
+import { getManagedClassicsOfferings } from '@/lib/classics-managed-content'
+import { mergeCourseOfferings } from '@/lib/classics-offering-utils'
 
 type CanonicalCourse = { canonicalNumber: number; slug: string; title: string; artwork?: string; artworkAlt?: string }
 type ArchiveOffering = {
@@ -49,10 +51,23 @@ export default async function ClassicsCourseHub({ courseSlug }: { courseSlug: st
   if (!course) notFound()
 
   const archive = archiveCatalog.courses.find((item) => item.canonicalNumber === course.canonicalNumber)
-  const publishedACI17 = course.canonicalNumber === 17 ? await getACI17Manifest() : null
-  const offerings = publishedACI17
-    ? [{...publishedACI17.offering, recordingCount: publishedACI17.offering.sessions.length}]
-    : archive?.offerings ?? []
+  const [publishedACI17, managedByCourse] = await Promise.all([
+    course.canonicalNumber === 17 ? getACI17Manifest() : Promise.resolve(null),
+    getManagedClassicsOfferings(),
+  ])
+  const archiveOfferings = (archive?.offerings ?? []).map(offering =>
+    publishedACI17 && offering.slug === publishedACI17.offering.slug
+      ? { ...offering, ...publishedACI17.offering,
+          recordingCount: publishedACI17.offering.sessions.length } : offering)
+  const managedOfferings: ArchiveOffering[] = (managedByCourse.get(course.canonicalNumber) ?? []).map(offering => ({
+    slug: offering.offeringSlug,
+    label: offering.offeringLabel,
+    sourceLabel: offering.kind,
+    playlistUrl: offering.playlistUrl,
+    recordingCount: offering.sessions.filter(session => session.recordingUrl).length || undefined,
+    sessionCount: offering.sessions.length,
+  }))
+  const offerings = mergeCourseOfferings(archiveOfferings, managedOfferings)
   const schedule = archive?.schedule ?? []
   const course16Sessions = course.canonicalNumber === 16 ? archiveSessionsFor(16, 'archive-2025-2026') : []
   const course18Schedule = course.canonicalNumber === 18 ? await getCourse18Schedule() : null
@@ -74,7 +89,7 @@ export default async function ClassicsCourseHub({ courseSlug }: { courseSlug: st
         } : undefined}
       />
 
-      {course16Sessions.length ? (
+      {course16Sessions.length && managedOfferings.length === 0 ? (
         <section className="section compact-section">
           <div className="section-head">
             <div>
