@@ -95,3 +95,9 @@ export function formatArizonaTimeRange(schedule: WeeklyTermSchedule) {
   }
   return format(schedule.startTime) + '–' + format(schedule.endTime) + ' AZ'
 }
+
+export function formatTermStartDate(value: string) {
+  return new Intl.DateTimeFormat('en-US', {
+    timeZone: 'UTC', month: 'short', day: 'numeric', year: 'numeric',
+  }).format(new Date(value + 'T12:00:00Z'))
+}
