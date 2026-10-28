@@ -15,6 +15,7 @@ export type LiveCalendarEvent = {
 export type LiveCalendarCourse = {
   id: string
   label: string
+  shortLabel: string
   title: string
   artwork: string
   artworkAlt: string
@@ -86,30 +87,104 @@ function status(course: LiveCalendarCourse, now: number, zone: string): CourseSt
   return { key: 'ongoing', label: 'Ongoing' }
 }
 
+type CalendarEntry = { event: LiveCalendarEvent; course: LiveCalendarCourse }
+
+function countdownForCourse(course: LiveCalendarCourse, now: number, zone: string) {
+  const live = course.events.find((event) =>
+    Date.parse(event.startsAt) <= now && Date.parse(event.endsAt) > now,
+  )
+  if (live) return {
+    label: 'Class happening now',
+    date: dayLabel(live.startsAt, zone) + ' · ' + shortTime(live.startsAt, zone),
+  }
+
+  const next = course.events
+    .filter((event) => Date.parse(event.startsAt) > now)
+    .sort((a, b) => Date.parse(a.startsAt) - Date.parse(b.startsAt))[0]
+  if (!next) return { label: 'No upcoming classes listed', date: '' }
+
+  const remaining = Date.parse(next.startsAt) - now
+  const day = 24 * 60 * 60 * 1000
+  const hour = 60 * 60 * 1000
+  const minute = 60 * 1000
+  const relative = remaining >= 2 * day
+    ? Math.ceil(remaining / day) + ' days'
+    : remaining >= day
+      ? '1 day'
+      : remaining >= hour
+        ? Math.floor(remaining / hour) + 'h ' + Math.ceil((remaining % hour) / minute) + 'm'
+        : Math.max(1, Math.ceil(remaining / minute)) + ' min'
+
+  return {
+    label: (Date.parse(course.startsAt) > now ? 'Starts' : 'Next class') + ' in ' + relative,
+    date: dayLabel(next.startsAt, zone) + ' · ' + shortTime(next.startsAt, zone),
+  }
+}
+
 function EventRow({
-  event, course, zone, now,
+  event, course, zone, now, zoneLabel, showCover = true,
 }: {
   event: LiveCalendarEvent
   course: LiveCalendarCourse
   zone: string
   now: number
+  zoneLabel: string
+  showCover?: boolean
 }) {
   const live = Date.parse(event.startsAt) <= now && Date.parse(event.endsAt) > now
   const past = Date.parse(event.endsAt) <= now
   return (
-    <Link className={'lc-event-row lc-event-row--' + course.palette + (past ? ' lc-event-row--past' : '')} href={event.href}>
+    <Link
+      className={'lc-event-row lc-event-row--' + course.palette +
+        (past ? ' lc-event-row--past' : '') +
+        (!showCover ? ' lc-event-row--no-cover' : '')}
+      href={event.href}
+    >
       <time className="lc-event-date" dateTime={event.startsAt}>{dayLabel(event.startsAt, zone)}</time>
-      <span className="lc-event-cover" aria-hidden="true">
-        <img src={course.artwork} alt="" loading="lazy" />
-      </span>
+      {showCover ? (
+        <span className="lc-event-cover" aria-hidden="true">
+          <img src={course.artwork} alt="" loading="lazy" />
+        </span>
+      ) : null}
       <span className="lc-event-name">
         <span className="lc-event-course">{course.label}</span>
         <strong>{event.title}</strong>
       </span>
-      <span className="lc-event-time">{timeRange(event, zone)}</span>
+      <span className="lc-event-time-wrap">
+        <span className="lc-event-time">{timeRange(event, zone)}</span>
+        <small className="lc-event-zone">{zoneLabel}</small>
+      </span>
       <span className="lc-event-arrow" aria-hidden="true">↗</span>
       {live ? <span className="lc-event-live">Live now</span> : null}
     </Link>
+  )
+}
+
+function EarlierClasses({
+  entries, zone, now, zoneLabel, showCovers,
+}: {
+  entries: CalendarEntry[]
+  zone: string
+  now: number
+  zoneLabel: string
+  showCovers: boolean
+}) {
+  if (!entries.length) return null
+  return (
+    <details className="lc-earlier-details">
+      <summary>
+        <span className="lc-earlier-closed">Show earlier classes</span>
+        <span className="lc-earlier-open">Hide earlier classes</span>
+        <span className="lc-earlier-count">({entries.length})</span>
+        <span className="lc-earlier-chevron" aria-hidden="true">⌄</span>
+      </summary>
+      <div className="lc-earlier-rows">
+        {entries.map(({ event, course }) => (
+          <EventRow key={event.id} event={event} course={course} zone={zone}
+            now={now} zoneLabel={zoneLabel} showCover={showCovers} />
+        ))}
+      </div>
+    </details>
   )
 }
 
@@ -140,12 +215,15 @@ export default function LibraryCalendarExplorer({
   }, [])
 
   const zone = timePreference === 'arizona' ? ARIZONA_ZONE : browserZone
+  const zoneLabel = timePreference === 'arizona' ? 'Arizona time' : zoneReady ? 'Your local time' : 'Arizona time (checking local time)'
   const shownCourses = activeCourse
     ? courses.filter((course) => course.id === activeCourse)
     : courses
   const allShownEvents = shownCourses.flatMap((course) =>
     course.events.map((event) => ({ event, course })),
   ).sort((a, b) => Date.parse(a.event.startsAt) - Date.parse(b.event.startsAt))
+  const allUpcoming = allShownEvents.filter(({ event }) => Date.parse(event.endsAt) > now)
+  const allEarlier = allShownEvents.filter(({ event }) => Date.parse(event.endsAt) <= now).reverse()
   const today = dayKey(new Date(now).toISOString(), zone)
   const monthEvents = allShownEvents.filter(({ event }) => dayKey(event.startsAt, zone).slice(0, 7) === month)
   const firstUpcomingInMonth = monthEvents.find(({ event }) => Date.parse(event.endsAt) > now)
@@ -220,7 +298,7 @@ export default function LibraryCalendarExplorer({
         <div className="lc-course-grid">
           {courses.map((course) => {
             const state = status(course, now, zone)
-            const futureCount = course.events.filter((event) => Date.parse(event.endsAt) > now).length
+            const countdown = countdownForCourse(course, now, zone)
             return (
               <button
                 type="button"
@@ -233,7 +311,8 @@ export default function LibraryCalendarExplorer({
                 <span className="lc-tile-copy">
                   <span className="lc-tile-label">{course.label}</span>
                   <strong>{course.title}</strong>
-                  <span className="lc-tile-next">{futureCount ? futureCount + ' listed upcoming classes' : 'View published class dates'}</span>
+                  <span className="lc-tile-next" aria-live="off">{countdown.label}</span>
+                  {countdown.date ? <span className="lc-tile-date">{countdown.date}</span> : null}
                 </span>
                 <span className={'lc-course-status lc-course-status--' + state.key}>{state.label}</span>
               </button>
@@ -244,8 +323,8 @@ export default function LibraryCalendarExplorer({
 
       <div className="lc-view-bar">
         <div className="lc-view-context">
-          <h2>{view === 'list' ? 'Class schedules' : 'Monthly calendar'}</h2>
-          <p>{activeCourse ? shownCourses[0]?.label : 'All courses'} · {timePreference === 'arizona' ? 'Arizona time' : 'Your local time'}</p>
+          <h2>{view === 'list' ? (activeCourse ? 'Class schedule' : 'Upcoming classes') : 'Monthly calendar'}</h2>
+          <p>{activeCourse ? shownCourses[0]?.label : 'All courses in date order'} · {zoneLabel}</p>
         </div>
         <div className="lc-segment lc-view-switch" role="group" aria-label="Calendar display">
           <button type="button" className={view === 'list' ? 'is-selected' : ''} aria-pressed={view === 'list'} onClick={() => selectView('list')}>☷ List</button>
@@ -254,51 +333,72 @@ export default function LibraryCalendarExplorer({
       </div>
 
       {view === 'list' ? (
-        <div className="lc-course-lists">
-          {shownCourses.map((course) => {
-            const state = status(course, now, zone)
-            const upcoming = course.events.filter((event) => Date.parse(event.endsAt) > now)
-            const previous = course.events.filter((event) => Date.parse(event.endsAt) <= now)
-            return (
-              <section className={'lc-course-section lc-course-section--' + course.palette} key={course.id} aria-label={course.label + ' schedule'}>
-                <header className="lc-course-section-head">
-                  <Link href={course.href} className="lc-section-artwork" aria-label={'Open ' + course.title}>
-                    <img src={course.artwork} alt={course.artworkAlt} loading="lazy" />
-                  </Link>
-                  <div className="lc-section-copy">
-                    <div className="lc-section-kicker">
-                      <span>{course.label}</span>
-                      <span className={'lc-course-status lc-course-status--' + state.key}>{state.label}</span>
+        activeCourse === null ? (
+          <section className="lc-all-agenda" aria-label="Upcoming classes from all courses">
+            {allUpcoming.length ? (
+              <div className="lc-event-list">
+                {allUpcoming.map(({ event, course }) => (
+                  <EventRow key={event.id} event={event} course={course}
+                    zone={zone} now={now} zoneLabel={zoneLabel} />
+                ))}
+              </div>
+            ) : (
+              <p className="lc-empty-inline">No upcoming classes are currently listed.</p>
+            )}
+            <EarlierClasses entries={allEarlier} zone={zone} now={now}
+              zoneLabel={zoneLabel} showCovers={true} />
+          </section>
+        ) : (
+          <div className="lc-course-lists">
+            {shownCourses.map((course) => {
+              const state = status(course, now, zone)
+              const upcoming = course.events.filter((event) => Date.parse(event.endsAt) > now)
+              const previous = course.events
+                .filter((event) => Date.parse(event.endsAt) <= now)
+                .sort((a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt))
+              return (
+                <section className={'lc-course-section lc-course-section--' + course.palette}
+                  key={course.id} aria-label={course.label + ' schedule'}>
+                  <header className="lc-course-section-head">
+                    <Link href={course.href} className="lc-section-artwork" aria-label={'Open ' + course.title}>
+                      <img src={course.artwork} alt={course.artworkAlt} loading="lazy" />
+                    </Link>
+                    <div className="lc-section-copy">
+                      <div className="lc-section-kicker">
+                        <span>{course.label}</span>
+                        <span className={'lc-course-status lc-course-status--' + state.key}>{state.label}</span>
+                      </div>
+                      <h3>{course.title}</h3>
+                      <p>{course.cadence}</p>
+                      <div className="lc-section-actions">
+                        <Link href={course.href}>Course details ↗</Link>
+                        {course.calendarHref ? (
+                          <a href={course.calendarHref}>Add full schedule to calendar ↗</a>
+                        ) : null}
+                      </div>
                     </div>
-                    <h3>{course.title}</h3>
-                    <p>{course.cadence}</p>
-                    <div className="lc-section-actions">
-                      <Link href={course.href}>Course details ↗</Link>
-                      {course.calendarHref ? <a href={course.calendarHref}>Add full schedule to calendar ↗</a> : null}
-                    </div>
-                  </div>
-                </header>
-                {upcoming.length ? (
-                  <>
-                    <div className="lc-list-heading"><h4>Upcoming classes</h4><span>{upcoming.length} listed</span></div>
-                    <div className="lc-event-list">
-                      {upcoming.map((event) => <EventRow key={event.id} event={event} course={course} zone={zone} now={now} />)}
-                    </div>
-                  </>
-                ) : <p className="lc-empty-inline">No future classes in this published schedule.</p>}
-                {previous.length ? (
-                  <>
-                    <div className="lc-list-heading lc-list-heading--past"><h4>Earlier classes</h4><span>{previous.length} listed</span></div>
-                    <div className="lc-event-list">
-                      {previous.map((event) => <EventRow key={event.id} event={event} course={course} zone={zone} now={now} />)}
-                    </div>
-                  </>
-                ) : null}
-                <p className="lc-schedule-note">{course.scheduleNote}</p>
-              </section>
-            )
-          })}
-        </div>
+                  </header>
+                  {upcoming.length ? (
+                    <>
+                      <div className="lc-list-heading">
+                        <h4>Upcoming classes</h4><span>{upcoming.length} listed</span>
+                      </div>
+                      <div className="lc-event-list">
+                        {upcoming.map((event) => (
+                          <EventRow key={event.id} event={event} course={course}
+                            zone={zone} now={now} zoneLabel={zoneLabel} showCover={false} />
+                        ))}
+                      </div>
+                    </>
+                  ) : <p className="lc-empty-inline">No future classes in this published schedule.</p>}
+                  <EarlierClasses entries={previous.map((event) => ({ event, course }))}
+                    zone={zone} now={now} zoneLabel={zoneLabel} showCovers={false} />
+                  <p className="lc-schedule-note">{course.scheduleNote}</p>
+                </section>
+              )
+            })}
+          </div>
+        )
       ) : (
         <section className="lc-month-panel" aria-label="Calendar by month">
           <div className="lc-month-toolbar">
@@ -336,7 +436,7 @@ export default function LibraryCalendarExplorer({
                         aria-label={course.label + ': ' + event.title + ', ' + shortTime(event.startsAt, zone)}
                       >
                         <img src={course.artwork} alt="" loading="lazy" />
-                        <span>{shortTime(event.startsAt, zone)} · {course.label}</span>
+                        <span className="lc-day-event-info"><strong>{course.shortLabel} · {event.title}</strong><small>{shortTime(event.startsAt, zone)}</small></span>
                       </Link>
                     ))}
                   </div>
@@ -354,7 +454,7 @@ export default function LibraryCalendarExplorer({
             </div>
             {dayEvents.length ? (
               <div className="lc-selected-events">
-                {dayEvents.map(({ event, course }) => <EventRow key={event.id} event={event} course={course} zone={zone} now={now} />)}
+                {dayEvents.map(({ event, course }) => <EventRow key={event.id} event={event} course={course} zone={zone} now={now} zoneLabel={zoneLabel} />)}
               </div>
             ) : <p className="lc-empty-inline">No published classes on this day. Select another date to explore.</p>}
           </div>
