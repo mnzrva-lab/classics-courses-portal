@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { getCourse18Schedule } from '@/lib/course18-content'
 import { getTerm7Schedule } from '@/lib/term7-content'
-import { weeklyTermOccurrences } from '@/lib/weekly-term-schedule'
+import { weeklyTermOccurrences, formatArizonaDate, formatArizonaTimeRange, formatTermStartDate } from '@/lib/weekly-term-schedule'
 
 export const dynamic = 'force-dynamic'
 
@@ -64,11 +64,11 @@ export default async function CalendarPage() {
       <p className="lead">Upcoming live classes and weekly teaching sessions, shown in Arizona time.</p>
 
       <section className="library-calendar-feature" aria-label="Living Lam Rim Term 7 weekly schedule">
-        <div className="eyebrow">Starts Monday, November 2, 2026</div>
+        <div className="eyebrow">Starts {formatArizonaDate(term7.startDate + 'T14:00:00Z')}</div>
         <h2>Living Lam Rim · Term 7</h2>
         <h3>{term7.title}</h3>
-        <p>Every Monday · 7:00–8:15 am Arizona time (UTC−7)</p>
-        <p className="meta">Weekly classes continue on Mondays. The final class date has not been announced.</p>
+        <p>Every Monday · {formatArizonaTimeRange(term7)} (UTC−7)</p>
+        <p className="meta">{term7.endDate ? `Weekly Mondays through ${formatTermStartDate(term7.endDate)}.` : 'Weekly classes continue on Mondays. The final class date has not been announced.'}</p>
         <div className="actions">
           <Link className="button sage" href="/living-lam-rim/term-7">View course</Link>
           <a className="button" href="/living-lam-rim/term-7/calendar">＋ Add recurring classes to calendar</a>
