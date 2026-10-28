@@ -69,8 +69,8 @@ function isCandidate(value: string) {
  * Use source offsets so punctuation and every bracketed marker stay intact.
  */
 function contextAround(text: string, start: number, end: number) {
-  const beforeTokens = Array.from(text.slice(0, start).matchAll(/\\S+/g))
-  const afterTokens = Array.from(text.slice(end).matchAll(/\\S+/g))
+  const beforeTokens = Array.from(text.slice(0, start).matchAll(/\S+/g))
+  const afterTokens = Array.from(text.slice(end).matchAll(/\S+/g))
   const firstWord = beforeTokens.length > 11 ? beforeTokens[beforeTokens.length - 11] : null
   const lastWord = afterTokens.length > 15 ? afterTokens[14] : null
 
@@ -79,7 +79,7 @@ function contextAround(text: string, start: number, end: number) {
     ? end + (lastWord.index ?? 0) + lastWord[0].length
     : text.length
 
-  const excerpt = text.slice(excerptStart, excerptEnd).replace(/\\s+/g, ' ').trim()
+  const excerpt = text.slice(excerptStart, excerptEnd).replace(/\s+/g, ' ').trim()
   return `${excerptStart > 0 ? '…' : ''}${excerpt}${excerptEnd < text.length ? '…' : ''}`
 }
 
