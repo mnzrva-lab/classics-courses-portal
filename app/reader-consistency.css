@@ -243,3 +243,18 @@
     transition: none;
   }
 }
+
+/* Search controls must shrink before adjacent filters, even at intermediate widths. */
+.search-page-simple .advanced-search-form { min-width: 0; }
+.search-page-simple .advanced-search-form > label { min-width: 0; }
+.search-page-simple .advanced-search-form select { display: block; width: 100%; min-width: 0; max-width: 100%; }
+.search-result-source { font-weight: 800; color: var(--sage-900); }
+.search-query-mark, .transcript-find-mark { background: #f4e7a0; color: #292419; border-radius: 3px; padding: 0 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.search-result-count-note { color: var(--ink-soft); font-size: 13px; margin-top: 5px; }
+.tibetan-term-count { color: var(--sage-900); font-weight: 750; font-size: 12px; }
+.tibetan-mentions { margin-top: 10px; border-top: 1px solid var(--line); }
+.tibetan-mentions summary { cursor: pointer; padding: 12px 0; font-weight: 750; }
+.tibetan-mention { border-top: 1px solid var(--line); padding: 12px 0; }
+.tibetan-mention p { margin: 5px 0; }
+@media (max-width: 980px) { .search-page-simple .advanced-search-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) { .search-page-simple .advanced-search-form { grid-template-columns: minmax(0,1fr); } }
