@@ -7,7 +7,7 @@ import MarkdownContent from '@/components/markdown-content'
 export type LibraryTranscriptChapter = {
   id: string
   title: string
-  paragraphs: Array<{ id: string; speaker?: string | null; text: string; startSeconds?: number | null }>
+  paragraphs: Array<{ id: string; speaker?: string | null; text: string; startSeconds?: number | null; timingSource?: 'youtube-caption' | 'estimated' }>
 }
 
 type Props = {
@@ -85,6 +85,7 @@ export default function LibraryTranscriptReader({
                 const newTurn = Boolean(announcedSpeaker) && announcedSpeaker !== currentSpeaker
                 if (announcedSpeaker) currentSpeaker = announcedSpeaker
                 const paragraphTime = validTime(paragraph.startSeconds) ? paragraph.startSeconds : null
+                const isEstimated = paragraph.timingSource === 'estimated'
                 const reference = [
                   currentSpeaker ? `Speaker: ${currentSpeaker}` : null,
                   programTitle,
@@ -110,8 +111,8 @@ export default function LibraryTranscriptReader({
                           type="button"
                           className="transcript-timestamp timed-transcript-time"
                           data-transcript-seek={paragraphTime}
-                          aria-label={`Play near this passage from ${formatTimestamp(paragraphTime)}`}
-                        >{formatTimestamp(paragraphTime)}</button>
+                          aria-label={`Play near this passage from ${isEstimated ? 'approximately ' : ''}${formatTimestamp(paragraphTime)}`}
+                        >{isEstimated ? '~ ' : ''}{formatTimestamp(paragraphTime)}</button>
                       ) : null}
                       <div className="timed-transcript-html">
                         <MarkdownContent
