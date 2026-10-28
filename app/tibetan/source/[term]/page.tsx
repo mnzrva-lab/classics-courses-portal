@@ -39,7 +39,7 @@ export default async function TranscriptTermHub({ params }: {
             <p className="search-result-copy">{mention.context}</p>
             <div className="actions">
               <Link className="button" href={passageWithHighlight(mention.href, entry.term)}>Open exact passage</Link>
-              <CopyReference reference={'Tibetan term: ' + entry.term + ' · ' + mention.source + ' · Reference Transcript'} path={mention.href} />
+              <CopyReference reference={'Tibetan term: ' + mention.markedTerm + ' · ' + mention.source + ' · Reference Transcript'} path={mention.href} />
             </div>
           </article>
         ))}
