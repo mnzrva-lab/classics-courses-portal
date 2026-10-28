@@ -10,6 +10,8 @@ import RecordingPlayer from '@/components/recording-player'
 import TimedArchiveTranscript from '@/components/timed-archive-transcript'
 import ACI17PreviewReader from '@/components/aci17-preview-reader'
 import { getACI17Manifest, getACI17Transcript } from '@/lib/aci17-published-content'
+import { getManagedClassicsClass } from '@/lib/classics-managed-content'
+import ManagedClassicsClassPage from '@/components/managed-classics-class-page'
 import ContentDownloadLinks from '@/components/content-download-links'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
@@ -33,6 +35,9 @@ export default async function ClassicsArchiveSessionPage({ params }: { params: P
   const { courseSlug, offeringSlug, sessionSlug } = await params
   const course = catalog.find((item) => item.slug === courseSlug)
   if (!course) notFound()
+
+  const managedClass = await getManagedClassicsClass(courseSlug, offeringSlug, sessionSlug)
+  if (managedClass) return <ManagedClassicsClassPage record={managedClass} courseSlug={courseSlug} />
 
   const archive = archiveCatalog.courses.find((item) => item.canonicalNumber === course.canonicalNumber)
   const offering = archive?.offerings?.find((item) => item.slug === offeringSlug)
