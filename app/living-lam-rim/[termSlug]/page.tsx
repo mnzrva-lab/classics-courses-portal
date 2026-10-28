@@ -49,6 +49,19 @@ export default async function LivingLamRimTermPage({ params }: { params: Promise
       </header>
 
       {schedule ? (
+        <figure className="llr-term-cover">
+          <img
+            src="/images/living-lam-rim/term-7/BG.webp"
+            alt="A figure overlooking a green city and mountains beneath flowing digital patterns"
+            width={1920}
+            height={1080}
+            loading="eager"
+            decoding="async"
+          />
+        </figure>
+      ) : null}
+
+      {schedule ? (
         <section className="section compact-section llr-live-term">
           <div className="section-head">
             <div>
