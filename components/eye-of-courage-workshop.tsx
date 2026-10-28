@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { eyeOfCourageProgram } from '@/content/eye-of-courage/program'
 import { assumptionScenarios, beliefAreas, fourPowers, fourSteps } from './eye-of-courage-workshop-data'
 
 const KEY = 'eye-of-courage-workbook-v1'
@@ -99,7 +98,7 @@ export default function EyeOfCourageWorkshop() {
 
   return <div className="eoc-workshop">
     <section className="eoc-workshop-intro card cream"><div><div className="eyebrow">Interactive workbook</div><h2>Notice what comes up.</h2><p>Begin with five everyday situations from Class 2, explore the five areas of limiting beliefs, then use the Four Powers and Four Steps to practice a different response.</p></div><div className="eoc-workbook-rule"><strong>How to begin</strong><span>Finish each sentence with your first honest reaction. There are no right answers, and you do not have to make your answer sound better.</span></div></section>
-    <div className="eoc-workshop-toolbar"><div className="eoc-local-status"><strong>Your reflections stay with you.</strong><span>Your answers are saved only in this browser on this device. They are not uploaded to V Houses or your student account. Clearing browser data, using private browsing, or switching browser or device may make them unavailable.</span><small>{savedAt ? `Saved locally at ${savedAt}` : ready ? 'Ready to save locally' : 'Loading saved answers…'}</small></div><div className="actions">{eyeOfCourageProgram.workbookPdfPath ? <><a className="button" href={eyeOfCourageProgram.workbookPdfPath} target="_blank" rel="noreferrer">View PDF</a><a className="button" href={eyeOfCourageProgram.workbookPdfPath} download>Download PDF</a></> : <span className="pill">Printable PDF will be added here</span>}<button className="button sage" onClick={downloadAnswers} disabled={exporting}>{exporting ? 'Preparing DOCX…' : 'Download my answers'}</button><button className="button" onClick={clearAll}>Clear saved answers</button></div><div className="meta">{count ? `${count} saved response${count === 1 ? '' : 's'} / selections` : 'No responses yet'}</div></div>
+    <div className="eoc-workshop-toolbar"><div className="eoc-local-status"><strong>Your reflections stay with you.</strong><span>Your answers are saved only in this browser on this device. They are not uploaded to V Houses or your student account. Clearing browser data, using private browsing, or switching browser or device may make them unavailable.</span><small>{savedAt ? `Saved locally at ${savedAt}` : ready ? 'Ready to save locally' : 'Loading saved answers…'}</small></div><div className="actions"><button className="button sage" onClick={downloadAnswers} disabled={exporting}>{exporting ? 'Preparing DOCX…' : 'Download my answers (DOCX)'}</button><button className="button" onClick={clearAll}>Clear saved answers</button></div><div className="meta">{count ? `${count} saved response${count === 1 ? '' : 's'} / selections` : 'No responses yet'}</div></div>
 
     <section className="eoc-workshop-section" id="assumptions">
       <Head n={1} eyebrow="First impressions" title="What do I automatically assume?" copy="Complete each unfinished sentence. Notice the thought that appears before you correct or explain it." />
@@ -143,6 +142,6 @@ export default function EyeOfCourageWorkshop() {
         {oneWeekCommitments.map(([id, question]) => <Field key={id} id={id} label={question} rows={2} value={data.answers[id] ?? ''} onChange={value => set(id, value)} />)}
       </div>
     </div>
-    <div className="eoc-workshop-finish card sage"><div><div className="eyebrow">Keep your work</div><h2>Download a copy before you leave.</h2><p>Your browser copy stays on this device. A DOCX export gives you a portable copy of everything you wrote.</p></div><div className="actions"><button className="button sage" onClick={downloadAnswers} disabled={exporting}>{exporting ? 'Preparing DOCX…' : 'Download my answers'}</button><a className="button" href="#assumptions">Return to the beginning</a></div></div>
+    <div className="eoc-workshop-finish card sage"><div><div className="eyebrow">Keep your work</div><h2>Download a copy before you leave.</h2><p>Your browser copy stays on this device. A DOCX export gives you a portable copy of everything you wrote.</p></div><div className="actions"><button className="button sage" onClick={downloadAnswers} disabled={exporting}>{exporting ? 'Preparing DOCX…' : 'Download my answers (DOCX)'}</button><a className="button" href="#assumptions">Return to the beginning</a></div></div>
   </div>
 }
