@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import rawCatalog from '@/content/living-lam-rim/catalog.json'
 import { getTerm7Schedule } from '@/lib/term7-content'
-import { formatArizonaTimeRange } from '@/lib/weekly-term-schedule'
+import { formatArizonaTimeRange, formatTermStartDate } from '@/lib/weekly-term-schedule'
 
 type Session = { id: string; transcriptSource: string | null }
 type Term = {
@@ -36,7 +36,7 @@ export default async function LivingLamRimPage() {
               <span className="term-list-copy">
                 <strong>{term.term === 7 ? term7.title : (term.title ?? `Term ${term.term}`)}</strong>
                 {term.term === 7 ? (
-                  <small>Live from {term7.startDate === '2026-11-02' ? 'Nov 2, 2026' : term7.startDate} · Mondays · {formatArizonaTimeRange(term7)} · End date TBA</small>
+                  <small>Live from {formatTermStartDate(term7.startDate)} · Mondays · {formatArizonaTimeRange(term7)} · End date TBA</small>
                 ) : (
                   <small>{term.range} · {term.sessions.length} recording{term.sessions.length === 1 ? '' : 's'}</small>
                 )}
