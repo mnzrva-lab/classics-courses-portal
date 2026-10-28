@@ -3,6 +3,11 @@ import { notFound } from 'next/navigation'
 import CopyReference from '@/components/copy-reference'
 import { transcriptGlossaryTerms } from '@/content/tibetan/transcript-glossary'
 
+function passageWithHighlight(href: string, term: string) {
+  const [base, anchor] = href.split('#')
+  return base + '?highlight=' + encodeURIComponent(term) + (anchor ? '#' + anchor : '')
+}
+
 export default async function TranscriptTermHub({ params }: {
   params: Promise<{ term: string }>
 }) {
@@ -26,7 +31,7 @@ export default async function TranscriptTermHub({ params }: {
             <strong className="search-result-source">{mention.source}</strong>
             <p className="search-result-copy">{mention.context}</p>
             <div className="actions">
-              <Link className="button" href={mention.href}>Open exact passage</Link>
+              <Link className="button" href={passageWithHighlight(mention.href, entry.term)}>Open exact passage</Link>
               <CopyReference reference={'Tibetan term: ' + entry.term + ' · ' + mention.source + ' · Reference Transcript'} path={mention.href} />
             </div>
           </article>
