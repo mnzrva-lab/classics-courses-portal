@@ -107,13 +107,16 @@ function countdownForCourse(course: LiveCalendarCourse, now: number, zone: strin
   const day = 24 * 60 * 60 * 1000
   const hour = 60 * 60 * 1000
   const minute = 60 * 1000
+  const roundedMinutes = Math.max(1, Math.ceil(remaining / minute))
+  const hours = Math.floor(roundedMinutes / 60)
+  const mins = roundedMinutes % 60
   const relative = remaining >= 2 * day
     ? Math.ceil(remaining / day) + ' days'
     : remaining >= day
       ? '1 day'
       : remaining >= hour
-        ? Math.floor(remaining / hour) + 'h ' + Math.ceil((remaining % hour) / minute) + 'm'
-        : Math.max(1, Math.ceil(remaining / minute)) + ' min'
+        ? hours + 'h' + (mins ? ' ' + mins + 'm' : '')
+        : roundedMinutes + ' min'
 
   return {
     label: (Date.parse(course.startsAt) > now ? 'Starts' : 'Next class') + ' in ' + relative,
@@ -423,7 +426,11 @@ export default function LibraryCalendarExplorer({
               const isSelected = displayDay === dateKey
               return (
                 <div className={'lc-day' + (isSelected ? ' is-selected' : '') + (today === dateKey ? ' is-today' : '')} key={dateKey}>
-                  <button type="button" className="lc-day-pick" aria-label={fullDayLabel(dateKey) + ', ' + inDay.length + ' classes'} aria-pressed={isSelected} onClick={() => setSelectedDay(dateKey)}>
+                  <button type="button" className="lc-day-pick"
+                    aria-label={fullDayLabel(dateKey) + ': ' + (inDay.length
+                      ? inDay.map(({ course, event }) => course.label + ', ' + event.title).join('; ')
+                      : 'No classes')}
+                    aria-pressed={isSelected} onClick={() => setSelectedDay(dateKey)}>
                     <span>{date}</span>
                     <span className="lc-day-count">{inDay.length ? inDay.length : ''}</span>
                   </button>
@@ -441,7 +448,11 @@ export default function LibraryCalendarExplorer({
                     ))}
                   </div>
                   <div className="lc-day-dots" aria-hidden="true">
-                    {inDay.map(({ event, course }) => <span key={event.id} className={'lc-dot lc-dot--' + course.palette} />)}
+                    {inDay.map(({ event, course }) => (
+                      <span key={event.id} className={'lc-dot lc-dot--' + course.palette}>
+                        {course.id === 'course18' ? 'C18' : 'LR7'}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )
