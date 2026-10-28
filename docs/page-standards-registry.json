@@ -31,11 +31,13 @@
     "app/courses/course-18/[classSlug]/page.tsx": "class",
     "app/living-lam-rim/term-7/[dateSlug]/page.tsx": "class",
     "app/library/page.tsx": "index",
-    "app/library/[programSlug]/[offeringSlug]/page.tsx": "course",
-    "app/library/[programSlug]/[offeringSlug]/[sessionSlug]/page.tsx": "class"
+    "app/library/[programSlug]/[offeringSlug]/page.tsx": "legacy-exception",
+    "app/library/[programSlug]/[offeringSlug]/[sessionSlug]/page.tsx": "legacy-exception"
   },
   "exceptions": {
     "app/courses/[courseSlug]/[offeringSlug]/[sessionSlug]/page.tsx": "Legacy Supabase-backed session implementation kept in source for compatibility. It is not a verified current GitHub-backed public study route and must be migrated intentionally before removing this exception.",
-    "app/other-programs/eye-of-courage/class-2/workshop/page.tsx": "Dedicated interactive workbook, reached from the standard Eye of Courage class-2 page. Uses its specialized workbook layout and must retain an accessible route back to the class."
+    "app/other-programs/eye-of-courage/class-2/workshop/page.tsx": "Dedicated interactive workbook, reached from the standard Eye of Courage class-2 page. Uses its specialized workbook layout and must retain an accessible route back to the class.",
+    "app/library/[programSlug]/[offeringSlug]/page.tsx": "Compatibility redirect only for links shared during development. The page has no public UI and sends visitors to the canonical course offering or class within the existing Classics Courses section.",
+    "app/library/[programSlug]/[offeringSlug]/[sessionSlug]/page.tsx": "Compatibility redirect only for links shared during development. The page has no public UI and sends visitors to the canonical course offering or class within the existing Classics Courses section."
   }
 }
