@@ -29,6 +29,8 @@ jobs:
         run: node --experimental-strip-types scripts/test-search-match.mjs
       - name: Managed Library schema tests
         run: node --experimental-strip-types scripts/test-managed-library-schema.mjs
+      - name: Approved WebP image upload and GitHub size-limit tests
+        run: node --experimental-strip-types scripts/test-approved-cover-payload.mjs
       - name: Classics offering integration tests
         run: node --experimental-strip-types scripts/test-classics-offering-utils.mjs
       - name: Reject temporary QA content source
