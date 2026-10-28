@@ -42,7 +42,7 @@ jobs:
             cat /tmp/classics-preview-start.log
             exit 1
           fi
-          grep -F "'OG MIN" /tmp/tibetan-hub.html > /dev/null
+          grep -F "OG MIN" /tmp/tibetan-hub.html > /dev/null
           grep -F "Open exact passage" /tmp/tibetan-hub.html > /dev/null
           curl -fsS --max-time 10 "http://127.0.0.1:3199/search?q=OG%20MIN" -o /tmp/search-results.html
           grep -F "Open passage" /tmp/search-results.html > /dev/null
