@@ -1,7 +1,7 @@
 type DownloadContent = 'transcript' | 'notes'
 
 type Props = {
-  collection: 'course8' | 'living-lam-rim' | 'perfection'
+  collection: 'course8' | 'course17' | 'living-lam-rim' | 'perfection'
   sessionId: string
   content: DownloadContent
 }

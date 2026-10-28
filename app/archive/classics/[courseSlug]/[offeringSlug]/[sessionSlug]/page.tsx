@@ -7,7 +7,8 @@ import { notFound } from 'next/navigation'
 import RecordingPlayer from '@/components/recording-player'
 import TimedArchiveTranscript from '@/components/timed-archive-transcript'
 import ACI17PreviewReader from '@/components/aci17-preview-reader'
-import { getACI17PreviewTranscript } from '@/lib/aci17-preview-transcript'
+import { getACI17Manifest, getACI17Transcript } from '@/lib/aci17-published-content'
+import ContentDownloadLinks from '@/components/content-download-links'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import { archiveSessionBySlug, archiveSessionSlug } from '@/content/classics/archive-route'
@@ -35,15 +36,24 @@ export default async function ClassicsArchiveSessionPage({ params }: { params: P
   const offering = archive?.offerings?.find((item) => item.slug === offeringSlug)
   if (!offering) notFound()
 
-  const resolved = archiveSessionBySlug(course.canonicalNumber, offeringSlug, sessionSlug)
+  const publishedACI17 = course.canonicalNumber === 17 && offeringSlug === 'current-2026'
+    ? await getACI17Manifest()
+    : null
+  const resolved = publishedACI17
+    ? (() => {
+        const sessions = publishedACI17.offering.sessions
+        const index = sessions.findIndex((session, i) => archiveSessionSlug(session, i) === sessionSlug)
+        return index < 0 ? null : { session: sessions[index], index, sessions }
+      })()
+    : archiveSessionBySlug(course.canonicalNumber, offeringSlug, sessionSlug)
   if (!resolved) notFound()
   const { session, index, sessions } = resolved
   const teacher = displayTeacher(session.teacher)
   const previous = index > 0 ? sessions[index - 1] : null
   const next = index < sessions.length - 1 ? sessions[index + 1] : null
-  const timedTranscript = timedTranscriptFor(course.canonicalNumber, offeringSlug, session.code)
-  const previewTranscript = course.canonicalNumber === 17 && offeringSlug === 'current-2026'
-    ? await getACI17PreviewTranscript(session.code, session.videoId)
+  const timedTranscript = publishedACI17 ? null : timedTranscriptFor(course.canonicalNumber, offeringSlug, session.code)
+  const publishedTranscript = publishedACI17
+    ? await getACI17Transcript(session.code, session.videoId)
     : null
 
   return (
@@ -64,11 +74,12 @@ export default async function ClassicsArchiveSessionPage({ params }: { params: P
         <RecordingPlayer recordingUrl={session.url} title={`Classics Course ${course.canonicalNumber} · ${offering.label} · ${session.name}`} />
       </LibraryClassSection>
 
-      <LibraryClassSection id="transcript" className="transcript-section-v12" eyebrow="Reference Transcript" title={previewTranscript || timedTranscript ? 'Reference Transcript' : 'Transcript not added yet'}>
-        {previewTranscript || timedTranscript ? <TranscriptNotice /> : null}
-        {previewTranscript ? (
+      <LibraryClassSection id="transcript" className="transcript-section-v12" eyebrow="Reference Transcript" title={publishedTranscript || timedTranscript ? 'Reference Transcript' : 'Transcript not added yet'}>
+        {publishedTranscript || timedTranscript ? <TranscriptNotice /> : null}
+        {publishedTranscript ? (
           <>
-            <ACI17PreviewReader transcript={previewTranscript} sessionTitle={session.name} sessionDate={session.date ?? ''} sessionPath={`/archive/classics/${course.slug}/${offering.slug}/${sessionSlug}`} />
+            <ContentDownloadLinks collection="course17" sessionId={session.code} content="transcript" />
+            <ACI17PreviewReader transcript={publishedTranscript} sessionTitle={session.name} sessionDate={session.date ?? ''} sessionPath={`/archive/classics/${course.slug}/${offering.slug}/${sessionSlug}`} />
           </>
         ) : timedTranscript ? (
           <TimedArchiveTranscript

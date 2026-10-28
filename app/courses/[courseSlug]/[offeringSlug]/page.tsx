@@ -6,6 +6,7 @@ import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
 import { archiveSessionsFor } from '@/content/classics/archive-sessions'
 import { archiveSessionSlug } from '@/content/classics/archive-route'
+import { getACI17Manifest } from '@/lib/aci17-published-content'
 
 type CanonicalCourse = { canonicalNumber: number; slug: string; title: string; artwork?: string; artworkAlt?: string }
 type ArchiveOffering = {
@@ -40,9 +41,14 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
   const offering = archive?.offerings?.find((item) => item.slug === offeringSlug)
   if (!offering) notFound()
 
-  const sessions = archiveSessionsFor(course.canonicalNumber, offering.slug)
-  const artworkSrc = offering.artwork ?? course.artwork
-  const artworkAlt = offering.artworkAlt ?? course.artworkAlt ?? course.title
+  const publishedACI17 = course.canonicalNumber === 17 && offering.slug === 'current-2026'
+    ? await getACI17Manifest()
+    : null
+  const displayedOffering = publishedACI17 ? { ...offering, ...publishedACI17.offering } : offering
+  const displayedTitle = publishedACI17?.title ?? course.title
+  const sessions = publishedACI17?.offering.sessions ?? archiveSessionsFor(course.canonicalNumber, offering.slug)
+  const artworkSrc = displayedOffering.artwork ?? publishedACI17?.artwork ?? course.artwork
+  const artworkAlt = displayedOffering.artworkAlt ?? publishedACI17?.artworkAlt ?? course.artworkAlt ?? course.title
 
   if (offering.internalHref) {
     return (
@@ -50,8 +56,8 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
         <div className="offering-breadcrumbs"><Link href="/courses">Classics Courses</Link><span>/</span><Link href={`/courses/${course.slug}`}>Course {course.canonicalNumber}</Link><span>/</span><span>{offering.label}</span></div>
         <LibraryCourseHero
           eyebrow="Course Offering"
-          title={course.title}
-          subtitle={offering.label}
+          title={displayedTitle}
+          subtitle={displayedOffering.label}
           artwork={artworkSrc ? { src: artworkSrc, alt: artworkAlt, width: 1920, height: 1080 } : undefined}
         >
           <Link className="inline-library-link" href={offering.internalHref}>Open course →</Link>
@@ -66,12 +72,12 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
 
       <LibraryCourseHero
         eyebrow={'Classics Course ' + course.canonicalNumber + ' · Course Offering'}
-        title={course.title}
-        subtitle={offering.label}
+        title={displayedTitle}
+        subtitle={displayedOffering.label}
         artwork={artworkSrc ? { src: artworkSrc, alt: artworkAlt, width: 1920, height: 1080 } : undefined}
       >
-        {offering.playlistUrl ? (
-          <a className="inline-library-link" href={offering.playlistUrl} target="_blank" rel="noreferrer">Open playlist on YouTube ↗</a>
+        {displayedOffering.playlistUrl ? (
+          <a className="inline-library-link" href={displayedOffering.playlistUrl} target="_blank" rel="noreferrer">Open playlist on YouTube ↗</a>
         ) : null}
       </LibraryCourseHero>
 
@@ -89,7 +95,7 @@ export default async function CourseOfferingPage({ params }: { params: Promise<{
               status: ['Recording', session.duration].filter(Boolean).join(' · '),
             }
           })} />
-          {offering.note ? <p className="meta" style={{ marginTop: 12 }}>{offering.note}</p> : null}
+          {displayedOffering.note ? <p className="meta" style={{ marginTop: 12 }}>{displayedOffering.note}</p> : null}
         </section>
       ) : (
         <section className="section compact-section"><p className="meta">Individual class pages will appear here as verified source data is connected.</p></section>
