@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import SearchResultList from '@/components/search-result-list'
-import { searchScore, searchWords, relatedWordCandidates, type MatchMode, type WordSuggestion } from '@/lib/search-match'
+import { searchScore, searchWords, type MatchMode } from '@/lib/search-match'
+import { relatedWordCandidates, type WordSuggestion } from '@/lib/search-word-families'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 import { allArchiveSessions } from '@/content/classics/archive-sessions'
