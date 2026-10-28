@@ -85,7 +85,9 @@
 .tibetan-browser-info span:first-child { color: var(--sage-900); font-weight: 780; }
 .tibetan-term-browser-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 9px; min-width: 0; }
 .tibetan-term-browser-heading h2 { min-width: 0; overflow-wrap: anywhere; font-size: 23px; margin: 4px 0 10px; line-height: 1.24; }
+/* Smaller visual star control, with a full 44px tap/focus target. */
 .tibetan-star-button {
+  position: relative;
   display: inline-flex;
   flex: 0 0 44px;
   align-items: center;
@@ -93,16 +95,26 @@
   width: 44px;
   height: 44px;
   padding: 0;
-  border: 1px solid var(--line);
+  border: 0;
   border-radius: 12px;
-  background: #fff;
+  background: transparent;
   color: var(--ink-soft);
-  font-size: 27px;
+  font-size: 21px;
   line-height: 1;
   cursor: pointer;
 }
-.tibetan-star-button:hover { background: #f9f0da; border-color: #d6c190; }
-.tibetan-star-button.is-starred { background: #fff4d9; border-color: #d6b45a; color: #916015; }
+.tibetan-star-button::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+}
+.tibetan-star-button > span { position: relative; }
+.tibetan-star-button:hover::before { background: #f9f0da; border-color: #d6c190; }
+.tibetan-star-button.is-starred { color: #916015; }
+.tibetan-star-button.is-starred::before { background: #fff4d9; border-color: #d6b45a; }
 .tibetan-star-button:disabled { opacity: .5; cursor: default; }
 .tibetan-term-browser-item .tibetan-term-source { margin-top: auto; }
 .tibetan-term-browser-foot { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 7px 12px; margin-top: 12px; }
@@ -126,7 +138,8 @@
 }
 .tibetan-term-browser-grid.is-list .tibetan-term-browser-heading { align-items: center; }
 .tibetan-term-browser-grid.is-list .tibetan-term-browser-heading h2 { margin: 0; font-size: 17px; line-height: 1.35; }
-.tibetan-term-browser-grid.is-list .tibetan-star-button { flex-basis: 40px; width: 40px; height: 40px; font-size: 24px; }
+.tibetan-term-browser-grid.is-list .tibetan-star-button { flex-basis: 44px; width: 44px; height: 44px; font-size: 20px; }
+.tibetan-term-browser-grid.is-list .tibetan-star-button::before { inset: 4px; }
 .tibetan-term-browser-grid.is-list .tibetan-term-context {
   display: -webkit-box;
   -webkit-line-clamp: 2;
