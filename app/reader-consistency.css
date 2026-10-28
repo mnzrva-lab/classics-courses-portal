@@ -138,26 +138,31 @@
   outline-offset: 2px;
 }
 
-/* When Cite opens, place the action on a new grid row. This keeps the
-   popup in the document flow instead of floating over the paragraph. */
-.library-transcript-reader .transcript-paragraph-v12 > .library-transcript-cite:has(.citation-menu[open]) {
-  grid-column: 1 / -1;
-  grid-row: 2;
-  justify-self: end;
-  margin-top: 7px !important;
+/* The Cite button stays in its original column/row when opened.
+   Only the options float above the transcript, anchored to the button. */
+.library-transcript-reader .transcript-paragraph-v12:has(.citation-menu[open]) {
+  z-index: 12;
 }
-.library-transcript-reader .citation-menu[open] {
-  display: grid;
-  justify-items: end;
+.library-transcript-reader .citation-menu {
+  position: relative;
 }
 .library-transcript-reader .citation-menu[open] .citation-menu-panel {
-  position: static !important;
-  top: auto;
-  right: auto;
+  position: absolute !important;
+  top: calc(100% + 6px);
+  right: 0;
+  bottom: auto;
+  left: auto;
   width: 196px;
   max-width: min(240px, 78vw);
-  margin-top: 6px;
-  box-shadow: none;
+  max-height: min(300px, calc(100dvh - 24px));
+  overflow-y: auto;
+  margin: 0;
+  z-index: 25;
+  box-shadow: var(--shadow-md);
+}
+.library-transcript-reader .citation-menu[data-popup-placement="above"] .citation-menu-panel {
+  top: auto;
+  bottom: calc(100% + 6px);
 }
 .library-transcript-reader .citation-menu-panel button {
   min-height: 40px;
@@ -214,12 +219,6 @@
   .library-transcript-reader .transcript-paragraph-v12:not([data-cite-active]):not(:focus-within) > .library-transcript-cite {
     opacity: 0 !important;
     pointer-events: none !important;
-  }
-  .library-transcript-reader .transcript-paragraph-v12 > .library-transcript-cite:has(.citation-menu[open]) {
-    position: static !important;
-    grid-column: 1;
-    grid-row: 2;
-    justify-self: stretch;
   }
   .library-transcript-reader .citation-menu > summary {
     min-width: 52px;
