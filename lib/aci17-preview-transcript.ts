@@ -76,9 +76,10 @@ function isTranscript(value: unknown, sessionId: string, videoId: string): value
         if (typeof paragraph.startSeconds !== 'number' ||
             (paragraph.timingSource !== 'youtube-caption' && paragraph.timingSource !== 'estimated')) return false
         if (paragraph.timingSource === 'youtube-caption' &&
-            (!Number.isInteger(paragraph.youtubeCueLine) ||
-             (paragraph.youtubeCueLine as number) < 1 ||
-             (paragraph.youtubeCueLine as number) > 100000)) return false
+            (typeof paragraph.youtubeCueLine !== 'number' ||
+             !Number.isInteger(paragraph.youtubeCueLine) ||
+             paragraph.youtubeCueLine < 1 ||
+             paragraph.youtubeCueLine > 100000)) return false
         if (paragraph.timingSource === 'estimated' && paragraph.youtubeCueLine != null) return false
       }
       if (typeof paragraph.startSeconds === 'number') {
