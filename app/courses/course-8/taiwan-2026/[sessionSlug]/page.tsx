@@ -5,6 +5,7 @@ import ContentDownloadLinks from '@/components/content-download-links'
 import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
 import TranscriptControls from '@/components/transcript-controls'
+import LibraryTranscriptReader from '@/components/library-transcript-reader'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 import { course8StudyNotesForSession } from '@/content/classics/course-08/taiwan-2026/study-notes'
 import { course8TranscriptForSession } from '@/content/classics/course-08/taiwan-2026/transcripts'
@@ -106,21 +107,7 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
 
             <TranscriptControls chapters={transcriptChapters.map((chapter) => ({ id: chapter.id, label: chapter.title }))} />
 
-            <article className="transcript-v12-card">
-              {transcriptChapters.map((chapter) => (
-                <section key={chapter.id} id={chapter.id} style={{ scrollMarginTop: 96, marginBottom: 34 }}>
-                  <h3>{chapter.title}</h3>
-                  {chapter.paragraphs.map((paragraph) => (
-                    <div className="transcript-paragraph-v12" data-transcript-paragraph id={paragraph.id} key={paragraph.id} style={{ scrollMarginTop: 96 }}>
-                      <div className="transcript-copy">
-                        <strong>{paragraph.speaker}: </strong>
-                        <span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.text}</span>
-                      </div>
-                    </div>
-                  ))}
-                </section>
-              ))}
-            </article>
+            <LibraryTranscriptReader chapters={transcriptChapters} programTitle={courseData.course.fullTitle} sessionTitle={session.label} sessionDate={session.date} sessionPath={`/courses/course-8/taiwan-2026/${session.slug}`} />
           </>
         ) : transcriptRecovered ? (
           <p>The transcript source has been recovered from the earlier Course 8 prototype and is being moved into the GitHub Library in verified batches.</p>
