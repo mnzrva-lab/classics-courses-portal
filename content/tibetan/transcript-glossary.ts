@@ -4,6 +4,7 @@ import rawLivingLamRim from '@/content/living-lam-rim/catalog.json'
 import { livingLamRimTranscripts } from '@/content/living-lam-rim/transcripts'
 import { perfectionGroups } from '@/content/perfection-of-wisdom/catalog'
 import { perfectionTranscripts } from '@/content/perfection-of-wisdom/transcripts'
+import { eyeOfCourageSessions, eyeOfCourageProgram, eyeOfCourageTranscripts } from '@/content/eye-of-courage'
 
 type GlossaryTerm = {
   term: string
@@ -45,15 +46,21 @@ function cleanInline(value: string) {
     .trim()
 }
 
+/**
+ * Import only explicit source-marked Wylie/Tibetan-script terms.
+ * This intentionally rejects ordinary bracketed speech edits such as
+ * [those], [need to], or [unclear], without pretending to verify a translation.
+ */
 function isCandidate(value: string) {
   const term = cleanInline(value)
   if (term.length < 2 || term.length > 80) return false
-  if (!/[A-Za-z]/.test(term)) return false
   if (term.split(/\s+/).length > 8) return false
   if (/https?:\/\/|www\.|[<>={}]/i.test(term)) return false
-  if (/[.!?;:]$/.test(term)) return false
   if (editorialMarkers.has(term.toLowerCase())) return false
-  return true
+
+  const sourceMarkedWylie = /^[A-Z'’\-\s]+$/.test(term) && /[A-Z]{2}/.test(term)
+  const sourceMarkedTibetan = /^[\u0F00-\u0FFF\s]+$/.test(term) && /[\u0F00-\u0FFF]/.test(term)
+  return sourceMarkedWylie || sourceMarkedTibetan
 }
 
 function contextAround(text: string, start: number, end: number) {
@@ -101,6 +108,16 @@ function sourceEntries(): SourceEntry[] {
         chapters,
       })
     }
+  }
+
+  for (const session of eyeOfCourageSessions) {
+    const chapters = eyeOfCourageTranscripts[session.id]
+    if (!chapters?.length) continue
+    entries.push({
+      label: `${eyeOfCourageProgram.title} · ${session.label}`,
+      hrefBase: `/other-programs/eye-of-courage/${session.slug}`,
+      chapters,
+    })
   }
 
   return entries
