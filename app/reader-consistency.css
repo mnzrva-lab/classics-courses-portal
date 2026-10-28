@@ -133,6 +133,12 @@
     padding-right: 8px !important;
   }
 
+  /* Prevent a sticky touch :hover from exposing every Cite control. */
+  .library-transcript-reader .transcript-paragraph-v12:not([data-cite-active]):not(:focus-within) > .library-transcript-cite {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+
   /* The inactive controls take no space, but remain keyboard-focusable. */
   .library-transcript-reader .transcript-paragraph-v12 > .library-transcript-cite {
     position: absolute !important;
