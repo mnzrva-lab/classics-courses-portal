@@ -83,3 +83,23 @@
   .llr-live-term { padding: 18px; }
   .upcoming-feature-heading > .inline-library-link { font-size: 13px; }
 }
+
+/* Living Lam Rim Term 7: display the original 16:9 cover without cropping. */
+.llr-term-cover {
+  width: 100%;
+  max-width: 1120px;
+  margin: 22px 0 30px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  overflow: hidden;
+  background: #132b23;
+}
+.llr-term-cover img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+}
+@media (max-width: 620px) {
+  .llr-term-cover { margin: 16px 0 24px; border-radius: 14px; }
+}
