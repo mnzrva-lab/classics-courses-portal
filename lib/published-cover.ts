@@ -20,7 +20,7 @@ export const readApprovedCover = cache(async (
   if (!token) return null
   try {
     const response = await fetch(
-      'https://api.github.com/repos/' + repo + '/contents/published/' + path + '?ref=qa-auto-covers-search-standalone-2026',
+      'https://api.github.com/repos/' + repo + '/contents/published/' + path + '?ref=main',
       {
         headers: {
           Accept: 'application/vnd.github+json',
