@@ -1,17 +1,34 @@
 import assert from 'node:assert/strict'
 import {
   isManagedLibraryIndex, isManagedLibraryManifest, isManagedTranscript,
-  isPublishedSlug, isApprovedExternalLink,
+  isPublishedSlug, isApprovedExternalLink, isStandaloneTeachingManifest,
 } from '../lib/managed-library-schema.ts'
 
 const copy = value => JSON.parse(JSON.stringify(value))
 const index = {
   schemaVersion: 1, entries: [
     { programSlug: 'classics-course-17', offeringSlug: 'arizona-2026', source: 'existing-aci17' },
-    { programSlug: 'example-program', offeringSlug: 'test-offering', source: 'managed-v1' },
+    { programSlug: 'classics-course-8', offeringSlug: 'test-offering', source: 'managed-v1' },
   ],
 }
 assert.ok(isManagedLibraryIndex(index))
+assert.ok(isManagedLibraryIndex({
+  schemaVersion: 1, entries: [
+    {programSlug:'other-programs',offeringSlug:'qa-standalone',source:'standalone-v1'}
+  ],
+}))
+assert.equal(isManagedLibraryIndex({
+  schemaVersion:1,entries:[{programSlug:'classics-course-8',offeringSlug:'bad',source:'standalone-v1'}]
+}),false)
+assert.equal(isManagedLibraryIndex({
+  schemaVersion:1,entries:[{programSlug:'random-program',offeringSlug:'bad',source:'managed-v1'}]
+}),false)
+const standalone={schemaVersion:1,teachingSlug:'qa-standalone',title:'QA One-Off',
+  teacher:'Test Speaker',transcript:true,studyNotes:true,recordingUrl:'https://youtube.com/watch?v=JGKtCO5G_kg'}
+assert.ok(isStandaloneTeachingManifest(standalone,'qa-standalone'))
+assert.equal(isStandaloneTeachingManifest(standalone,'different-slug'),false)
+assert.equal(isStandaloneTeachingManifest({...standalone,artwork:'https://bad.example/img.webp'},'qa-standalone'),false)
+
 const duplicated = copy(index)
 duplicated.entries.push(copy(duplicated.entries[1]))
 assert.equal(isManagedLibraryIndex(duplicated), false, 'Duplicate identities are rejected')
@@ -32,7 +49,7 @@ assert.equal(isApprovedExternalLink('https://user:secret@example.org/'), false)
 
 const manifest = {
   schemaVersion: 1,
-  programSlug: 'example-program',
+  programSlug: 'classics-course-8',
   offeringSlug: 'test-offering',
   programTitle: 'Example Program (test fixture)',
   offeringLabel: 'Test Offering',
@@ -48,23 +65,23 @@ const manifest = {
     { slug: 'class-2', code: 'C2', title: 'Test Class 2 (not yet recorded)' },
   ],
 }
-assert.ok(isManagedLibraryManifest(manifest, 'example-program', 'test-offering'))
+assert.ok(isManagedLibraryManifest(manifest, 'classics-course-8', 'test-offering'))
 assert.equal(isManagedLibraryManifest(manifest, 'wrong-program', 'test-offering'), false)
-assert.equal(isManagedLibraryManifest({ ...manifest, sessions: [] }, 'example-program', 'test-offering'), false)
+assert.equal(isManagedLibraryManifest({ ...manifest, sessions: [] }, 'classics-course-8', 'test-offering'), false)
 assert.equal(isManagedLibraryManifest({
   ...manifest, sessions: [manifest.sessions[0], manifest.sessions[0]],
-}, 'example-program', 'test-offering'), false)
+}, 'classics-course-8', 'test-offering'), false)
 assert.equal(isManagedLibraryManifest({
   ...manifest, sessions: [{ ...manifest.sessions[0], recordingUrl: 'file:///etc/passwd' }],
-}, 'example-program', 'test-offering'), false)
+}, 'classics-course-8', 'test-offering'), false)
 assert.equal(isManagedLibraryManifest({
   ...manifest, sessions: [{ ...manifest.sessions[0], materials: [
     { label: 'Injected link', url: 'javascript:alert(1)' },
   ] }],
-}, 'example-program', 'test-offering'), false)
+}, 'classics-course-8', 'test-offering'), false)
 assert.equal(isManagedLibraryManifest({
   ...manifest, artwork: '/private-image.webp',
-}, 'example-program', 'test-offering'), false)
+}, 'classics-course-8', 'test-offering'), false)
 
 const untimed = {
   schemaVersion: 1,
