@@ -5,7 +5,8 @@
     "app/living-lam-rim",
     "app/perfection-of-wisdom",
     "app/other-programs",
-    "app/archive/classics"
+    "app/archive/classics",
+    "app/library"
   ],
   "roles": {
     "app/courses/page.tsx": "index",
@@ -28,7 +29,10 @@
     "app/perfection-of-wisdom/[groupSlug]/[sessionSlug]/page.tsx": "class",
     "app/archive/classics/[courseSlug]/[offeringSlug]/[sessionSlug]/page.tsx": "class",
     "app/courses/course-18/[classSlug]/page.tsx": "class",
-    "app/living-lam-rim/term-7/[dateSlug]/page.tsx": "class"
+    "app/living-lam-rim/term-7/[dateSlug]/page.tsx": "class",
+    "app/library/page.tsx": "index",
+    "app/library/[programSlug]/[offeringSlug]/page.tsx": "course",
+    "app/library/[programSlug]/[offeringSlug]/[sessionSlug]/page.tsx": "class"
   },
   "exceptions": {
     "app/courses/[courseSlug]/[offeringSlug]/[sessionSlug]/page.tsx": "Legacy Supabase-backed session implementation kept in source for compatibility. It is not a verified current GitHub-backed public study route and must be migrated intentionally before removing this exception.",
