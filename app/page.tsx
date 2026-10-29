@@ -1,14 +1,20 @@
 import Link from 'next/link'
 import UpcomingCourses from '@/components/upcoming-courses'
+import { readPublishedJSON } from '@/lib/public-content'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
-import rawCourse18Schedule from '@/content/classics/course-18-schedule.json'
+import { eyeOfCourageProgram } from '@/content/eye-of-courage/program'
+import { getCourse18Schedule, type Course18Schedule } from '@/lib/course18-content'
+import { getTerm7Schedule } from '@/lib/term7-content'
+import type { WeeklyTermSchedule } from '@/lib/weekly-term-schedule'
 
 type CatalogCourse = { canonicalNumber: number; slug: string; title: string; artwork?: string | null }
-type ArchiveCourse = { canonicalNumber: number; schedule?: Array<{ label: string; date: string }> }
+type ArchiveCourse = {
+  canonicalNumber: number
+  offerings?: Array<{ slug: string; internalHref?: string; artwork?: string | null }>
+  schedule?: Array<{ label: string; date: string }>
+}
 type ArchiveCatalog = { courses: ArchiveCourse[] }
-type DetailedSchedule = { sessions: Array<{ id: string; label: string; startsAt: string; endsAt: string }> }
-
 type LatestCourse = {
   sortDate: string
   dates: string
@@ -20,33 +26,129 @@ type LatestCourse = {
   artwork?: string | null
 }
 
+type LatestCoursesFile = {
+  schemaVersion: number
+  items: LatestCourse[]
+}
+
+function isLatestCoursesFile(candidate: unknown): candidate is LatestCoursesFile {
+  if (!candidate || typeof candidate !== 'object') return false
+  const data = candidate as Partial<LatestCoursesFile>
+  if (data.schemaVersion !== 1 || !Array.isArray(data.items) ||
+      data.items.length < 1 || data.items.length > 100) return false
+
+  const seenHrefs = new Set<string>()
+  for (const item of data.items as unknown[]) {
+    if (!item || typeof item !== 'object') return false
+    const course = item as Partial<LatestCourse>
+
+    for (const field of ['dates', 'eyebrow', 'title', 'detail'] as const) {
+      if (typeof course[field] !== 'string' || !course[field]?.trim() ||
+          course[field]!.length > 400) return false
+    }
+
+    const date = course.sortDate
+    if (typeof date !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
+        !Number.isFinite(Date.parse(date)) ||
+        new Date(date).toISOString().slice(0, 10) !== date) return false
+
+    const href = course.href
+    if (typeof href !== 'string' || !/^\/(?!\/)[a-z0-9/_-]+$/i.test(href) ||
+        href.includes('..') || seenHrefs.has(href)) return false
+    seenHrefs.add(href)
+
+    if (course.courseNumber !== undefined &&
+        (!Number.isInteger(course.courseNumber) || course.courseNumber < 1 ||
+         course.courseNumber > 100)) return false
+
+    if (course.artwork !== undefined && course.artwork !== null &&
+        (typeof course.artwork !== 'string' ||
+         !/^\/(?!\/)[a-z0-9/_-]+\.(?:jpg|jpeg|png|webp|svg)$/i.test(course.artwork) ||
+         course.artwork.includes('..'))) return false
+  }
+  return true
+}
+
 const catalog = rawCatalog as CatalogCourse[]
 const archiveCatalog = rawArchiveCatalog as ArchiveCatalog
-const course18Schedule = rawCourse18Schedule as DetailedSchedule
 const courseByNumber = new Map(catalog.map((course) => [course.canonicalNumber, course]))
 
-const upcomingCourses = archiveCatalog.courses.flatMap((archive) => {
-  if (!archive.schedule?.length) return []
-  const course = courseByNumber.get(archive.canonicalNumber)
-  if (!course) return []
+function arizonaDate(iso: string) {
+  const formatted = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Phoenix', year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date(iso))
+  const get = (part: string) => formatted.find((item) => item.type === part)?.value ?? ''
+  return `${get('year')}-${get('month')}-${get('day')}`
+}
 
-  const detailed = archive.canonicalNumber === 18 ? course18Schedule.sessions : []
-  const detailedByLabel = new Map(detailed.map((session) => [session.label.replace(' & ', '–'), session]))
-  const sessions = archive.schedule.map((session, index) => {
-    const exact = detailed[index] ?? detailedByLabel.get(session.label)
-    return {
-      id: exact?.id ?? `course-${archive.canonicalNumber}-${index + 1}`,
-      label: exact?.label ?? session.label,
-      date: session.date,
-      startsAt: exact?.startsAt ?? null,
-      endsAt: exact?.endsAt ?? null,
+type FeaturedUpcomingSession = {
+  id: string
+  label: string
+  date: string
+  startsAt: string | null
+  endsAt: string | null
+}
+type FeaturedUpcomingCourse = {
+  courseNumber?: number
+  programLabel?: string
+  title: string
+  href: string
+  artwork: string | null
+  sessions: FeaturedUpcomingSession[]
+  recurrence?: WeeklyTermSchedule
+}
+
+function getUpcomingCourses(course18Schedule: Course18Schedule, term7Schedule: WeeklyTermSchedule): FeaturedUpcomingCourse[] {
+  const classics = archiveCatalog.courses.flatMap((archive): FeaturedUpcomingCourse[] => {
+    const course = courseByNumber.get(archive.canonicalNumber)
+    if (!course) return []
+
+    // Exact Arizona schedule is read from the private content repository.
+    // New sessions added there are included automatically.
+    if (archive.canonicalNumber === 18) {
+      const sessions = course18Schedule.sessions.map((session) => ({
+        id: session.id,
+        label: session.label,
+        date: arizonaDate(session.startsAt),
+        startsAt: session.startsAt,
+        endsAt: session.endsAt,
+      }))
+      return [{
+        courseNumber: course.canonicalNumber,
+        title: course.title,
+        href: `/courses/${course.slug}`,
+        artwork: course.artwork ?? null,
+        sessions,
+      }]
     }
+
+    if (!archive.schedule?.length) return []
+    const sessions = archive.schedule.map((session, index) => ({
+      id: `course-${archive.canonicalNumber}-${index + 1}`,
+      label: session.label,
+      date: session.date,
+      startsAt: null,
+      endsAt: null,
+    }))
+    return [{
+      courseNumber: course.canonicalNumber,
+      title: course.title,
+      href: `/courses/${course.slug}`,
+      artwork: course.artwork ?? null,
+      sessions,
+    }]
   })
+  return [...classics, {
+    programLabel: 'Living Lam Rim · Term 7',
+    title: term7Schedule.title,
+    href: '/living-lam-rim/term-7',
+    artwork: '/images/living-lam-rim/term-7/BG.webp',
+    sessions: [],
+    recurrence: term7Schedule,
+  }]
+}
 
-  return [{ courseNumber: course.canonicalNumber, title: course.title, href: `/courses/${course.slug}`, artwork: course.artwork ?? null, sessions }]
-})
-
-const latestCourses: LatestCourse[] = [
+const fallbackLatestCourses: LatestCourse[] = [
   {
     sortDate: '2026-09-12',
     dates: 'Sep 11–12, 2026',
@@ -54,7 +156,7 @@ const latestCourses: LatestCourse[] = [
     title: 'The Eye of Courage: Blindspots & Leadership',
     detail: 'Timothy Lowenhaupt · Guadalajara',
     href: '/other-programs/eye-of-courage',
-    artwork: '/eye-of-courage/cover.jpg',
+    artwork: '/images/other-programs/eye-of-courage/2026.webp',
   },
   {
     sortDate: '2026-08-22',
@@ -64,6 +166,7 @@ const latestCourses: LatestCourse[] = [
     detail: 'Timothy Lowenhaupt & Brian Mendoza · Online from Taiwan',
     href: '/courses/course-8/taiwan-2026',
     courseNumber: 8,
+    artwork: '/images/classics/course-8/taiwan-2026.webp',
   },
   {
     sortDate: '2026-08-23',
@@ -73,6 +176,7 @@ const latestCourses: LatestCourse[] = [
     detail: 'Timothy Lowenhaupt',
     href: '/courses/course-17/current-2026',
     courseNumber: 17,
+    artwork: '/images/classics/course-17/arizona-2026.webp',
   },
   {
     sortDate: '2026-04-05',
@@ -80,8 +184,9 @@ const latestCourses: LatestCourse[] = [
     eyebrow: 'Classics Course 7 · Taiwan 2026',
     title: 'The Bodhisattva Vows',
     detail: 'Timothy Lowenhaupt',
-    href: '/courses/course-7',
+    href: '/courses/course-7/taiwan-march-april-2026',
     courseNumber: 7,
+    artwork: '/images/classics/course-7/taiwan-2026.webp',
   },
   {
     sortDate: '2026-03-22',
@@ -91,21 +196,45 @@ const latestCourses: LatestCourse[] = [
     detail: 'Timothy Lowenhaupt',
     href: '/courses/course-16',
     courseNumber: 16,
+    artwork: '/images/classics/course-16/arizona-2026.webp',
   },
 ].sort((a, b) => b.sortDate.localeCompare(a.sortDate)).slice(0, 5)
 
-export default function HomePage() {
+export const dynamic = 'force-dynamic'
+
+export default async function HomePage() {
+  const [course18Schedule, term7Schedule, remoteLatest] = await Promise.all([
+    getCourse18Schedule(),
+    getTerm7Schedule(),
+    readPublishedJSON('home/latest-courses.json', isLatestCoursesFile),
+  ])
+  const upcomingCourses = getUpcomingCourses(course18Schedule, term7Schedule)
+  const latestCourses = (remoteLatest?.items ?? fallbackLatestCourses)
+    .slice()
+    .sort((a, b) => b.sortDate.localeCompare(a.sortDate))
+    .slice(0, 5)
+
   return (
     <main>
-      <section className="hero home-v12-hero"><div className="container"><div className="eyebrow">Teaching library</div><h1>Study the teachings.</h1><p>Browse Classics Courses, recordings, Study Notes, Reference Transcripts, meditations, and course materials in one calm study space.</p><div className="actions" style={{ marginTop: 22 }}><Link className="button sage" href="/courses">Browse Classics Courses</Link><Link className="button" href="/search">Search the Library</Link></div></div></section>
-
       <UpcomingCourses courses={upcomingCourses} />
 
       <section className="container section">
         <div className="section-head"><div><div className="eyebrow">Recently taught</div><h2>Latest courses</h2><p>Newest first, based on the final teaching date.</p></div></div>
         <div className="home-milestones">
           {latestCourses.map((course) => {
-            const artwork = course.artwork ?? (course.courseNumber ? courseByNumber.get(course.courseNumber)?.artwork : null)
+            // GitHub-controlled originals take precedence over older remote metadata.
+            // Preserve remote artwork as the fallback for courses not yet assigned local images.
+            const canonical = course.courseNumber ? courseByNumber.get(course.courseNumber) : undefined
+            const offerings = course.courseNumber
+              ? archiveCatalog.courses.find((item) => item.canonicalNumber === course.courseNumber)?.offerings ?? []
+              : []
+            const offering = canonical
+              ? offerings.find((item) => (item.internalHref ?? `/courses/${canonical.slug}/${item.slug}`) === course.href)
+              : undefined
+            const localArtwork = course.href === '/other-programs/eye-of-courage'
+              ? eyeOfCourageProgram.coverPath
+              : offering?.artwork ?? canonical?.artwork ?? null
+            const artwork = localArtwork ?? course.artwork ?? null
             return (
               <Link className="home-milestone-row" href={course.href} key={`${course.sortDate}-${course.title}`}>
                 <div

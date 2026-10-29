@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "program": "living-lam-rim",
+  "term": 7,
+  "title": "Open the Gift of Liberation",
+  "startDate": "2026-11-02",
+  "weekday": "MO",
+  "startTime": "07:00",
+  "endTime": "08:15",
+  "sourceTimezone": "America/Phoenix",
+  "sourceLabel": "Arizona time",
+  "endDate": null
+}

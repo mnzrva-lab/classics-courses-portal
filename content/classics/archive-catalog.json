@@ -132,7 +132,9 @@
           "sourceLabel": "Taiwan · March–April 2026",
           "playlistUrl": "https://www.youtube.com/playlist?list=PLTqjBtjd9j8f6dPuRsS5o-vpbC_KiSUb1",
           "recordingCount": 11,
-          "note": "One supplied Class 8 title is dated 2024 while the surrounding teaching archive is 2026. The source date is preserved rather than silently corrected."
+          "note": "One supplied Class 8 title is dated 2024 while the surrounding teaching archive is 2026. The source date is preserved rather than silently corrected.",
+          "artwork": "/images/classics/course-7/taiwan-2026.webp",
+          "artworkAlt": "Climbers ascending a rocky mountain ridge at sunrise"
         }
       ]
     },
@@ -260,7 +262,7 @@
           "label": "Arizona 2026",
           "sourceLabel": "Arizona · 2026",
           "playlistUrl": "https://www.youtube.com/playlist?list=PLTqjBtjd9j8eoKAvtmWAVOGvv8_iwgNu6",
-          "recordingCount": 9
+          "recordingCount": 10
         }
       ]
     },

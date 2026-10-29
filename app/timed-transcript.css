@@ -144,35 +144,6 @@
   box-shadow: inset 3px 0 0 var(--sage-700);
 }
 
-.timed-transcript-jump-back {
-  position: fixed;
-  right: 24px;
-  bottom: 84px;
-  z-index: 68;
-  display: flex;
-  gap: 6px;
-  padding: 6px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgba(251,247,239,.96);
-  box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(12px);
-}
-.timed-transcript-jump-back button {
-  min-height: 34px;
-  padding: 0 11px;
-  border: 0;
-  border-radius: 999px;
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-  font-size: 11px;
-  font-weight: 850;
-}
-.timed-transcript-jump-back button:hover { background: var(--sage-100); }
-
-.transcript-sync-mobile-nav { display: none; }
-
 @media (max-width: 720px) {
   .timed-transcript-root.reader-size-small { --timed-reader-size: 16px; --timed-reader-line: 1.64; }
   .timed-transcript-root.reader-size-medium { --timed-reader-size: 18.5px; --timed-reader-line: 1.7; }
@@ -222,50 +193,7 @@
     margin: 0 0 7px;
   }
 
-  .timed-transcript-jump-back {
-    display: none;
-  }
 
-  .transcript-sync-floating {
-    right: 12px !important;
-    bottom: calc(74px + env(safe-area-inset-bottom)) !important;
-    left: 12px !important;
-    width: auto !important;
-    display: none !important;
-    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-    align-items: center !important;
-    gap: 4px !important;
-    padding: 6px !important;
-    border-radius: 15px !important;
-  }
-  .transcript-sync-floating.is-in-transcript {
-    display: grid !important;
-  }
-  .transcript-sync-copy { display: none; }
-  .transcript-sync-mobile-nav {
-    display: contents;
-  }
-  .transcript-sync-mobile-nav button,
-  .transcript-sync-follow {
-    appearance: none;
-    width: 100% !important;
-    min-width: 0 !important;
-    min-height: 38px !important;
-    padding: 0 6px !important;
-    border: 0;
-    border-radius: 10px;
-    background: transparent;
-    color: var(--ink);
-    cursor: pointer;
-    font: inherit;
-    font-size: 11px !important;
-    font-weight: 850;
-    white-space: nowrap;
-  }
-  .transcript-sync-mobile-nav button:hover,
-  .transcript-sync-mobile-nav button:focus-visible {
-    background: var(--sage-050);
-  }
 }
 
 @media (max-width: 420px) {

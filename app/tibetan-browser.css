@@ -1,0 +1,183 @@
+/* Tibetan term library: compact discovery controls and personal device-only study list. */
+.tibetan-browser { margin-top: 28px !important; }
+.tibetan-browser-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.tibetan-browser-search {
+  display: flex;
+  align-items: center;
+  flex: 1 1 340px;
+  min-width: 0;
+  max-width: 680px;
+  gap: 11px;
+  padding: 0 14px;
+  min-height: 52px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+}
+.tibetan-browser-search:focus-within { outline: 2px solid var(--sage-700); outline-offset: 2px; }
+.tibetan-browser-search-symbol { font-size: 24px; color: var(--sage-700); line-height: 1; }
+.tibetan-browser-search input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  padding: 12px 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 16px;
+}
+.tibetan-browser-search input::-webkit-search-cancel-button { cursor: pointer; }
+.tibetan-browser-clear { padding: 6px 9px; background: transparent; color: var(--sage-900); font-size: 12px; font-weight: 750; cursor: pointer; }
+.tibetan-browser-toolbar-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+.tibetan-browser-view-switch {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 13px;
+  background: var(--surface, #f0ebe1);
+  border: 1px solid var(--line);
+}
+.tibetan-browser-view-switch button {
+  min-height: 40px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 14px;
+  font-weight: 760;
+  cursor: pointer;
+}
+.tibetan-browser-view-switch button.is-active { color: var(--sage-900); background: #fff; box-shadow: 0 1px 3px #1b2d251a; }
+.tibetan-browser-view-switch button:focus-visible, .tibetan-star-button:focus-visible,
+.tibetan-browser-saved-link:focus-visible { outline: 3px solid var(--sage-700); outline-offset: 2px; }
+.tibetan-browser-saved-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 10px 15px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  color: var(--sage-900);
+  background: #fff;
+  font-size: 14px;
+  font-weight: 780;
+  white-space: nowrap;
+}
+.tibetan-browser-saved-link:hover { background: #f8f3e9; }
+.tibetan-browser-info {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 6px 18px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.tibetan-browser-info span:first-child { color: var(--sage-900); font-weight: 780; }
+.tibetan-term-browser-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 9px; min-width: 0; }
+.tibetan-term-browser-heading h2 { min-width: 0; overflow-wrap: anywhere; font-size: 23px; margin: 4px 0 10px; line-height: 1.24; }
+/* Smaller visual star control, with a full 44px tap/focus target. */
+.tibetan-star-button {
+  position: relative;
+  display: inline-flex;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 21px;
+  line-height: 1;
+  cursor: pointer;
+}
+.tibetan-star-button::before {
+  content: '';
+  position: absolute;
+  inset: 2px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: #fff;
+}
+.tibetan-star-button > span { position: relative; }
+.tibetan-star-button:hover::before { background: #f9f0da; border-color: #d6c190; }
+.tibetan-star-button.is-starred { color: #916015; }
+.tibetan-star-button.is-starred::before { background: #fff4d9; border-color: #d6b45a; }
+.tibetan-star-button:disabled { opacity: .5; cursor: default; }
+.tibetan-term-browser-item .tibetan-term-source { margin-top: auto; }
+.tibetan-term-browser-foot { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 7px 12px; margin-top: 12px; }
+.tibetan-term-browser-item .tibetan-term-hub-link { margin: 0; }
+.tibetan-term-browser-grid.is-list {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+}
+.tibetan-term-browser-grid.is-list .tibetan-term-browser-item {
+  display: grid;
+  grid-template-columns: minmax(165px, 1fr) minmax(240px, 1.5fr) minmax(135px, .7fr) minmax(125px, .7fr);
+  gap: 14px;
+  align-items: center;
+  min-height: 0;
+  padding: 14px 5px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.tibetan-term-browser-grid.is-list .tibetan-term-browser-heading { align-items: center; }
+.tibetan-term-browser-grid.is-list .tibetan-term-browser-heading h2 { margin: 0; font-size: 17px; line-height: 1.35; }
+.tibetan-term-browser-grid.is-list .tibetan-star-button { flex-basis: 44px; width: 44px; height: 44px; font-size: 20px; }
+.tibetan-term-browser-grid.is-list .tibetan-star-button::before { inset: 4px; }
+.tibetan-term-browser-grid.is-list .tibetan-term-context {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-width: 0;
+}
+.tibetan-term-browser-grid.is-list .tibetan-term-source { margin: 0; padding: 0; font-size: 12px; line-height: 1.4; }
+.tibetan-term-browser-grid.is-list .tibetan-term-browser-foot { margin: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.tibetan-term-browser-grid.is-list .tibetan-term-count { font-size: 12px; }
+.tibetan-browser-empty { padding: 30px 22px; border: 1px solid var(--line); border-radius: 18px; background: #fff; }
+.tibetan-browser-empty h2 { font-size: 24px; margin: 0 0 8px; }
+.tibetan-browser-empty p { color: var(--ink-soft); }
+.tibetan-browser-more { display: grid; justify-items: center; gap: 9px; padding: 22px 0 6px; }
+.tibetan-browser-more p { margin: 0; color: var(--ink-soft); font-size: 13px; }
+.tibetan-browser-privacy { margin: 24px 0 0; color: var(--ink-soft); font-size: 12px; line-height: 1.55; }
+.tibetan-hub-save-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 14px 0 19px; }
+.tibetan-hub-save-label { font-size: 13px; color: var(--ink-soft); }
+.tibetan-hub-save-actions a { margin-left: auto; color: var(--sage-900); font-weight: 750; text-decoration: underline; text-underline-offset: 4px; }
+@media (max-width: 1150px) {
+  .tibetan-term-browser-grid.is-list .tibetan-term-browser-item { grid-template-columns: minmax(165px, 1fr) minmax(0, 1.6fr); gap: 9px 18px; }
+  .tibetan-term-browser-grid.is-list .tibetan-term-browser-heading { grid-column: 1; grid-row: 1; }
+  .tibetan-term-browser-grid.is-list .tibetan-term-context { grid-column: 2; grid-row: 1 / 3; }
+  .tibetan-term-browser-grid.is-list .tibetan-term-source { grid-column: 1; grid-row: 2; }
+  .tibetan-term-browser-grid.is-list .tibetan-term-browser-foot { grid-column: 2; grid-row: 3; flex-direction: row; justify-content: space-between; }
+}
+@media (max-width: 720px) {
+  .tibetan-browser-toolbar { align-items: stretch; }
+  .tibetan-browser-search { flex-basis: 100%; max-width: none; }
+  .tibetan-browser-toolbar-actions { width: 100%; justify-content: space-between; }
+  .tibetan-browser-view-switch { flex: 1; }
+  .tibetan-browser-view-switch button { flex: 1; }
+  .tibetan-term-browser-grid.is-list .tibetan-term-browser-item { grid-template-columns: minmax(0, 1fr); gap: 7px; padding: 16px 2px; }
+  .tibetan-term-browser-grid.is-list .tibetan-term-browser-heading,
+  .tibetan-term-browser-grid.is-list .tibetan-term-context,
+  .tibetan-term-browser-grid.is-list .tibetan-term-source,
+  .tibetan-term-browser-grid.is-list .tibetan-term-browser-foot { grid-column: 1; grid-row: auto; }
+  .tibetan-term-browser-grid.is-list .tibetan-term-source { padding: 0; }
+  .tibetan-term-browser-grid.is-list .tibetan-term-browser-foot { justify-content: flex-start; gap: 8px 20px; }
+  .tibetan-hub-save-actions a { margin-left: 0; }
+}

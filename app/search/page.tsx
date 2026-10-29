@@ -1,5 +1,9 @@
 import Link from 'next/link'
-import CopyReference from '@/components/copy-reference'
+import SearchResultList from '@/components/search-result-list'
+import { searchScore, searchWords, type MatchMode } from '@/lib/search-match'
+import { getACI17Corpus, type ACI17Corpus } from '@/lib/aci17-published-content'
+import { getPublishedSearchRecords, type PublishedSearchRecord } from '@/lib/published-search-index'
+import { relatedWordCandidates, type WordSuggestion } from '@/lib/search-word-families'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 import { allArchiveSessions } from '@/content/classics/archive-sessions'
@@ -29,7 +33,7 @@ type SearchResult = {
   sessionLabel: string
   sessionKind: string
   teacher: string
-  contentType: 'Transcript' | 'Study Notes' | 'Recording'
+  contentType: 'Transcript' | 'Study Notes' | 'Recording' | 'Overview'
   chapter?: string
   speaker?: string
   body: string
@@ -47,23 +51,6 @@ const lamRimSessionIndex = new Map<string, { term: LamRimTerm; session: LamRimSe
 for (const term of lamRimCatalog.terms) for (const session of term.sessions) lamRimSessionIndex.set(session.id, { term, session })
 const perfectionSessionIndex = new Map(perfectionGroups.flatMap((group) => group.sessions.map((session) => [session.id, { group, session }] as const)))
 
-function clip(text: string, length = 320) {
-  const cleaned = text.replace(/\s+/g, ' ').replace(/[*_`]/g, '').trim()
-  return cleaned.length > length ? `${cleaned.slice(0, length).trim()}…` : cleaned
-}
-function normalize(value: string) { return value.toLocaleLowerCase().replace(/[“”‘’]/g, "'").replace(/[*_`]/g, '').replace(/\s+/g, ' ').trim() }
-function searchScore(text: string, query: string) {
-  const haystack = normalize(text)
-  const phrase = normalize(query)
-  const terms = phrase.split(' ').filter(Boolean)
-  if (!terms.length || !terms.every((term) => haystack.includes(term))) return 0
-  let score = haystack.includes(phrase) ? 50 : 0
-  for (const term of terms) {
-    let index = 0
-    while ((index = haystack.indexOf(term, index)) !== -1) { score += 1; index += term.length }
-  }
-  return score
-}
 function studyNoteSections(markdown: string) {
   const sections: Array<{ title: string; body: string }> = []
   let title = 'Study Notes'; let lines: string[] = []
@@ -92,11 +79,12 @@ function archiveKind(code: string, name: string) {
   return 'Class'
 }
 
-function buildResults(query: string) {
+function buildResults(query: string, mode: MatchMode, aci17: ACI17Corpus | null = null, published: readonly PublishedSearchRecord[] = []) {
   if (!query) return [] as SearchResult[]
   const results: SearchResult[] = []
 
   for (const item of allArchiveSessions()) {
+    if (item.courseNumber === 17 && aci17) continue // ACI 17 comes from the published manifest.
     const course = classicsByNumber.get(item.courseNumber)
     if (!course) continue
     const searchable = [
@@ -109,7 +97,7 @@ function buildResults(query: string) {
       item.date,
       item.sourceTitle,
     ].filter(Boolean).join('\n')
-    const score = searchScore(searchable, query)
+    const score = searchScore(searchable, query, mode)
     if (!score) continue
     const href = `/archive/classics/${course.slug}/${item.offeringSlug}/${archiveSessionSlug(item)}`
     const teacher = item.teacher ?? ''
@@ -130,10 +118,55 @@ function buildResults(query: string) {
     })
   }
 
+  // Approved ACI 17 class data and transcripts share the same live source as its class pages.
+  if (aci17) {
+    const { manifest } = aci17
+    for (const { session, transcript, index } of aci17.items) {
+      const href = '/archive/classics/course-17/current-2026/' + archiveSessionSlug(session, index)
+      const teacher = session.teacher ?? ''
+      const details = [session.sourceTitle || session.name, teacher, session.date, session.duration].filter(Boolean).join(' · ')
+      const recordingScore = searchScore([
+        'Course 17', manifest.title, manifest.offering.label,
+        session.code, session.name, teacher, session.date,
+        session.sourceTitle ?? '',
+      ].join('\n'), query, mode)
+      if (recordingScore > 0) {
+        results.push({
+          id: 'aci17-recording-' + session.code,
+          sourceId: 'course-17', sourceLabel: 'Classics Course 17 · ' + manifest.title,
+          contextLabel: manifest.offering.label, sessionLabel: session.code + ' · ' + session.name,
+          sessionKind: 'Class', teacher, contentType: 'Recording',
+          body: details, href, score: recordingScore,
+          reference: 'Course 17 · ' + manifest.offering.label + ' · ' + session.code + ' · Recording',
+        })
+      }
+      for (const chapter of transcript?.chapters ?? []) {
+        for (const paragraph of chapter.paragraphs) {
+          const score = searchScore(paragraph.text, query, mode)
+          if (!score) continue
+          results.push({
+            id: paragraph.id,
+            sourceId: 'course-17', sourceLabel: 'Classics Course 17 · ' + manifest.title,
+            contextLabel: manifest.offering.label,
+            sessionLabel: session.code + ' · ' + session.name,
+            sessionKind: 'Class', teacher,
+            contentType: 'Transcript',
+            chapter: chapter.title.replace(/[*_\u0060]/g, ''),
+            speaker: paragraph.speaker,
+            body: paragraph.text,
+            href: href + '#' + paragraph.id,
+            score: score + 5,
+            reference: 'Course 17 · ' + manifest.offering.label + ' · ' + session.code + ' · Reference Transcript',
+          })
+        }
+      }
+    }
+  }
+
   for (const [sessionId, chapters] of Object.entries(course8Transcripts)) {
     const session = course8Sessions.get(sessionId); if (!session) continue
     for (const chapter of chapters) for (const paragraph of chapter.paragraphs) {
-      const score = searchScore(`${chapter.title}\n${paragraph.speaker}\n${paragraph.text}`, query); if (!score) continue
+      const score = searchScore(paragraph.text, query, mode); if (!score) continue
       const href = `/courses/course-8/taiwan-2026/${session.slug}#${paragraph.id}`
       results.push({ id: paragraph.id, sourceId: courseData.course.slug, sourceLabel: `Classics Course ${courseData.course.canonicalNumber} · ${courseData.course.title}`, contextLabel: courseData.offering.label, sessionLabel: session.label, sessionKind: session.kind, teacher: session.teacher, contentType: 'Transcript', chapter: chapter.title, speaker: paragraph.speaker, body: paragraph.text, href, score: score + 5, reference: `Course ${courseData.course.canonicalNumber} · ${courseData.offering.label} · ${session.label} · Transcript` })
     }
@@ -142,7 +175,7 @@ function buildResults(query: string) {
   for (const [sessionId, notes] of Object.entries(course8StudyNotes)) {
     const session = course8Sessions.get(sessionId); if (!session) continue
     studyNoteSections(notes.markdown).forEach((section, index) => {
-      const score = searchScore(`${section.title}\n${section.body}`, query); if (!score) return
+      const score = searchScore(section.body, query, mode); if (!score) return
       const href = `/courses/course-8/taiwan-2026/${session.slug}#study-notes`
       results.push({ id: `${sessionId}-notes-${index + 1}`, sourceId: courseData.course.slug, sourceLabel: `Classics Course ${courseData.course.canonicalNumber} · ${courseData.course.title}`, contextLabel: courseData.offering.label, sessionLabel: session.label, sessionKind: session.kind, teacher: session.teacher, contentType: 'Study Notes', chapter: section.title, body: section.body.replace(/^[-*]\s+/gm, ''), href, score: score + 3, reference: `Course ${courseData.course.canonicalNumber} · ${courseData.offering.label} · ${session.label} · Study Notes` })
     })
@@ -152,7 +185,7 @@ function buildResults(query: string) {
     const entry = lamRimSessionIndex.get(sessionId); if (!entry) continue
     const { term, session } = entry
     for (const chapter of chapters) for (const paragraph of chapter.paragraphs) {
-      const score = searchScore(`${chapter.title}\n${paragraph.speaker}\n${paragraph.text}`, query); if (!score) continue
+      const score = searchScore(paragraph.text, query, mode); if (!score) continue
       const href = `/living-lam-rim/${term.slug}/${session.slug}#${paragraph.id}`
       const termLabel = `Term ${term.term}${term.title ? ` · ${term.title}` : ''}`
       results.push({ id: paragraph.id, sourceId: lamRimCatalog.program.slug, sourceLabel: lamRimCatalog.program.title, contextLabel: termLabel, sessionLabel: session.label, sessionKind: session.kind, teacher: 'Timothy Lowenhaupt', contentType: 'Transcript', chapter: chapter.title, speaker: paragraph.speaker, body: paragraph.text, href, score: score + 5, reference: `${lamRimCatalog.program.title} · ${termLabel} · ${session.label} · Transcript` })
@@ -163,24 +196,125 @@ function buildResults(query: string) {
     const entry = perfectionSessionIndex.get(sessionId); if (!entry) continue
     const { group, session } = entry
     for (const chapter of chapters) for (const paragraph of chapter.paragraphs) {
-      const score = searchScore(`${chapter.title}\n${paragraph.speaker}\n${paragraph.text}`, query); if (!score) continue
+      const score = searchScore(paragraph.text, query, mode); if (!score) continue
       const href = `/perfection-of-wisdom/${group.slug}/${session.slug}#${paragraph.id}`
       results.push({ id: paragraph.id, sourceId: perfectionProgram.slug, sourceLabel: perfectionProgram.title, contextLabel: group.title, sessionLabel: session.name, sessionKind: perfectionKind(session.name), teacher: session.teacher, contentType: 'Transcript', chapter: chapter.title.replace(/[*_`]/g, ''), speaker: paragraph.speaker, body: paragraph.text, href, score: score + 5, reference: `${perfectionProgram.title} · ${group.title} · ${session.code} · Transcript` })
     }
   }
 
-  return results.sort((a, b) => b.score - a.score || a.sourceLabel.localeCompare(b.sourceLabel)).slice(0, 150)
+  // Content from new managed courses and standalone teachings is generated
+  // automatically by the private GitHub publishing workflow, never hardcoded.
+  for (const record of published) {
+    const score = searchScore(record.body, query, mode)
+    if (!score) continue
+    const { glossarySource: _source, ...result } = record
+    results.push({
+      ...result, score: score + (record.contentType === 'Transcript' ? 5 : record.contentType === 'Study Notes' ? 3 : 0),
+    })
+  }
+
+  return results.sort((a, b) => b.score - a.score || a.sourceLabel.localeCompare(b.sourceLabel))
 }
 
-export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string; course?: string; teacher?: string; type?: string }> }) {
+
+/** Word discovery indexes the same bundled sources as the current exact search.
+ * Later, both must be refreshed from the same published private content. */
+let indexedVocabularyCache: string[] | null = null
+
+function indexedVocabulary(aci17: ACI17Corpus | null, published: readonly PublishedSearchRecord[]): string[] {
+  if (!indexedVocabularyCache) {
+    const words = new Set<string>()
+  const addText = (value: string | undefined) => {
+    if (!value) return
+    for (const word of searchWords(value)) {
+      if (/^[a-z]{4,40}$/.test(word)) words.add(word)
+    }
+  }
+
+  for (const item of allArchiveSessions()) {
+    const course = classicsByNumber.get(item.courseNumber)
+    addText(course?.title)
+    for (const field of [item.offeringLabel, item.code, item.name, item.teacher, item.date, item.sourceTitle]) addText(field)
+  }
+  for (const session of courseData.sessions) {
+    for (const field of [courseData.course.title, courseData.offering.label, session.label, session.teacher]) addText(field)
+  }
+  for (const chapters of Object.values(course8Transcripts)) {
+    for (const chapter of chapters) for (const paragraph of chapter.paragraphs) addText(paragraph.text)
+  }
+  for (const notes of Object.values(course8StudyNotes)) {
+    for (const section of studyNoteSections(notes.markdown)) addText(section.body)
+  }
+  for (const chapters of Object.values(livingLamRimTranscripts)) {
+    for (const chapter of chapters) for (const paragraph of chapter.paragraphs) addText(paragraph.text)
+  }
+  for (const chapters of Object.values(perfectionTranscripts)) {
+    for (const chapter of chapters) for (const paragraph of chapter.paragraphs) addText(paragraph.text)
+  }
+    indexedVocabularyCache = [...words]
+  }
+
+  // Expand the static vocabulary with published transcripts, not bundled text.
+  const words = new Set(indexedVocabularyCache)
+  for (const record of published) {
+    for (const value of [record.body, record.sourceLabel, record.sessionLabel, record.teacher]) {
+      for (const word of searchWords(value)) if (/^[a-z]{4,40}$/.test(word)) words.add(word)
+    }
+  }
+  if (!aci17) return [...words]
+  for (const { session, transcript } of aci17.items) {
+    for (const field of [session.name, session.sourceTitle, session.teacher, session.date]) {
+      for (const word of searchWords(field ?? '')) if (/^[a-z]{4,40}$/.test(word)) words.add(word)
+    }
+    for (const chapter of transcript?.chapters ?? []) {
+      for (const paragraph of chapter.paragraphs) {
+        for (const word of searchWords(paragraph.text)) {
+          if (/^[a-z]{4,40}$/.test(word)) words.add(word)
+        }
+      }
+    }
+  }
+  return [...words]
+}
+
+export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string; course?: string; teacher?: string; type?: string; match?: string }> }) {
   const params = await searchParams
   const query = (params.q ?? '').trim(); const courseFilter = (params.course ?? '').trim(); const teacherFilter = (params.teacher ?? '').trim(); const typeFilter = (params.type ?? '').trim()
-  const rawResults = buildResults(query)
+  const matchMode: MatchMode = params.match === 'all' ? 'all' : 'phrase'
+  const [publishedACI17, managedRecords] = query
+    ? await Promise.all([getACI17Corpus(), getPublishedSearchRecords()])
+    : [null, [] as PublishedSearchRecord[]]
+  const rawResults = buildResults(query, matchMode, publishedACI17, managedRecords)
   const results = rawResults.filter((result) => (!courseFilter || result.sourceId === courseFilter) && (!teacherFilter || result.teacher === teacherFilter) && (!typeFilter || result.sessionKind === typeFilter))
   const courseOptions = Array.from(new Map(rawResults.map((result) => [result.sourceId, result.sourceLabel] as const))).sort((a, b) => a[1].localeCompare(b[1]))
   const teacherOptions = Array.from(new Set(rawResults.map((result) => result.teacher).filter(Boolean))).sort()
   const typeOptions = Array.from(new Set(rawResults.map((result) => result.sessionKind).filter(Boolean))).sort()
-  const advancedActive = Boolean(courseFilter || teacherFilter || typeFilter)
+  const advancedActive = Boolean(courseFilter || teacherFilter || typeFilter || matchMode === 'all')
+  const matchesFilters = (result: SearchResult) =>
+    (!courseFilter || result.sourceId === courseFilter) &&
+    (!teacherFilter || result.teacher === teacherFilter) &&
+    (!typeFilter || result.sessionKind === typeFilter)
+
+  // These are separate queries with real matches, never additions to the exact count.
+  const related: Array<WordSuggestion & { count: number }> = []
+  const queryWords = searchWords(query)
+  if (queryWords.length === 1 && /^[a-z]{4,40}$/.test(queryWords[0])) {
+    const options = relatedWordCandidates(query, indexedVocabulary(publishedACI17, managedRecords), results.length === 0, 20)
+    for (const option of options) {
+      const count = buildResults(option.word, matchMode, publishedACI17, managedRecords).filter(matchesFilters).length
+      if (count > 0) related.push({ ...option, count })
+      if (related.length >= 6) break
+    }
+  }
+
+  const suggestionHref = (word: string) => {
+    const link = new URLSearchParams({ q: word })
+    if (matchMode === 'all') link.set('match', 'all')
+    if (courseFilter) link.set('course', courseFilter)
+    if (teacherFilter) link.set('teacher', teacherFilter)
+    if (typeFilter) link.set('type', typeFilter)
+    return '/search?' + link.toString()
+  }
 
   return <main className="container page search-page-simple">
     <div className="eyebrow">Search</div><h1>Search the teachings</h1>
@@ -189,17 +323,26 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
     {query ? <>
       <details className="advanced-search" open={advancedActive}><summary>Advanced search</summary><form action="/search" method="get" className="advanced-search-form">
         <input type="hidden" name="q" value={query} />
+        <label>Match<select name="match" defaultValue={matchMode}><option value="phrase">Exact phrase</option><option value="all">All words (any order)</option></select></label>
         <label>Archive<select name="course" defaultValue={courseFilter}><option value="">All available archives</option>{courseOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
         <label>Teacher<select name="teacher" defaultValue={teacherFilter}><option value="">All teachers</option>{teacherOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
         <label>Session type<select name="type" defaultValue={typeFilter}><option value="">All session types</option>{typeOptions.map((value) => <option key={value} value={value}>{value}</option>)}</select></label>
         <div className="actions"><button className="button sage" type="submit">Apply filters</button>{advancedActive ? <Link className="button" href={`/search?q=${encodeURIComponent(query)}`}>Clear filters</Link> : null}</div>
       </form></details>
       <section className="section search-results-simple"><div className="section-head"><div><h2>{results.length} result{results.length === 1 ? '' : 's'} for “{query}”</h2></div></div>
-        {results.length ? results.map((result) => <article className="search-result-row" key={`${result.sourceId}-${result.contentType}-${result.id}`}>
-          <div className="meta">{result.sourceLabel} · {result.contextLabel} · {result.sessionLabel} · {result.contentType}{result.chapter ? ` · ${result.chapter}` : ''}</div>
-          <div className="search-result-copy">{result.speaker ? <strong>{result.speaker}: </strong> : null}{clip(result.body)}</div>
-          <div className="actions"><Link className="button" href={result.href}>Open {result.contentType === 'Transcript' ? 'passage' : result.contentType === 'Study Notes' ? 'Study Notes' : 'recording'}</Link><CopyReference reference={result.reference} path={result.href} /></div>
-        </article>) : <p className="meta">No teaching material matched this search.</p>}
+        {related.length ? <aside className="search-word-discovery" aria-label="Other word forms with results">
+          <div className="search-word-discovery-heading">
+            <strong>{related.every((entry) => entry.kind === 'prefix') ? 'Words beginning with “' + query + '”' : 'Related word forms'}</strong>
+            <span>Separate searches; exact results stay unchanged</span>
+          </div>
+          <div className="search-word-discovery-links">
+            {related.map(({ word, count, kind }) => <Link href={suggestionHref(word)} className="search-word-discovery-link" key={word}>
+              <strong>{word}</strong><span>{count} {count === 1 ? 'result' : 'results'}</span>
+              {kind === 'prefix' ? <span className="sr-only">Word beginning with your search</span> : null}
+            </Link>)}
+          </div>
+        </aside> : null}
+        {results.length ? <SearchResultList results={results} query={query} mode={matchMode} /> : <p className="meta">No exact matches were found. {related.length ? 'Try one of the available words above.' : 'Check the spelling, or try All words (any order) in Advanced search.'}</p>}
       </section>
     </> : <section className="section search-empty"><p className="meta">Search includes the migrated Classics recording archives, Course 8 Study Notes and transcripts, Living Lam Rim transcripts, and Perfection of Wisdom transcripts. More transcript text will appear as it is added to the Library.</p></section>}
   </main>

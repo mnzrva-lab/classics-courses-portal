@@ -1,3 +1,4 @@
+import TranscriptSearchHighlights from '@/components/transcript-search-highlights'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -179,6 +180,7 @@ export default async function SessionPage({
   }
 
   let previousSectionId: string | null | undefined = undefined
+  let citationSpeaker = ''
   const teachers = (session.session_teachers ?? []).map((item: any) => item.teachers?.full_name).filter(Boolean)
   const publicReturnPath = `/courses/${courseSlug}/${offeringSlug}/${sessionSlug}`
   const returnPath = adminContentPreview ? `${publicReturnPath}?contentPreview=1` : publicReturnPath
@@ -303,21 +305,30 @@ export default async function SessionPage({
           <div className="text-downloads"><span>Download</span><a href={`${downloadBase}?kind=transcript&format=txt`}>TXT</a><span>·</span><a href={`${downloadBase}?kind=transcript&format=docx`}>DOCX</a></div>
         </div>
         <div className="info-callout"><strong>About this transcript</strong><br />{transcript.disclaimer}</div>
+        <TranscriptSearchHighlights />
         <TranscriptControls chapters={transcriptChapterOptions} />
         {transcriptParagraphs.length > 0 ? <article className="transcript-v12-card">
           {renderLeadingTranscriptAssets()}
           {transcriptParagraphs.map((paragraph) => {
             const section = paragraph.section_id ? sectionMap.get(paragraph.section_id) : null
-            const showHeading = paragraph.section_id !== previousSectionId && Boolean(section)
+            const sectionChanged = paragraph.section_id !== previousSectionId
+            const showHeading = sectionChanged && Boolean(section)
+            // Each new transcript chapter starts a fresh attribution context.
+            if (sectionChanged) citationSpeaker = ''
             previousSectionId = paragraph.section_id
+            const announcedSpeaker = paragraph.speaker?.trim().replace(/[:：]\s*$/, '') ?? ''
+            if (announcedSpeaker) citationSpeaker = announcedSpeaker
             const timestamp = formatTimestamp(paragraph.start_seconds)
             const bookmarked = paragraphBookmarkIds.has(paragraph.id)
             const noteCount = passageNoteCounts.get(paragraph.id) ?? 0
-            const reference = [citationCourse, offering.label, session.title, timestamp].filter(Boolean).join(' · ')
+            const reference = [
+              citationSpeaker ? `Speaker: ${citationSpeaker}` : null,
+              citationCourse, offering.label, session.title, section?.title, timestamp, 'Reference Transcript',
+            ].filter(Boolean).join(' · ')
             const passagePath = `${publicReturnPath}#paragraph-${paragraph.id}`
-            return <div key={paragraph.id} id={`paragraph-${paragraph.id}`} data-transcript-paragraph className="transcript-paragraph-v12">
+            return <div key={paragraph.id} id={`paragraph-${paragraph.id}`} data-transcript-paragraph data-transcript-speaker={citationSpeaker} className="transcript-paragraph-v12">
               {showHeading ? <h3>{section?.title}</h3> : null}
-              <div className="transcript-copy">{timestamp ? <span className="transcript-timestamp">{timestamp}</span> : null}{paragraph.speaker ? <strong>{paragraph.speaker}: </strong> : null}<span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.body}</span></div>
+              <div className="transcript-copy">{timestamp ? <span className="transcript-timestamp">{timestamp}</span> : null}{paragraph.speaker?.trim().replace(/[:：]\s*$/, '') ? <strong>{paragraph.speaker.trim().replace(/[:：]\s*$/, '')}: </strong> : null}<span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.body}</span></div>
               <PassageStudyTools paragraphId={paragraph.id} sessionId={session.id} returnPath={returnPath} bookmarked={userId ? bookmarked : false} canSaveBookmarks={Boolean(userId && canSaveBookmarks)} canSaveNotes={Boolean(userId && canSaveNotes)} noteCount={userId ? noteCount : 0} reference={reference} passagePath={passagePath} />
               {renderTranscriptAssets(paragraph)}
             </div>

@@ -1,10 +1,41 @@
-export const reactionQuestions = [
-  'When I see somebody confidently living with or engaging with other people, I think they must be…',
-  'When I come across someone who has a lot more money than I do, I assume…',
-  'When I see someone in a happy romantic relationship, I think that couple probably…',
-  'When I see someone getting more attention than me, I assume…',
-  'When someone gives me advice that I actually need, my reaction is…',
-]
+export const assumptionScenarios = [
+  {
+    title: 'Around other people',
+    hint: 'What do you think about these people? Write down what comes up.',
+    prompts: [
+      { id: 'reaction-0', text: 'When I see somebody confidently living with other people or engaging with other people, I think they must be…' },
+      { id: 'reaction-0-comfort', text: 'When I see someone comfortable with other people, I think they must be…' },
+    ],
+  },
+  {
+    title: 'Money',
+    hint: 'Your assumption may be about them, or about yourself.',
+    prompts: [
+      { id: 'reaction-1', text: 'When I come across someone who has a lot more money than I do, I assume…' },
+    ],
+  },
+  {
+    title: 'Relationships',
+    hint: '',
+    prompts: [
+      { id: 'reaction-2', text: "When I see someone who's in a happy romantic relationship, I think that couple probably…" },
+    ],
+  },
+  {
+    title: 'Attention',
+    hint: '',
+    prompts: [
+      { id: 'reaction-3', text: 'When I see someone getting more attention than me, like my teacher paying attention to another student, I assume…' },
+    ],
+  },
+  {
+    title: 'Advice',
+    hint: '',
+    prompts: [
+      { id: 'reaction-4', text: 'When someone gives me advice that I actually need, my reaction to that advice is…' },
+    ],
+  },
+] as const
 
 export const beliefAreas = {
   Money: ['Money is the source of all evil.','Having too much money is a bad thing.','I need to have money saved because something bad might happen.','I can only make enough to sustain my life.','It is impossible to have extra.','You only live once, so spend it all today.','You only live once, so sacrifice today for a better tomorrow.','Money is hard to get.',"I'm just not good at managing money.","If I think about money, I can't be spiritual.","If I want more money, I'm greedy.",'If I have a lot of money, people will judge me negatively.'],
@@ -13,15 +44,6 @@ export const beliefAreas = {
   Work: ['Work is a modern form of slavery.','I will never get my dream job.','Work has to be hard.',"If I don't enjoy my job, I'm doing something right.","I'm never going to be happy at work.",'All the good jobs are taken.','The economy is bad.',"It's too late for me to do the thing that I truly love.",'My coworkers are out to get me.','Everyone else gets the good jobs, and I always get the crappy ones.',"My teacher doesn't give me the job that I really want.","Everyone else gets a job, but I don't."],
   'Self-worth': ['I will never be happy until I have the things I want.',"People won't pay attention to me or love me if I have no money.",'Happiness means I have to give up on the physical world entirely.',"I'm not worthy of attention.",'I have nothing to give other people.',"I'm perfect, and I don't need to change.",'I will always be imperfect.','I was just born in the wrong generation.','Nobody will ever understand me.',"I'm always going to fail.",'Successful people are only successful because they deceived others.',"It's someone else's fault that I'm not successful.","If that one thing hadn't happened, I'd be successful now.","I can't ever get out of debt.","I don't have time to work on myself.",'To be successful means I need to be the best at everything.',"I'm too stupid to be successful."],
 } as const
-
-export const focusQuestions = [
-  'My chosen belief, in my exact words',
-  'What tends to trigger it?',
-  'What happens in my body?',
-  'What do I usually do immediately afterward?',
-  'What am I defending, protecting, or trying to control?',
-  'What does not feel safe in that moment?',
-]
 
 export const fourPowers = [
   ['Recognize','What happened? What pattern or seed did I just reinforce?'],

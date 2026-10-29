@@ -4,6 +4,10 @@ on:
   push:
     branches:
       - preview-staging
+      - feature/search-related-word-forms
+  pull_request:
+    branches:
+      - preview-staging
   workflow_dispatch:
 
 jobs:
@@ -21,5 +25,175 @@ jobs:
           node-version: '22'
       - name: Install dependencies
         run: npm install
+      - name: Search matching tests
+        run: node --experimental-strip-types scripts/test-search-match.mjs
+      - name: Managed Library schema tests
+        run: node --experimental-strip-types scripts/test-managed-library-schema.mjs
+      - name: Approved WebP image upload and GitHub size-limit tests
+        run: node --experimental-strip-types scripts/test-approved-cover-payload.mjs
+      - name: Classics offering integration tests
+        run: node --experimental-strip-types scripts/test-classics-offering-utils.mjs
+      - name: Reject temporary QA content source
+        run: node scripts/test-no-disposable-content.mjs
+      - name: Tibetan term search tests
+        run: node --experimental-strip-types scripts/test-tibetan-term-search.mjs
+      - name: Living Lam Rim Term 7 schedule tests
+        run: node --experimental-strip-types scripts/test-weekly-term7.mjs
+      - name: Verify public page design standards
+        run: node scripts/check-page-standards.mjs
+      - name: Verify shared transcript reading standards
+        run: node scripts/check-transcript-standards.mjs
+      - name: Verify original course cover files and mappings
+        run: node scripts/check-course-artworks.mjs
+      - name: Verify course lists and scheduled date links
+        run: node --experimental-strip-types scripts/test-course-lists.mjs
+      - name: Verify ACI 18 recordings and playlist mapping
+        run: node scripts/check-course18-recordings.mjs
       - name: Build
         run: npm run build
+      - name: Smoke test exact search, term hub, and program introduction
+        run: |
+          npm run start -- -p 3199 > /tmp/classics-preview-start.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          ready=0
+          for attempt in {1..35}; do
+            if curl -fsS --max-time 5 "http://127.0.0.1:3199/tibetan/source/apostrophe-og-min" -o /tmp/tibetan-hub.html; then
+              ready=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$ready" -ne 1 ]; then
+            cat /tmp/classics-preview-start.log
+            exit 1
+          fi
+          echo "Hub response bytes: $(wc -c < /tmp/tibetan-hub.html)"
+          if ! grep -Fq "OG MIN" /tmp/tibetan-hub.html; then
+            echo "Term not present in rendered hub. First 2400 bytes:"
+            head -c 2400 /tmp/tibetan-hub.html
+            exit 1
+          fi
+          if ! grep -Fq "Open exact passage" /tmp/tibetan-hub.html; then
+            echo "Missing passage links. First 2400 bytes:"
+            head -c 2400 /tmp/tibetan-hub.html
+            exit 1
+          fi
+          node scripts/check-tibetan-term-rendering.mjs
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/tibetan" -o /tmp/tibetan-library.html
+          grep -Fq 'Search Tibetan terms' /tmp/tibetan-library.html
+          grep -Fq 'Saved terms' /tmp/tibetan-library.html
+          grep -Fq 'Cards' /tmp/tibetan-library.html
+          grep -Fq 'List' /tmp/tibetan-library.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/tibetan/saved" -o /tmp/tibetan-saved.html
+          grep -Fq 'My saved Tibetan terms' /tmp/tibetan-saved.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/search?q=OG%20MIN" -o /tmp/search-results.html
+          if ! grep -Fq 'class="search-result-row"' /tmp/search-results.html; then
+            echo "Search returned no result rows. First 2400 bytes:"
+            head -c 2400 /tmp/search-results.html
+            exit 1
+          fi
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/living-lam-rim/term-7" -o /tmp/term7.html
+          grep -Fq "Open the Gift of Liberation" /tmp/term7.html
+          grep -Fq "Weekly live classes" /tmp/term7.html
+          grep -Fq 'data-layout-standard="course-hero-v1"' /tmp/term7.html
+          grep -Fq 'class="library-course-hero-artwork"' /tmp/term7.html
+          grep -Fq "/images/living-lam-rim/term-7/BG.webp" /tmp/term7.html
+          grep -Fq "/living-lam-rim/term-7/monday-2026-11-02" /tmp/term7.html
+          grep -Fq "/living-lam-rim/term-7/monday-2027-01-04" /tmp/term7.html
+          grep -Fq 'Class 1</b>' /tmp/term7.html
+          grep -Fq 'Class 10</b>' /tmp/term7.html
+          grep -Fq 'C1</span>' /tmp/term7.html
+          grep -Fq 'C10</span>' /tmp/term7.html
+          grep -Fq '>Schedule</h2>' /tmp/term7.html
+          grep -Fq '>Classes 1–10</h2>' /tmp/term7.html
+          grep -Fq 'class="section compact-section llr-course-classes"' /tmp/term7.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/living-lam-rim/term-7/monday-2026-11-02" -o /tmp/term7-monday.html
+          grep -Fq 'data-layout-standard="class-v1"' /tmp/term7-monday.html
+          grep -Fq "Monday, November 2, 2026" /tmp/term7-monday.html
+          grep -Fq '>Class 1</h1>' /tmp/term7-monday.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/living-lam-rim/term-7/monday-2027-01-04" -o /tmp/term7-monday-10.html
+          grep -Fq '>Class 10</h1>' /tmp/term7-monday-10.html
+          grep -Fq 'Monday, January 4, 2027' /tmp/term7-monday-10.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/images/living-lam-rim/term-7/BG.webp" -o /tmp/term7-cover.webp
+          cmp -s public/images/living-lam-rim/term-7/BG.webp /tmp/term7-cover.webp
+          printf "39e65a1dfae70d658063e33a220e729cf41e614d6ba71a6c0182b52d0339439a  public/images/living-lam-rim/term-7/BG.webp\n" | sha256sum -c -
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/living-lam-rim/term-7/calendar" -o /tmp/term7.ics
+          grep -Fq "DTSTART:20261102T140000Z" /tmp/term7.ics
+          grep -Fq "DTEND:20261102T151500Z" /tmp/term7.ics
+          grep -Fq "RRULE:FREQ=WEEKLY;BYDAY=MO" /tmp/term7.ics
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/calendar" -o /tmp/calendar.html
+          grep -Fq "Open the Gift of Liberation" /tmp/calendar.html
+          grep -Fq "Live class calendar" /tmp/calendar.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/" -o /tmp/upcoming-home.html
+          grep -Fq "Open the Gift of Liberation" /tmp/upcoming-home.html
+          grep -Fq "View live calendar" /tmp/upcoming-home.html
+          grep -Fq '/images/classics/course-8/taiwan-2026.webp' /tmp/upcoming-home.html
+          grep -Fq '/images/classics/course-16/arizona-2026.webp' /tmp/upcoming-home.html
+          grep -Fq '/images/classics/course-17/arizona-2026.webp' /tmp/upcoming-home.html
+          grep -Fq '/images/other-programs/eye-of-courage/2026.webp' /tmp/upcoming-home.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/other-programs/eye-of-courage" -o /tmp/eye-of-courage-page.html
+          grep -Fq 'data-layout-standard="course-hero-v1"' /tmp/eye-of-courage-page.html
+          grep -Fq '/images/other-programs/eye-of-courage/2026.webp' /tmp/eye-of-courage-page.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-8/taiwan-2026" -o /tmp/course8-offering-page.html
+          grep -Fq 'data-layout-standard="course-hero-v1"' /tmp/course8-offering-page.html
+          grep -Fq '/images/classics/course-8/taiwan-2026.webp' /tmp/course8-offering-page.html
+          if grep -Fq 'Source recovered · link being connected' /tmp/course8-offering-page.html; then
+            echo "Unready Reading section still visible on Course 8"
+            exit 1
+          fi
+          grep -Fq 'has-artwork' /tmp/course8-offering-page.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-16" -o /tmp/course16-page.html
+          grep -Fq '/images/classics/course-16/arizona-2026.webp' /tmp/course16-page.html
+          grep -Fq 'Classes 1' /tmp/course16-page.html
+          grep -Fq '/archive/classics/course-16/archive-2025-2026/video-' /tmp/course16-page.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/archive/classics/course-16/archive-2025-2026/video-lGJZ3uBR3_Q" -o /tmp/course16-class1.html
+          grep -Fq 'data-layout-standard="class-v1"' /tmp/course16-class1.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-17/current-2026" -o /tmp/course17-page.html
+          grep -Fq '/images/classics/course-17/arizona-2026.webp' /tmp/course17-page.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-18" -o /tmp/course18-page.html
+          grep -Fq '/images/classics/course-18/arizona-2026.webp' /tmp/course18-page.html
+          grep -Fq '/courses/course-18/class-1' /tmp/course18-page.html
+          grep -Fq '/courses/course-18/class-10' /tmp/course18-page.html
+          grep -Fq '5:30–7:00 am AZ' /tmp/course18-page.html
+          grep -Fq '7:30–9:00 am AZ' /tmp/course18-page.html
+          grep -Fq 'Open ACI 18 playlist on YouTube' /tmp/course18-page.html
+          grep -Fq 'Recording available' /tmp/course18-page.html
+          if grep -Fq '(shared block)' /tmp/course18-page.html; then
+            echo "Outdated shared-block wording is still visible on Course 18"
+            exit 1
+          fi
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-18/class-1" -o /tmp/course18-class1.html
+          grep -Fq 'data-layout-standard="class-v1"' /tmp/course18-class1.html
+          grep -Fq 'Sunday, September 20, 2026' /tmp/course18-class1.html
+          grep -Fq '5:30–7:00 am AZ' /tmp/course18-class1.html
+          grep -Fq 'Class recording' /tmp/course18-class1.html
+          grep -Fq 'oQYnS1wLe-k' /tmp/course18-class1.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-18/class-4" -o /tmp/course18-class4.html
+          grep -Fq 'R90dFMwWU3k' /tmp/course18-class4.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-18/class-5" -o /tmp/course18-class5.html
+          grep -Fq 'Recording not added yet' /tmp/course18-class5.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/courses/course-18/class-10" -o /tmp/course18-class10.html
+          grep -Fq 'data-layout-standard="class-v1"' /tmp/course18-class10.html
+          grep -Fq 'Sunday, January 24, 2027' /tmp/course18-class10.html
+          grep -Fq '7:30–9:00 am AZ' /tmp/course18-class10.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/living-lam-rim/term-1/class-1" -o /tmp/living-lam-rim-class.html
+          grep -Fq 'data-layout-standard="class-v1"' /tmp/living-lam-rim-class.html
+          grep -Fq 'id="recording"' /tmp/living-lam-rim-class.html
+          grep -Fq 'id="transcript"' /tmp/living-lam-rim-class.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/other-programs/eye-of-courage/class-1" -o /tmp/eye-of-courage-class.html
+          grep -Fq 'data-layout-standard="class-v1"' /tmp/eye-of-courage-class.html
+          grep -Fq "/images/living-lam-rim/term-7/BG.webp" /tmp/upcoming-home.html
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/images/classics/course-8/taiwan-2026.webp" -o /tmp/cc8-new.webp
+          cmp -s public/images/classics/course-8/taiwan-2026.webp /tmp/cc8-new.webp
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/images/classics/course-16/arizona-2026.webp" -o /tmp/course16-new.webp
+          cmp -s public/images/classics/course-16/arizona-2026.webp /tmp/course16-new.webp
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/images/classics/course-17/arizona-2026.webp" -o /tmp/course17-new.webp
+          cmp -s public/images/classics/course-17/arizona-2026.webp /tmp/course17-new.webp
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/images/classics/course-18/arizona-2026.webp" -o /tmp/course18-new.webp
+          cmp -s public/images/classics/course-18/arizona-2026.webp /tmp/course18-new.webp
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/images/other-programs/eye-of-courage/2026.webp" -o /tmp/eye-new.webp
+          cmp -s public/images/other-programs/eye-of-courage/2026.webp /tmp/eye-new.webp
+          curl -fsS --max-time 10 "http://127.0.0.1:3199/perfection-of-wisdom" -o /tmp/perfection-intro.html
+          grep -F "String of White Lotuses" /tmp/perfection-intro.html > /dev/null
+          grep -F "Root text" /tmp/perfection-intro.html > /dev/null

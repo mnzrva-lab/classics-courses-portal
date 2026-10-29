@@ -1,0 +1,145 @@
+/* Shared ACI 17 reading experience for every source-based class transcript. */
+/* The existing course/class layout and transcript source text remain unchanged. */
+.unified-transcript-reader .library-transcript-reader {
+  overflow: visible;
+}
+.unified-transcript-reader .library-standard-chapter .timed-transcript-chapter {
+  margin: 30px 0 10px;
+  border-top: 1px solid var(--line);
+}
+.unified-transcript-reader .library-standard-chapter:first-of-type .timed-transcript-chapter {
+  margin-top: 0;
+  border-top: 0;
+}
+.unified-transcript-reader .library-standard-chapter .library-untimed-chapter {
+  display: block;
+  grid-template-columns: none;
+}
+.unified-transcript-reader .library-transcript-reader .timed-transcript-copy > .timed-transcript-html {
+  min-width: 0;
+  font-size: var(--timed-reader-size);
+  line-height: var(--timed-reader-line);
+}
+.unified-transcript-reader .library-transcript-reader .timed-transcript-html > div > p {
+  margin: 0 !important;
+  line-height: inherit !important;
+}
+.unified-transcript-reader .library-transcript-reader .timed-transcript-html > div > p + p {
+  margin-top: 8px !important;
+}
+.unified-transcript-reader.show-paragraph-times .library-transcript-reader .timed-transcript-copy {
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: start;
+}
+.unified-transcript-reader.show-paragraph-times .library-transcript-reader .timed-transcript-copy > .timed-transcript-time {
+  grid-column: 1;
+}
+.unified-transcript-reader.show-paragraph-times .library-transcript-reader .timed-transcript-copy > .timed-transcript-html {
+  grid-column: 2;
+  min-width: 0;
+}
+/* An untimed paragraph never falls into a narrow time badge column. */
+.unified-transcript-reader.show-paragraph-times .library-transcript-reader .timed-transcript-copy:not(:has(.timed-transcript-time)) > .timed-transcript-html {
+  grid-column: 2;
+}
+.unified-transcript-reader .library-transcript-reader .transcript-paragraph-v12:hover,
+.unified-transcript-reader .library-transcript-reader .transcript-paragraph-v12:target,
+.unified-transcript-reader .library-transcript-reader .transcript-paragraph-v12.is-current,
+.unified-transcript-reader .library-transcript-reader .transcript-paragraph-v12[data-cite-active] {
+  background: var(--sage-050);
+  box-shadow: none !important;
+}
+@media (max-width: 720px) {
+  .unified-transcript-reader.show-paragraph-times .library-transcript-reader .timed-transcript-copy {
+    display: block;
+  }
+  .unified-transcript-reader.show-paragraph-times .library-transcript-reader .timed-transcript-copy > .timed-transcript-html {
+    grid-column: auto;
+  }
+  .unified-transcript-reader .library-standard-chapter .timed-transcript-chapter {
+    margin-top: 28px;
+  }
+}
+
+/* Single contextual toolbar for every class reader; one desktop or mobile row. */
+.transcript-sync-floating {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 68;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  width: max-content;
+  max-width: calc(100vw - 24px);
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(251,247,239,.97);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(12px);
+}
+.transcript-sync-floating > button {
+  appearance: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 42px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.transcript-sync-floating > button:hover { background: var(--white); }
+.transcript-sync-floating > button:focus-visible { outline: 3px solid var(--signal-700); outline-offset: 2px; }
+.transcript-sync-floating > .transcript-sync-video { background: var(--sage-700); color: var(--white); }
+.transcript-sync-floating > .transcript-sync-video:hover { background: var(--sage-900); }
+.transcript-sync-floating > .transcript-sync-follow {
+  border-color: var(--line);
+  background: var(--paper-2);
+  color: var(--ink-soft);
+}
+.transcript-sync-floating > .transcript-sync-follow:hover { background: var(--white); }
+.transcript-sync-floating > .transcript-sync-follow.is-following {
+  border-color: var(--sage-300);
+  background: var(--sage-100);
+  color: var(--sage-900);
+}
+/* Tablets already use the bottom app navigation at 960px. Keep the
+   compact toolbar above it, without expanding to the full tablet width. */
+@media (max-width: 960px) and (min-width: 721px) {
+  .transcript-sync-floating {
+    right: 12px;
+    bottom: calc(74px + env(safe-area-inset-bottom));
+  }
+}
+@media (max-width: 720px) {
+  .transcript-sync-floating {
+    left: 12px;
+    right: 12px;
+    bottom: calc(74px + env(safe-area-inset-bottom));
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    width: auto;
+    max-width: none;
+    border-radius: 16px;
+  }
+  .transcript-sync-floating:not(.has-follow) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .transcript-sync-floating > button {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 6px;
+    border-radius: 11px;
+    font-size: 12px;
+  }
+}
+@media (max-width: 360px) { .transcript-sync-floating > button { font-size: 11px; } }

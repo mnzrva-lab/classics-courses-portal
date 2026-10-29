@@ -1,0 +1,136 @@
+/* ACI 17 uses the original timed reader's text-size and paragraph-time controls. */
+.aci17-timed-reader .aci17-timed-chapter-group:first-of-type .timed-transcript-chapter {
+  margin-top: 0;
+  border-top: 0;
+}
+.aci17-timed-reader .timed-transcript-html > div > p {
+  margin: 0 !important;
+  line-height: inherit !important;
+}
+.aci17-timed-reader .timed-transcript-html > div > p + p { margin-top: 8px !important; }
+
+/* The citation action has a reserved narrow gutter, so it never overlaps text.
+   Its menu floats above the reading content; opening it doesn't resize a passage. */
+.aci17-timed-reader .aci17-timed-paragraph {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 54px;
+  column-gap: 12px;
+  align-items: start;
+  overflow: visible;
+}
+.aci17-timed-reader .aci17-timed-paragraph > .transcript-copy {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+.aci17-timed-reader .aci17-cite-row {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: start;
+  min-width: 0;
+  margin: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.aci17-timed-reader .aci17-timed-paragraph:hover > .aci17-cite-row,
+.aci17-timed-reader .aci17-timed-paragraph:focus-within > .aci17-cite-row,
+.aci17-timed-reader .aci17-timed-paragraph[data-cite-active] > .aci17-cite-row {
+  opacity: 1;
+  pointer-events: auto;
+}
+.aci17-timed-reader .aci17-timed-paragraph:has(.citation-menu[open]) { z-index: 40; }
+.aci17-timed-reader .aci17-cite-row .citation-menu {
+  position: relative;
+  width: max-content;
+}
+.aci17-timed-reader .aci17-cite-row .citation-menu > summary {
+  min-width: 50px;
+  min-height: 35px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: var(--paper);
+  font-size: 11px;
+}
+.aci17-timed-reader .aci17-cite-row .citation-menu[open] .citation-menu-panel {
+  position: absolute !important;
+  top: calc(100% + 6px) !important;
+  right: 0 !important;
+  bottom: auto !important;
+  left: auto !important;
+  width: 196px;
+  max-width: min(240px, calc(100vw - 36px));
+  max-height: min(300px, calc(100dvh - 36px));
+  margin: 0;
+  overflow-y: auto;
+  z-index: 50;
+  box-shadow: var(--shadow-md);
+}
+.aci17-timed-reader .aci17-cite-row .citation-menu[data-popup-placement="above"] .citation-menu-panel {
+  top: auto !important;
+  bottom: calc(100% + 6px) !important;
+}
+.aci17-timed-reader .aci17-cite-row .citation-menu-panel button { min-height: 40px; }
+
+@media (max-width: 720px), (hover: none), (pointer: coarse) {
+  .aci17-timed-reader .aci17-timed-paragraph { display: block; }
+  .aci17-timed-reader .aci17-cite-row {
+    display: none;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .aci17-timed-reader .aci17-timed-paragraph[data-cite-active] > .aci17-cite-row,
+  .aci17-timed-reader .aci17-timed-paragraph:focus-within > .aci17-cite-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 6px;
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .aci17-timed-reader .aci17-cite-row .citation-menu > summary { min-height: 44px; }
+  .aci17-timed-reader .aci17-cite-row .citation-menu-panel button { min-height: 44px; }
+}
+
+/* Always assign the spoken text to the wide track. This also protects
+   the layout if a future transcript contains a passage without a cue. */
+.aci17-timed-reader.show-paragraph-times .timed-transcript-copy {
+  grid-template-columns: 80px minmax(0, 1fr);
+}
+.aci17-timed-reader.show-paragraph-times .timed-transcript-copy > .timed-transcript-time {
+  grid-column: 1;
+}
+.aci17-timed-reader.show-paragraph-times .timed-transcript-copy > .timed-transcript-html {
+  grid-column: 2;
+  min-width: 0;
+}
+/* Estimated timestamps have a quiet visual distinction and remain clickable. */
+.aci17-timed-reader .timed-transcript-time.aci17-estimated,
+.aci17-timed-reader .timed-chapter-time.aci17-estimated {
+  border-style: dashed;
+}
+.aci17-timed-reader .timed-transcript-time.aci17-estimated::before,
+.aci17-timed-reader .timed-chapter-time.aci17-estimated::before {
+  content: '~';
+  margin-right: 2px;
+  font-weight: 600;
+}
+@media (max-width: 720px) {
+  .aci17-timed-reader.show-paragraph-times .timed-transcript-copy { display: block; }
+  .aci17-timed-reader.show-paragraph-times .timed-transcript-copy > .timed-transcript-html { grid-column: auto; }
+}
+
+/* ACI 17: one consistent borderless passage highlight. The previous global
+   styles use inset shadows to draw a vertical stripe for playback-current
+   and anchor-target paragraphs, but hovered passages had no stripe. */
+.aci17-timed-reader .aci17-timed-paragraph:hover,
+.aci17-timed-reader .aci17-timed-paragraph:target,
+.aci17-timed-reader .aci17-timed-paragraph.is-current,
+.aci17-timed-reader .aci17-timed-paragraph[data-cite-active] {
+  background: var(--sage-050);
+  box-shadow: none !important;
+}
+/* Selection/focus remains visible on the individual accessible controls. */

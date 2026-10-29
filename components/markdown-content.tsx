@@ -2,6 +2,7 @@ import { Fragment, ReactNode } from 'react'
 
 type Props = {
   content: string
+  paragraphPrefix?: ReactNode
 }
 
 function safeHref(value: string) {
@@ -73,11 +74,12 @@ function tableCells(line: string) {
   return line.trim().slice(1, -1).split('|').map((cell) => cell.trim().replace(/\\\|/g, '|'))
 }
 
-export default function MarkdownContent({ content }: Props) {
+export default function MarkdownContent({ content, paragraphPrefix }: Props) {
   const lines = content.replace(/\r\n/g, '\n').split('\n')
   const blocks: ReactNode[] = []
   let index = 0
   let key = 0
+  let paragraphPrefixUsed = false
 
   while (index < lines.length) {
     const line = lines[index]
@@ -184,9 +186,11 @@ export default function MarkdownContent({ content }: Props) {
       index += 1
     }
 
+    const prefix = !paragraphPrefixUsed ? paragraphPrefix : undefined
+    paragraphPrefixUsed = true
     blocks.push(
       <p key={`p-${key++}`} style={{ lineHeight: 1.8, margin: '14px 0' }}>
-        {inlineNodes(paragraphLines.join(' '))}
+        {prefix}{inlineNodes(paragraphLines.join(' '))}
       </p>
     )
   }

@@ -4,18 +4,20 @@ import rawLivingLamRim from '@/content/living-lam-rim/catalog.json'
 import { livingLamRimTranscripts } from '@/content/living-lam-rim/transcripts'
 import { perfectionGroups } from '@/content/perfection-of-wisdom/catalog'
 import { perfectionTranscripts } from '@/content/perfection-of-wisdom/transcripts'
+import { eyeOfCourageSessions, eyeOfCourageProgram, eyeOfCourageTranscripts } from '@/content/eye-of-courage'
 
-type GlossaryTerm = {
+export type GlossaryTerm = {
   term: string
   context: string
   source: string
   href: string
+  occurrences: Array<{ context: string; source: string; href: string; markedTerm: string }>
 }
 
 type Paragraph = { id: string; text: string }
 type Chapter = { paragraphs: Paragraph[] }
 
-type SourceEntry = {
+export type SourceEntry = {
   label: string
   hrefBase: string
   chapters: Chapter[]
@@ -44,25 +46,41 @@ function cleanInline(value: string) {
     .trim()
 }
 
+/**
+ * Import only explicit source-marked Wylie/Tibetan-script terms.
+ * This intentionally rejects ordinary bracketed speech edits such as
+ * [those], [need to], or [unclear], without pretending to verify a translation.
+ */
 function isCandidate(value: string) {
   const term = cleanInline(value)
   if (term.length < 2 || term.length > 80) return false
-  if (!/[A-Za-z]/.test(term)) return false
   if (term.split(/\s+/).length > 8) return false
   if (/https?:\/\/|www\.|[<>={}]/i.test(term)) return false
-  if (/[.!?;:]$/.test(term)) return false
   if (editorialMarkers.has(term.toLowerCase())) return false
-  return true
+
+  const sourceMarkedWylie = /^[A-Z'’\-\s]+$/.test(term) && /[A-Z]{2}/.test(term)
+  const sourceMarkedTibetan = /^[\u0F00-\u0FFF\s]+$/.test(term) && /[\u0F00-\u0FFF]/.test(term)
+  return sourceMarkedWylie || sourceMarkedTibetan
 }
 
+/**
+ * Keep transcript excerpts faithful to the source.
+ * Only the glossary/term-page heading omits the source's [brackets].
+ * Use source offsets so punctuation and every bracketed marker stay intact.
+ */
 function contextAround(text: string, start: number, end: number) {
-  const before = cleanInline(text.slice(0, start)).split(/\s+/).filter(Boolean)
-  const middle = cleanInline(text.slice(start, end))
-  const after = cleanInline(text.slice(end)).split(/\s+/).filter(Boolean)
-  const words = [...before.slice(-11), middle, ...after.slice(0, 15)].filter(Boolean)
-  const prefix = before.length > 11 ? '…' : ''
-  const suffix = after.length > 15 ? '…' : ''
-  return `${prefix}${words.join(' ')}${suffix}`
+  const beforeTokens = Array.from(text.slice(0, start).matchAll(/\S+/g))
+  const afterTokens = Array.from(text.slice(end).matchAll(/\S+/g))
+  const firstWord = beforeTokens.length > 11 ? beforeTokens[beforeTokens.length - 11] : null
+  const lastWord = afterTokens.length > 15 ? afterTokens[14] : null
+
+  const excerptStart = firstWord?.index ?? 0
+  const excerptEnd = lastWord
+    ? end + (lastWord.index ?? 0) + lastWord[0].length
+    : text.length
+
+  const excerpt = text.slice(excerptStart, excerptEnd).replace(/\s+/g, ' ').trim()
+  return `${excerptStart > 0 ? '…' : ''}${excerpt}${excerptEnd < text.length ? '…' : ''}`
 }
 
 function sourceEntries(): SourceEntry[] {
@@ -102,15 +120,33 @@ function sourceEntries(): SourceEntry[] {
     }
   }
 
+  for (const session of eyeOfCourageSessions) {
+    const chapters = eyeOfCourageTranscripts[session.id]
+    if (!chapters?.length) continue
+    entries.push({
+      label: `${eyeOfCourageProgram.title} · ${session.label}`,
+      hrefBase: `/other-programs/eye-of-courage/${session.slug}`,
+      chapters,
+    })
+  }
+
   return entries
 }
 
-export function transcriptGlossaryTerms(): GlossaryTerm[] {
+/** Stable, URL-safe identifier. Apostrophes in Wylie spellings remain distinct. */
+export function transcriptTermSlug(term: string): string {
+  return term.normalize('NFKC').toLocaleLowerCase()
+    .replace(/['’]/g, '-apostrophe-')
+    .replace(/[^\p{L}\p{N}]+/gu, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+export function transcriptGlossaryTerms(additionalSources: SourceEntry[] = []): GlossaryTerm[] {
   const terms: GlossaryTerm[] = []
-  const seen = new Set<string>()
+  const byTerm = new Map<string, GlossaryTerm>()
   const bracketPattern = /\[([^\[\]\n]+)\]/g
 
-  for (const source of sourceEntries()) {
+  for (const source of [...sourceEntries(), ...additionalSources]) {
     for (const chapter of source.chapters) {
       for (const paragraph of chapter.paragraphs) {
         for (const match of paragraph.text.matchAll(bracketPattern)) {
@@ -123,15 +159,21 @@ export function transcriptGlossaryTerms(): GlossaryTerm[] {
           const cleanedTerm = cleanInline(match[1] ?? '')
           if (!cleanedTerm || !isCandidate(cleanedTerm)) continue
           const normalized = cleanedTerm.toLocaleLowerCase()
-          if (seen.has(normalized)) continue
-          seen.add(normalized)
-
-          terms.push({
-            term: cleanedTerm,
+          const occurrence = {
             context: contextAround(paragraph.text, start, end),
             source: source.label,
             href: `${source.hrefBase}#${paragraph.id}`,
-          })
+            markedTerm: match[0],
+          }
+          const existing = byTerm.get(normalized)
+          if (existing) {
+            // Count distinct passages, not repeated matches within the same passage.
+            if (!existing.occurrences.some((item) => item.href === occurrence.href)) existing.occurrences.push(occurrence)
+          } else {
+            const item = { term: cleanedTerm, ...occurrence, occurrences: [occurrence] }
+            byTerm.set(normalized, item)
+            terms.push(item)
+          }
         }
       }
     }

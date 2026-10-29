@@ -17,7 +17,7 @@ export const eyeOfCourageProgram = {
   dates: 'September 11–12, 2026',
   description:
     'A two-evening teaching on automatic scripts, limiting beliefs, the conditions that let good seeds ripen, and the way leadership becomes more natural as old patterns weaken.',
-  coverPath: '/eye-of-courage/cover.jpg',
+  coverPath: '/images/other-programs/eye-of-courage/2026.webp',
   workbookPdfPath: 'https://drive.google.com/file/d/1jopJ4M44cvZokJ3E1815sl5PAinVOqaX/view?usp=sharing',
 }
 
@@ -28,7 +28,7 @@ export const eyeOfCourageSessions: EyeOfCourageSession[] = [
     label: 'Class 1',
     date: 'September 11, 2026',
     teacher: 'Timothy Lowenhaupt',
-    recordingUrl: 'https://drive.google.com/file/d/11mtGJeGwlgBjkfq0PzCQV1uhHL17lyFM/view?usp=sharing',
+    recordingUrl: 'https://youtu.be/x6AY_fEKo-0?si=kOQ5hSVvCtIPMTlU',
     hasWorkshop: false,
   },
   {
@@ -37,7 +37,7 @@ export const eyeOfCourageSessions: EyeOfCourageSession[] = [
     label: 'Class 2',
     date: 'September 12, 2026',
     teacher: 'Timothy Lowenhaupt',
-    recordingUrl: 'https://drive.google.com/file/d/100qYlnJFPK9FUJ9cl55A1D7PhR8xpgiS/view?usp=sharing',
+    recordingUrl: 'https://youtu.be/P-vLWp8EtnY?si=uL2FUvlxWFnY0QNx',
     hasWorkshop: true,
   },
 ]

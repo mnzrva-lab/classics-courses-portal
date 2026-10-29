@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import LibraryCourseHero from '@/components/library-course-hero'
 import { perfectionGroupBySlug, perfectionProgram } from '@/content/perfection-of-wisdom/catalog'
 
 export default async function PerfectionGroupPage({ params }: { params: Promise<{ groupSlug: string }> }) {
@@ -14,13 +15,11 @@ export default async function PerfectionGroupPage({ params }: { params: Promise<
         <span>{group.title}</span>
       </div>
 
-      <header className="living-term-course-head">
-        <div className="eyebrow">{perfectionProgram.eyebrow}</div>
-        <h1>{group.title}</h1>
-        <div className="living-term-course-meta">
-          <span>{group.sessions.length} recording{group.sessions.length === 1 ? '' : 's'}</span>
-        </div>
-      </header>
+      <LibraryCourseHero
+        eyebrow={perfectionProgram.eyebrow}
+        title={group.title}
+        facts={[group.sessions.length + ' recording' + (group.sessions.length === 1 ? '' : 's')]}
+      />
 
       <section className="section living-term-study-section">
         <div className="living-term-study-head">

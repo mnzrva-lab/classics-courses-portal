@@ -6,7 +6,7 @@
   {"canonicalNumber":5,"slug":"course-5","title":"How Karma Works"},
   {"canonicalNumber":6,"slug":"course-6","title":"The Diamond Cutter Sutra"},
   {"canonicalNumber":7,"slug":"course-7","title":"The Bodhisattva Vows"},
-  {"canonicalNumber":8,"slug":"course-8","title":"Death and the Realms of Existence","offerings":[{"slug":"taiwan-2026","label":"Taiwan 2026","location":"Online from Taiwan","year":2026}]},
+  {"canonicalNumber":8,"slug":"course-8","title":"Death and the Realms of Existence","artwork":"/images/classics/course-8/taiwan-2026.webp","artworkAlt":"Person overlooking a dramatic cosmic landscape of planets and mountains","offerings":[{"slug":"taiwan-2026","label":"Taiwan 2026","location":"Online from Taiwan","year":2026}]},
   {"canonicalNumber":9,"slug":"course-9","title":"The Ethical Life"},
   {"canonicalNumber":10,"slug":"course-10","title":"A Guide to the Bodhisattva’s Way of Life, Part I"},
   {"canonicalNumber":11,"slug":"course-11","title":"A Guide to the Bodhisattva’s Way of Life, Part II"},
@@ -14,7 +14,7 @@
   {"canonicalNumber":13,"slug":"course-13","title":"The Art of Reasoning"},
   {"canonicalNumber":14,"slug":"course-14","title":"Lojong, Developing the Good Heart"},
   {"canonicalNumber":15,"slug":"course-15","title":"What the Buddha Really Meant"},
-  {"canonicalNumber":16,"slug":"course-16","title":"The Great Ideas of Buddhism, Part I"},
-  {"canonicalNumber":17,"slug":"course-17","title":"The Great Ideas of Buddhism, Part II"},
-  {"canonicalNumber":18,"slug":"course-18","title":"The Great Ideas of Buddhism, Part III"}
+  {"canonicalNumber":16,"slug":"course-16","title":"The Great Ideas of Buddhism, Part I","artwork":"/images/classics/course-16/arizona-2026.webp","artworkAlt":"Person meditating on a road at sunset with a luminous spine"},
+  {"canonicalNumber":17,"slug":"course-17","title":"The Great Ideas of Buddhism, Part II","artwork":"/images/classics/course-17/arizona-2026.webp","artworkAlt":"Peacock-feather fountain pen resting on textured watercolor paper"},
+  {"canonicalNumber":18,"slug":"course-18","title":"The Great Ideas of Buddhism, Part III","artwork":"/images/classics/course-18/arizona-2026.webp","artworkAlt":"Steaming dark cup of tea with the moon reflected in its surface"}
 ]

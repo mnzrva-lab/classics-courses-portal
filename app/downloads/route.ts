@@ -1,15 +1,16 @@
+import { getACI17Manifest, getACI17Transcript } from '@/lib/aci17-published-content'
 import rawCourse8 from '@/content/classics/course-08/taiwan-2026.json'
 import { course8StudyNotesForSession } from '@/content/classics/course-08/taiwan-2026/study-notes'
 import { course8TranscriptForSession } from '@/content/classics/course-08/taiwan-2026/transcripts'
 import rawLivingLamRim from '@/content/living-lam-rim/catalog.json'
 import { livingLamRimTranscriptForSession } from '@/content/living-lam-rim/transcripts'
 import { perfectionGroups, perfectionProgram } from '@/content/perfection-of-wisdom/catalog'
-import { perfectionTranscriptForSession } from '@/content/perfection-of-wisdom/transcripts'
+import { getPerfectionTranscriptChapters } from '@/lib/perfection-transcript-source'
 import { buildStudyDocxResponse, docxHeading, docxMeta, docxParagraph, docxTitle, docxTextBlocks } from '@/lib/study-docx'
 
-type TranscriptParagraph = { speaker?: string; text: string }
+type TranscriptParagraph = { speaker?: string; text: string; startSeconds?: number | null; timingSource?: 'youtube-caption' | 'estimated' }
 type TranscriptChapter = { title: string; paragraphs: TranscriptParagraph[] }
-type TranscriptBundle = { title: string; meta: string; filename: string; chapters: TranscriptChapter[] }
+type TranscriptBundle = { title: string; meta: string; filename: string; chapters: TranscriptChapter[]; includeTimestamps?: boolean }
 type NotesBundle = { title: string; meta: string; filename: string; summary: string; topics: string[]; markdown: string }
 
 type Course8Data = {
@@ -52,7 +53,22 @@ function safeFilename(value: string) {
     .slice(0, 80) || 'study-file'
 }
 
-function transcriptBundle(collection: string, sessionId: string): TranscriptBundle | null {
+async function transcriptBundle(collection: string, sessionId: string): Promise<TranscriptBundle | null> {
+  if (collection === 'course17') {
+    if (!/^C(?:10|[1-9])$/.test(sessionId)) return null
+    const manifest = await getACI17Manifest()
+    const session = manifest.offering.sessions.find(item => item.code === sessionId)
+    if (!session) return null
+    const transcript = await getACI17Transcript(session.code, session.videoId)
+    if (!transcript) return null
+    return {
+      title: 'Classics Course 17 · ' + session.name + ' · Reference Transcript',
+      meta: manifest.offering.label + ' · ' + session.date,
+      filename: 'course-17-arizona-2026-' + session.code.toLowerCase() + '-transcript',
+      chapters: transcript.chapters,
+      includeTimestamps: true,
+    }
+  }
   if (collection === 'course8') {
     const session = course8.sessions.find((item) => item.id === sessionId)
     const chapters = course8TranscriptForSession(sessionId)
@@ -84,7 +100,7 @@ function transcriptBundle(collection: string, sessionId: string): TranscriptBund
     for (const group of perfectionGroups) {
       const session = group.sessions.find((item) => item.id === sessionId)
       if (!session) continue
-      const chapters = perfectionTranscriptForSession(sessionId)
+      const chapters = await getPerfectionTranscriptChapters(sessionId)
       if (!chapters.length) return null
       return {
         title: `${perfectionProgram.title} · ${session.name} · Reference Transcript`,
@@ -113,13 +129,31 @@ function notesBundle(collection: string, sessionId: string): NotesBundle | null 
   }
 }
 
+function timestampFor(seconds: number): string {
+  const n = Math.max(0, Math.floor(seconds))
+  const hours = Math.floor(n / 3600)
+  const minutes = Math.floor((n % 3600) / 60)
+  const secs = n % 60
+  return hours
+    ? [hours, minutes, secs].map(v => String(v).padStart(2, '0')).join(':')
+    : [minutes, secs].map(v => String(v).padStart(2, '0')).join(':')
+}
+
+function exportParagraph(paragraph: TranscriptParagraph, includeTimestamps = false): string {
+  const prefix = includeTimestamps && typeof paragraph.startSeconds === 'number'
+    ? (paragraph.timingSource === 'estimated' ? '~' : '') + '[' + timestampFor(paragraph.startSeconds) + '] '
+    : ''
+  const speaker = paragraph.speaker ? paragraph.speaker + ': ' : ''
+  return prefix + speaker + cleanMarkdown(paragraph.text)
+}
+
 function transcriptTxt(bundle: TranscriptBundle) {
   const lines: string[] = [bundle.title, bundle.meta, '']
+  if (bundle.includeTimestamps) lines.push('YouTube-linked time markers. A ~ marks an estimated time.', '')
   for (const chapter of bundle.chapters) {
     lines.push(cleanMarkdown(chapter.title), '')
     for (const paragraph of chapter.paragraphs) {
-      const text = cleanMarkdown(paragraph.text)
-      lines.push(paragraph.speaker ? `${paragraph.speaker}: ${text}` : text, '')
+      lines.push(exportParagraph(paragraph, bundle.includeTimestamps), '')
     }
   }
   return lines.join('\n').trim() + '\n'
@@ -164,16 +198,16 @@ export async function GET(request: Request) {
   }
 
   if (content === 'transcript') {
-    const bundle = transcriptBundle(collection, sessionId)
+    const bundle = await transcriptBundle(collection, sessionId)
     if (!bundle) return new Response('Transcript not found.', { status: 404 })
     if (format === 'txt') return txtResponse(transcriptTxt(bundle), bundle.filename)
 
     const children = [docxTitle(bundle.title), docxMeta(bundle.meta)]
+    if (bundle.includeTimestamps) children.push(docxMeta('YouTube-linked time markers. A ~ marks an estimated time.'))
     for (const chapter of bundle.chapters) {
       children.push(docxHeading(cleanMarkdown(chapter.title), 2))
       for (const paragraph of chapter.paragraphs) {
-        const text = cleanMarkdown(paragraph.text)
-        children.push(docxParagraph(paragraph.speaker ? `${paragraph.speaker}: ${text}` : text))
+        children.push(docxParagraph(exportParagraph(paragraph, bundle.includeTimestamps)))
       }
     }
     return buildStudyDocxResponse({ title: bundle.title, filename: `${bundle.filename}.docx`, children })

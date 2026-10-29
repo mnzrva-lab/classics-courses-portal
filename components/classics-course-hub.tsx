@@ -1,12 +1,20 @@
 import Link from 'next/link'
+import LibraryCourseHero from '@/components/library-course-hero'
 import { notFound } from 'next/navigation'
-import LocalSessionTime from '@/components/local-session-time'
+import LibrarySessionList from '@/components/library-session-list'
+import { archiveSessionsFor } from '@/content/classics/archive-sessions'
+import { archiveSessionSlug } from '@/content/classics/archive-route'
+import { getCourse18Schedule } from '@/lib/course18-content'
+import { individualCourse18Classes, formatCourse18Date, formatCourse18ClassTime } from '@/lib/course18-individual-classes'
+import { course18PlaylistUrl, course18RecordingFor } from '@/lib/course18-recordings'
 import NextClassCountdown from '@/components/next-class-countdown'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
-import rawCourse18Schedule from '@/content/classics/course-18-schedule.json'
+import { getACI17Manifest } from '@/lib/aci17-published-content'
+import { getManagedClassicsOfferings } from '@/lib/classics-managed-content'
+import { mergeCourseOfferings } from '@/lib/classics-offering-utils'
 
-type CanonicalCourse = { canonicalNumber: number; slug: string; title: string }
+type CanonicalCourse = { canonicalNumber: number; slug: string; title: string; artwork?: string; artworkAlt?: string }
 type ArchiveOffering = {
   slug: string
   label: string
@@ -25,15 +33,8 @@ type ArchiveCourse = {
   schedule?: ScheduleItem[]
 }
 type ArchiveCatalog = { courses: ArchiveCourse[] }
-type DetailedSchedule = {
-  sourceTimezone: string
-  sourceLabel: string
-  sessions: Array<{ id: string; label: string; startsAt: string; endsAt: string; rebroadcastAt?: string | null }>
-}
-
 const catalog = rawCatalog as CanonicalCourse[]
 const archiveCatalog = rawArchiveCatalog as ArchiveCatalog
-const course18Schedule = rawCourse18Schedule as DetailedSchedule
 
 function dateLabel(value: string) {
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${value}T12:00:00Z`))
@@ -45,25 +46,72 @@ function offeringMeta(offering: ArchiveOffering) {
   return ''
 }
 
-export default function ClassicsCourseHub({ courseSlug }: { courseSlug: string }) {
+export default async function ClassicsCourseHub({ courseSlug }: { courseSlug: string }) {
   const course = catalog.find((item) => item.slug === courseSlug)
   if (!course) notFound()
 
   const archive = archiveCatalog.courses.find((item) => item.canonicalNumber === course.canonicalNumber)
-  const offerings = archive?.offerings ?? []
+  const [publishedACI17, managedByCourse] = await Promise.all([
+    course.canonicalNumber === 17 ? getACI17Manifest() : Promise.resolve(null),
+    getManagedClassicsOfferings(),
+  ])
+  const archiveOfferings = (archive?.offerings ?? []).map(offering =>
+    publishedACI17 && offering.slug === publishedACI17.offering.slug
+      ? { ...offering, ...publishedACI17.offering,
+          recordingCount: publishedACI17.offering.sessions.length } : offering)
+  const managedOfferings: ArchiveOffering[] = (managedByCourse.get(course.canonicalNumber) ?? []).map(offering => ({
+    slug: offering.offeringSlug,
+    label: offering.offeringLabel,
+    sourceLabel: offering.kind,
+    playlistUrl: offering.playlistUrl,
+    recordingCount: offering.sessions.filter(session => session.recordingUrl).length || undefined,
+    sessionCount: offering.sessions.length,
+  }))
+  const offerings = mergeCourseOfferings(archiveOfferings, managedOfferings)
   const schedule = archive?.schedule ?? []
-  const detailedSchedule = course.canonicalNumber === 18 ? course18Schedule.sessions : []
+  const course16Sessions = course.canonicalNumber === 16 ? archiveSessionsFor(16, 'archive-2025-2026') : []
+  const course18Schedule = course.canonicalNumber === 18 ? await getCourse18Schedule() : null
+  const detailedSchedule = course18Schedule?.sessions ?? []
+  const course18Classes = course18Schedule ? individualCourse18Classes(course18Schedule) : []
 
   return (
     <main className="container page compact-course-hub">
       <div className="offering-breadcrumbs"><Link href="/courses">Classics Courses</Link><span>/</span><span>Course {course.canonicalNumber}</span></div>
 
-      <header className="compact-page-head">
-        <div className="eyebrow">Classics Course {course.canonicalNumber}</div>
-        <h1>{course.title}</h1>
-      </header>
+      <LibraryCourseHero
+        eyebrow={'Classics Course ' + course.canonicalNumber}
+        title={publishedACI17?.title ?? course.title}
+        artwork={(publishedACI17?.artwork ?? course.artwork) ? {
+          src: (publishedACI17?.artwork ?? course.artwork)!,
+          alt: publishedACI17?.artworkAlt ?? course.artworkAlt ?? course.title,
+          width: 1920,
+          height: 1080,
+        } : undefined}
+      />
 
-      {offerings.length ? (
+      {course16Sessions.length && managedOfferings.length === 0 ? (
+        <section className="section compact-section">
+          <div className="section-head">
+            <div>
+              <div className="eyebrow">Course content · Arizona 2025–2026</div>
+              <h2>Classes 1–10</h2>
+              <p>Ten recorded classes. Select a class to open its recording and study page.</p>
+            </div>
+          </div>
+          <LibrarySessionList rows={course16Sessions.map((session, index) => ({
+            href: '/archive/classics/course-16/archive-2025-2026/' + archiveSessionSlug(session, index),
+            code: session.code,
+            title: session.name,
+            meta: session.date ?? '',
+            status: 'Recording' + (session.duration ? ' · ' + session.duration : ''),
+          }))} />
+          {offerings[0]?.playlistUrl ? (
+            <p className="meta" style={{ marginTop: 16 }}>
+              <a className="inline-library-link" href={offerings[0].playlistUrl} target="_blank" rel="noreferrer">Open full course playlist on YouTube ↗</a>
+            </p>
+          ) : null}
+        </section>
+      ) : offerings.length ? (
         <section className="section compact-section">
           <div className="section-head"><div><div className="eyebrow">Course Offerings</div><h2>Choose a course</h2></div></div>
           <div className="compact-offering-list">
@@ -82,21 +130,26 @@ export default function ClassicsCourseHub({ courseSlug }: { courseSlug: string }
             })}
           </div>
         </section>
-      ) : detailedSchedule.length ? (
+      ) : course18Classes.length ? (
         <section className="section compact-section">
-          <div className="section-head"><div><div className="eyebrow">Upcoming course</div><h2>Classes 1–10</h2></div></div>
-          <NextClassCountdown sessions={detailedSchedule} />
-          <div className="compact-schedule-list">
-            {detailedSchedule.map((item) => (
-              <div className="compact-schedule-row" key={item.id}>
-                <div className="compact-schedule-code">{item.label.replace('Classes ', 'C')}</div>
-                <div className="compact-schedule-copy">
-                  <strong>{item.label}</strong>
-                  <LocalSessionTime compact startsAt={item.startsAt} endsAt={item.endsAt} rebroadcastAt={item.rebroadcastAt} sourceTimezone={course18Schedule.sourceTimezone} sourceLabel={course18Schedule.sourceLabel} />
-                </div>
-              </div>
-            ))}
+          <div className="section-head">
+            <div>
+              <div className="eyebrow">Course content · Arizona 2026–2027</div>
+              <h2>Classes 1–10</h2>
+              <p>Ten classes across five teaching dates. Each date has two classes; recordings are available for Classes 1–4.</p>
+            </div>
           </div>
+          <NextClassCountdown sessions={detailedSchedule} />
+          <p className="meta" style={{ margin: '12px 0 16px' }}>
+            <a className="inline-library-link" href={course18PlaylistUrl} target="_blank" rel="noreferrer">Open ACI 18 playlist on YouTube ↗</a>
+          </p>
+          <LibrarySessionList rows={course18Classes.map((item) => ({
+            href: item.href,
+            code: 'C' + item.number,
+            title: item.title,
+            meta: formatCourse18Date(item.block.startsAt) + (course18RecordingFor(item.number) ? ' · Recording available' : ''),
+            status: formatCourse18ClassTime(item),
+          }))} />
         </section>
       ) : schedule.length ? (
         <section className="section compact-section">

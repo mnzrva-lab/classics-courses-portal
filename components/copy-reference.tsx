@@ -1,10 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 type Props = {
   reference: string
   path: string
+  /** Include a user-selected exact quote when this control is in a transcript. */
+  quoteFromSelection?: boolean
 }
 
 function fallbackCopy(value: string) {
@@ -28,7 +30,8 @@ async function copy(value: string) {
   fallbackCopy(value)
 }
 
-export default function CopyReference({ reference, path }: Props) {
+export default function CopyReference({ reference, path, quoteFromSelection = false }: Props) {
+  const detailsRef = useRef<HTMLDetailsElement>(null)
   const [status, setStatus] = useState<'reference' | 'link' | 'citation' | null>(null)
 
   useEffect(() => {
@@ -41,6 +44,31 @@ export default function CopyReference({ reference, path }: Props) {
     return new URL(path, window.location.origin).toString()
   }
 
+  // In the pilot transcript, options float relative to the original Cite
+  // button. If the viewport has too little room below, flip them above.
+  // Other existing Cite menus retain their current layout.
+  function positionCitationPopover() {
+    const details = detailsRef.current
+    if (!quoteFromSelection || !details) return
+    if (!details.open) {
+      details.removeAttribute('data-popup-placement')
+      return
+    }
+
+    const summary = details.querySelector('summary')
+    const menu = details.querySelector<HTMLElement>('.citation-menu-panel')
+    if (!summary || !menu) return
+
+    details.dataset.popupPlacement = 'below'
+    const anchor = summary.getBoundingClientRect()
+    const menuHeight = menu.getBoundingClientRect().height
+    const roomBelow = window.innerHeight - anchor.bottom
+    const roomAbove = anchor.top
+
+    details.dataset.popupPlacement =
+      roomBelow < menuHeight + 16 && roomAbove > roomBelow ? 'above' : 'below'
+  }
+
   async function copyReference() {
     await copy(reference)
     setStatus('reference')
@@ -50,12 +78,16 @@ export default function CopyReference({ reference, path }: Props) {
     setStatus('link')
   }
   async function copyCitation() {
-    await copy(`${reference}\n${absoluteUrl()}`)
+    const selectedText = quoteFromSelection
+      ? detailsRef.current?.closest<HTMLElement>('[data-transcript-paragraph]')?.dataset.citeSelectedQuote?.trim()
+      : null
+    const quote = selectedText ? `“${selectedText}”\n` : ''
+    await copy(`${quote}${reference}\n${absoluteUrl()}`)
     setStatus('citation')
   }
 
   return (
-    <details className="citation-menu">
+    <details className="citation-menu" ref={detailsRef} onToggle={positionCitationPopover}>
       <summary className="passage-action">Cite</summary>
       <div className="citation-menu-panel">
         <button type="button" onClick={copyReference}>{status === 'reference' ? 'Copied' : 'Reference'}</button>

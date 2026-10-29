@@ -1,11 +1,13 @@
 import Link from 'next/link'
+import LibraryClassHeader from '@/components/library-class-header'
+import LibraryClassSection from '@/components/library-class-section'
+import TranscriptNotice from '@/components/transcript-notice'
 import ClassSequenceNavigation from '@/components/class-sequence-navigation'
 import EyeOfCourageTabs from '@/components/eye-of-courage-tabs'
 import EyeOfCourageWorkshopShell from '@/components/eye-of-courage-workshop-shell'
 import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
-import TranscriptControls from '@/components/transcript-controls'
-import TranscriptQuickNav from '@/components/transcript-quick-nav'
+import LibraryTranscriptReader from '@/components/library-transcript-reader'
 import {
   eyeOfCourageProgram,
   eyeOfCourageSession,
@@ -28,25 +30,9 @@ export default function EyeOfCourageClassPage({ sessionSlug }: { sessionSlug: 'c
     <div id="transcript" style={{ scrollMarginTop: 96 }}>
       <div className="eyebrow">Reference Transcript</div>
       <h2>Reference Transcript</h2>
-      <div className="info-callout">
-        <strong>About this transcript</strong><br />
-        This transcript was created by a student with AI and should be used for reference only. Please check it against the video and audio for accuracy of content.
-      </div>
       {transcript.length ? <>
-        <TranscriptControls chapters={transcript.map((chapter) => ({ id: chapter.id, label: chapter.title }))} />
-        <article className="transcript-v12-card eoc-transcript-card">
-          {transcript.map((chapter) => (
-            <section key={chapter.id} id={chapter.id} style={{ scrollMarginTop: 96, marginBottom: 34 }}>
-              <h3>{chapter.title}</h3>
-              {chapter.paragraphs.map((paragraph) => (
-                <div className="transcript-paragraph-v12" data-transcript-paragraph id={paragraph.id} key={paragraph.id} style={{ scrollMarginTop: 96 }}>
-                  <div className="transcript-copy"><strong>{paragraph.speaker}: </strong><span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.text}</span></div>
-                </div>
-              ))}
-            </section>
-          ))}
-        </article>
-        <TranscriptQuickNav />
+        <TranscriptNotice />
+        <LibraryTranscriptReader chapters={transcript} programTitle={eyeOfCourageProgram.title} sessionTitle={session.label} sessionDate={session.date} sessionPath={`/other-programs/eye-of-courage/${session.slug}`} />
       </> : <p className="meta">Transcript not added yet.</p>}
     </div>
   )
@@ -79,17 +65,16 @@ export default function EyeOfCourageClassPage({ sessionSlug }: { sessionSlug: 'c
     <main className="container page eoc-class-page">
       <div className="offering-breadcrumbs"><Link href="/other-programs">Other Programs</Link><span>/</span><Link href="/other-programs/eye-of-courage">{eyeOfCourageProgram.title}</Link><span>/</span><span>{session.label}</span></div>
 
-      <header className="compact-page-head eoc-class-head">
-        <div className="eyebrow">{eyeOfCourageProgram.title} · {eyeOfCourageProgram.subtitle}</div>
-        <h1>{session.label}</h1>
-        <p className="lead">{session.date} · {session.teacher}</p>
-      </header>
+      <LibraryClassHeader
+        className="eoc-class-head"
+        eyebrow={eyeOfCourageProgram.title + ' · ' + eyeOfCourageProgram.subtitle}
+        title={session.label}
+        meta={session.date + ' · ' + session.teacher}
+      />
 
-      <section className="section eoc-recording-section" id="recording">
-        <div className="eyebrow">Recording</div>
-        <h2>Class recording</h2>
+      <LibraryClassSection id="recording" className="eoc-recording-section" eyebrow="Recording" title="Class recording">
         <RecordingPlayer recordingUrl={session.recordingUrl} title={`${eyeOfCourageProgram.title} · ${session.label}`} />
-      </section>
+      </LibraryClassSection>
 
       <EyeOfCourageTabs transcript={transcriptPanel} studyNotes={notesPanel} workshop={workshopPanel} />
 

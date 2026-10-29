@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import rawCatalog from '@/content/living-lam-rim/catalog.json'
+import { getTerm7Schedule } from '@/lib/term7-content'
+import { formatArizonaTimeRange, formatTermStartDate } from '@/lib/weekly-term-schedule'
 
 type Session = { id: string; transcriptSource: string | null }
 type Term = {
@@ -14,7 +16,8 @@ type Catalog = { program: { title: string; playlistUrl: string }; terms: Term[] 
 
 const catalog = rawCatalog as Catalog
 
-export default function LivingLamRimPage() {
+export default async function LivingLamRimPage() {
+  const term7 = await getTerm7Schedule()
   return (
     <main className="container page living-lam-rim-page">
       <header className="compact-page-head">
@@ -31,8 +34,12 @@ export default function LivingLamRimPage() {
             <Link className="term-list-card" href={`/living-lam-rim/${term.slug}`} key={term.slug}>
               <span className="term-list-badge">Term {term.term}</span>
               <span className="term-list-copy">
-                <strong>{term.title ?? `Term ${term.term}`}</strong>
-                <small>{term.range} · {term.sessions.length} recording{term.sessions.length === 1 ? '' : 's'}</small>
+                <strong>{term.term === 7 ? term7.title : (term.title ?? `Term ${term.term}`)}</strong>
+                {term.term === 7 ? (
+                  <small>Live from {formatTermStartDate(term7.startDate)} · Mondays · {formatArizonaTimeRange(term7)} · End date TBA</small>
+                ) : (
+                  <small>{term.range} · {term.sessions.length} recording{term.sessions.length === 1 ? '' : 's'}</small>
+                )}
               </span>
               <span className="term-list-arrow" aria-hidden="true">→</span>
             </Link>

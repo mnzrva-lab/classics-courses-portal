@@ -78,3 +78,246 @@
     justify-self: center;
   }
 }
+
+
+/* A speaker label starts the speech inline and is not repeated on
+   continuation paragraphs. The source text and paragraph IDs stay intact. */
+.transcript-inline-speaker {
+  color: var(--sage-900);
+  font-weight: 750;
+}
+
+
+/* Private-GitHub transcript pilot: Cite belongs to a real, separate
+   grid column. Neither the button nor its menu can overlap spoken text. */
+.library-transcript-reader .transcript-paragraph-v12 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 54px;
+  column-gap: 14px;
+  align-items: start;
+  padding: 8px 12px 9px 16px !important;
+}
+.library-transcript-reader .transcript-paragraph-v12 > .transcript-copy {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+}
+.library-transcript-reader .transcript-paragraph-v12 > .library-transcript-cite {
+  /* Override the older absolute-positioned passage action style. */
+  position: static !important;
+  inset: auto !important;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  align-self: start;
+  margin: 0 !important;
+  padding: 0;
+  opacity: 0 !important;
+  pointer-events: none;
+  z-index: 2;
+}
+.library-transcript-reader .transcript-paragraph-v12:hover > .library-transcript-cite,
+.library-transcript-reader .transcript-paragraph-v12:focus-within > .library-transcript-cite,
+.library-transcript-reader .transcript-paragraph-v12[data-cite-active] > .library-transcript-cite {
+  opacity: 1 !important;
+  pointer-events: auto;
+}
+.library-transcript-reader .citation-menu > summary {
+  min-width: 50px;
+  min-height: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+  font-size: 11px;
+  font-weight: 700;
+}
+.library-transcript-reader .citation-menu > summary:focus-visible {
+  outline: 2px solid var(--sage-900);
+  outline-offset: 2px;
+}
+
+/* The Cite button stays in its original column/row when opened.
+   Only the options float above the transcript, anchored to the button. */
+.library-transcript-reader .transcript-paragraph-v12:has(.citation-menu[open]) {
+  z-index: 12;
+}
+.library-transcript-reader .citation-menu {
+  position: relative;
+}
+.library-transcript-reader .citation-menu[open] .citation-menu-panel {
+  position: absolute !important;
+  top: calc(100% + 6px);
+  right: 0;
+  bottom: auto;
+  left: auto;
+  width: 196px;
+  max-width: min(240px, 78vw);
+  max-height: min(300px, calc(100dvh - 24px));
+  overflow-y: auto;
+  margin: 0;
+  z-index: 25;
+  box-shadow: var(--shadow-md);
+}
+.library-transcript-reader .citation-menu[data-popup-placement="above"] .citation-menu-panel {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+.library-transcript-reader .citation-menu-panel button {
+  min-height: 40px;
+}
+.library-cite-touch-hint {
+  display: none;
+}
+
+/* Mobile and touch devices: keep all buttons out of the reading layout.
+   Only the tapped, text-selected or keyboard-focused passage gains a
+   small action row below its words. */
+@media (max-width: 700px), (hover: none), (pointer: coarse) {
+  .library-transcript-reader .transcript-paragraph-v12 {
+    grid-template-columns: minmax(0, 1fr);
+    column-gap: 0;
+    padding: 10px 8px 12px !important;
+  }
+  .library-transcript-reader .transcript-paragraph-v12 > .transcript-copy {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .library-transcript-reader .transcript-paragraph-v12 > .library-transcript-cite {
+    position: absolute !important;
+    grid-column: 1;
+    grid-row: 2;
+    top: 0 !important;
+    right: 0 !important;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    opacity: 0 !important;
+    pointer-events: none;
+    margin: 0 !important;
+  }
+  .library-transcript-reader .transcript-paragraph-v12[data-cite-active] > .library-transcript-cite,
+  .library-transcript-reader .transcript-paragraph-v12:focus-within > .library-transcript-cite {
+    position: static !important;
+    inset: auto !important;
+    grid-column: 1;
+    grid-row: 2;
+    width: auto;
+    height: auto;
+    overflow: visible;
+    clip-path: none;
+    display: flex;
+    justify-self: stretch;
+    justify-content: flex-end;
+    margin-top: 6px !important;
+    opacity: 1 !important;
+    pointer-events: auto;
+  }
+  /* Suppress sticky touch hover for inactive passages. */
+  .library-transcript-reader .transcript-paragraph-v12:not([data-cite-active]):not(:focus-within) > .library-transcript-cite {
+    opacity: 0 !important;
+    pointer-events: none !important;
+  }
+  .library-transcript-reader .citation-menu > summary {
+    min-width: 52px;
+    min-height: 44px;
+    height: 44px;
+    font-size: 12px;
+  }
+  .library-transcript-reader .citation-menu-panel button {
+    min-height: 44px;
+  }
+  .library-cite-touch-hint {
+    display: block;
+    margin: 0 8px 15px;
+    color: var(--ink-soft);
+    font-size: 13px;
+    line-height: 1.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .library-transcript-reader .library-transcript-cite {
+    transition: none;
+  }
+}
+
+/* Search controls must shrink before adjacent filters, even at intermediate widths. */
+.search-page-simple .advanced-search-form { min-width: 0; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.search-page-simple .advanced-search-form > label { min-width: 0; }
+.search-page-simple .advanced-search-form select { display: block; width: 100%; min-width: 0; max-width: 100%; }
+.search-result-source { font-weight: 800; color: var(--sage-900); }
+.search-query-mark, .transcript-find-mark { background: #f4e7a0; color: #292419; border-radius: 3px; padding: 0 2px; box-decoration-break: clone; -webkit-box-decoration-break: clone; }
+.search-result-count-note { color: var(--ink-soft); font-size: 13px; margin-top: 5px; }
+.tibetan-term-count { color: var(--sage-900); font-weight: 750; font-size: 12px; }
+.tibetan-mentions { margin-top: 10px; border-top: 1px solid var(--line); }
+.tibetan-mentions summary { cursor: pointer; padding: 12px 0; font-weight: 750; }
+.tibetan-mention { border-top: 1px solid var(--line); padding: 12px 0; }
+.tibetan-mention p { margin: 5px 0; }
+@media (max-width: 980px) { .search-page-simple .advanced-search-form { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) { .search-page-simple .advanced-search-form { grid-template-columns: minmax(0,1fr); } }
+
+
+/* The first paragraph of the remote program introduction replaces the former
+   fixed subtitle. Editors own both introduction paragraphs in overview.md. */
+.perfection-page .perfection-intro-markdown > div > p:first-child {
+  max-width: 800px;
+  margin: 0 0 10px !important;
+  color: var(--ink-soft);
+  font-size: 18px;
+  line-height: 1.65 !important;
+}
+.perfection-page .perfection-intro-markdown > div > p:not(:first-child) {
+  margin: 10px 0 16px !important;
+  line-height: 1.7 !important;
+}
+.tibetan-term-card .tibetan-term-hub-link {
+  display: inline-block;
+  align-self: flex-start;
+  margin-top: 12px;
+  color: var(--sage-900);
+  font-weight: 750;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+
+/* Related word-form discovery is separate from exact search results. */
+.search-word-discovery {
+  margin: 3px 0 22px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--sage-050);
+}
+.search-word-discovery-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-bottom: 12px;
+}
+.search-word-discovery-heading strong { font-size: 15px; }
+.search-word-discovery-heading span { font-size: 12px; color: var(--ink-soft); }
+.search-word-discovery-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.search-word-discovery-link {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 9px;
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--sage-300);
+  border-radius: 12px;
+  background: var(--white);
+  text-decoration: none;
+}
+.search-word-discovery-link strong { color: var(--sage-900); font-size: 14px; }
+.search-word-discovery-link span { color: var(--ink-soft); font-size: 12px; }
+.search-word-discovery-link:hover { border-color: var(--sage-700); }
+@media (max-width: 600px) {
+  .search-word-discovery { padding: 13px; }
+  .search-word-discovery-link { max-width: 100%; }
+}

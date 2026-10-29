@@ -27,9 +27,15 @@ import './design-tibetan-pass.css'
 import './library-list-refinement.css'
 import './library-structure-pass.css'
 import './reader-consistency.css'
+import './tibetan-browser.css'
+import './live-calendar.css'
+import './calendar-explorer.css'
 import './eye-of-courage.css'
 import './eye-of-courage-refinement.css'
 import './timed-transcript.css'
+import './aci17-preview.css'
+import './library-page-standards.css'
+import './transcript-reader-standard.css'
 
 export const metadata: Metadata = {
   title: 'Classics Courses with Timothy Lowenhaupt',

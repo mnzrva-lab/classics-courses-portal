@@ -1,0 +1,99 @@
+# Student library page design standards
+
+**Status:** approved reference for public course and class pages, 2026-10-28.  
+**Visual source:** the user-approved screenshot of **The Eye of Courage** course page, with a rounded split card and the course content below it. The matching live reference route is `/other-programs/eye-of-courage`. This specification and the shared components are the persistent implementation reference.
+
+## 1. Course / term / offering overview
+
+Use `LibraryCourseHero` from `components/library-course-hero.tsx`, preceded by linked breadcrumbs (`.offering-breadcrumbs`). Never implement a new independent hero for another course.
+
+The shared course hero:
+- With verified artwork: **42% photo on the left, 58% factual course copy on the right** on desktop; rounded ~30 px card, warm white copy area, minimal border and subtle shadow.
+- Copy order: small red eyebrow (program/term), **one main H1**, optional substantive subtitle, factual date/location/teacher or schedule metadata, optional description and existing action links. Do not introduce duplicated headlines or made-up fields.
+- **Image behavior:** native image with informative alt text; `object-fit: cover` within the tall left panel on desktop, keeping the figure/subject in view through `object-position`. On screens ≤820 px the image stacks first at a **16:9** aspect ratio above the text. Preserve original image bytes; do not crop or edit the source image.
+- No verified photo: **no empty left side or generic stock placeholder**. Use the same rounded text-only hero variant.
+- Below the hero: use the actual source-driven class list, course materials, or future schedule, with heading eyebrow and H2. Each entry links to the proper class.
+- Data belongs in catalogs or the approved private content repository where already configured. Design components must not hardcode invented lesson or teacher details.
+
+Examples: `/living-lam-rim/term-7` uses the original WebP in `public/images/living-lam-rim/term-7/BG.webp`; `/other-programs/eye-of-courage` uses the supplied Eye of Courage WebP; Classics Courses 8 (Taiwan 2026), 16, 17 and 18 use their verified original covers from `public/images/classics/`. Pages without supplied covers, such as Perfection of Wisdom, remain text-only. Do not substitute generated images.
+
+## 2. Class / session detail
+
+Each standard class route uses the shared components:
+1. **Breadcrumbs** link back to the course and identify the class.
+2. `LibraryClassHeader` gives the program eyebrow, one H1 for the actual class name, and verified date/teacher/duration metadata. Missing source details are omitted, not guessed.
+3. `LibraryClassSection id="recording"` displays the recording first, or the existing clear unavailable-state message.
+4. Source-backed **Study Notes**, **Reference Transcript** (`id="transcript"`) and materials follow, when applicable. Keep download links, warnings, paragraph citations, word-level anchors and reader controls. Do not invent files for unavailable content.
+5. **ClassSequenceNavigation** provides previous, all classes, next. Keep each URL and existing navigation semantics.
+
+The Eye of Courage class keeps its approved study tabs and optional workshop. The archive session route retains its reader variants. Shared header and recording styling still apply.
+
+## 3. Mobile, accessibility and editorial integrity
+
+- Desktop split layout stacks at 820 px; phone views retain legible headings and metadata, with sufficient padding and no horizontal scroll.
+- Images have descriptive alt text; no alt/title overlay on top of broken images. Confirm that the image URL returns a real file.
+- Never replace a source's author, teacher, course title, schedule, reference text or video link while changing layout.
+- Preserve the original uploaded artwork. Images are currently stored in **GitHub**, then served through **Netlify**. No external image database or Supabase migration is part of this standard.
+- Source documents, transcripts, citations, highlighted passages and teacher notes are separate from visual layout and must remain stable.
+
+## 4. Enforcement and review
+
+`docs/page-standards-registry.json` declares every existing public route under the Classics, Living Lam Rim, Perfection and Other Programs / archive trees as **index**, **course**, **class**, **delegate-course**, **delegate-class**, or an explicitly explained exception.
+
+`node scripts/check-page-standards.mjs` runs on each push to `preview-staging`. It fails if:
+- a new public page is missing from the registry;
+- a declared course/class page bypasses the shared components;
+- a standard class lacks its recording/transcript anchors or class navigation;
+- an exception has no documented reason;
+- the approved shared layout and mobile breakpoint contract is removed.
+
+The GitHub Actions workflow also builds the app and checks live rendered preview routes and the unchanged Term 7 image bytes.
+
+**Manual review remains necessary** for desktop/mobile visual appearance, text readability, functioning links and real image loading. The CI tests enforce structural rules; they cannot fully inspect visual fidelity. Keep PR #2 draft until the human review is complete.
+
+## 5. Documented exceptions
+
+- `app/courses/[courseSlug]/[offeringSlug]/[sessionSlug]/page.tsx`: legacy Supabase-backed implementation; not the active source-based route. Do not silently retrofit it without a migration decision.
+- `app/other-programs/eye-of-courage/class-2/workshop/page.tsx`: standalone interactive workshop; specialized controls are intentional. The ordinary class page still follows the class standard.
+- Collection index pages and page delegates are **not individual course/class details**; their role is recorded in the registry, and the delegated components are validated.
+
+To introduce another exception, document its rationale in the registry and in the relevant PR. Never silently disable a failing standard.
+
+## 6. Transcript reader standard (ACI 17 reference)
+
+All active, source-backed class sessions share ACI 17's Reference Transcript reading experience: a source-preserving transcript; the same A− / A / A+ toolbar and saved browser preference; transcript search; chapter navigation; clickable passage citations with a floating Cite menu; and a soft, borderless current/selected passage highlight. Recording, study notes and materials remain specific to each class.
+
+**Approved notice, shown once above every available reference transcript:**
+
+> **About this transcript**
+>
+> This transcript was created by a student with AI and should be used for reference only. Please check it against the video and audio for accuracy of content.
+
+This is the entire approved notice. Never append an extra warning about SRTs, alignment, AI accuracy, estimates, or preview status. Changes to the text require explicit editorial approval. Only show the notice when the transcript actually exists.
+
+When source data includes paragraph start times, show chapter start times and offer the Show/Hide paragraph times toggle with clickable video-seek badges. When timestamps do not exist, preserve the same reader, text sizing, search, chapter navigation, and citation UI, but do not show time badges or an empty/disabled toggle. Never invent timestamps. A chapter start uses its first paragraph's verified or labeled estimated timestamp when available.
+
+The source-based reader uses `components/library-transcript-reader.tsx` inside `components/transcript-reader-shell.tsx`; ACI 17 and legacy timed readers use the same `TranscriptReaderToolbar`. The shared `TranscriptNotice` is reused by the archive, Course 8 Taiwan, Living Lam Rim, Perfection of Wisdom, and The Eye of Courage class templates. The legacy Supabase route remains the previously documented exception; do not re-enable or extend Supabase to fulfill this standard.
+
+Run `node scripts/check-transcript-standards.mjs` and `npm run build` before preview handoff. Both checks also run in preview CI. Browser review must cover text-size persistence, search, chapter jumps, Cite overlay, showing/hiding times, mobile reflow and video seeking where timestamps exist.
+
+## 7. Schedule-first class lists (Course 16, Course 18, Term 7)
+
+- **Course 8 Taiwan 2026:** The Reading section is intentionally not rendered until an approved material link is connected. Its recovered source metadata remains in GitHub. Do not display the "source recovered / link being connected" pill.
+- **Classics Course 16:** The course overview lists all ten verified archive classes individually, with each link opening its existing source-backed recording page. Dates and titles are taken from `content/classics/archive-sessions/course-16.json`; no new recordings are fabricated.
+- **Classics Course 18:** The approved schedule has five dates with two classes each. Display **ten separate clickable rows**, C1 through C10, generated by `lib/course18-individual-classes.ts` from the validated live two-class schedule. Both classes in each block share the verified date, but the organizer confirmed their **individual Arizona times** on October 28, 2026: the **first class is 5:30–7:00 am AZ**, and the **second is 7:30–9:00 am AZ**. Use `formatCourse18ClassTime` for each class list row and class-page header. Preserve the original 5:30–9:00 am teaching block for the overall course countdown and source schedule; do not append `(shared block)` to individual times. Class page URLs `/courses/course-18/class-1` … `/class-10` use the shared class components and explicitly mark missing recordings/transcripts.
+- **Living Lam Rim Term 7:** Show the first ten Mondays beginning November 2, 2026, with dates calculated from the editable weekly Arizona schedule, without inventing an end date or claiming the series contains only ten classes. Label the first ten dated rows **C1 / Class 1** through **C10 / Class 10**, with the date as secondary text and the announced weekly time beside it, matching Course 18's class-list structure. These numbers follow the Monday sequence and do **not** confirm a final ten-class total. Link each Monday to `/living-lam-rim/term-7/monday-YYYY-MM-DD`, whose Class # title follows the same date-derived number. Do not invent teacher names, recordings, Zoom links, or an end date.
+- **Term 7 layout:** The tinted `llr-live-term` panel contains only the recurring weekly **Schedule**, calendar links and end-date status. A separate standard `section compact-section llr-course-classes` immediately below it contains the **Classes 1–10** heading and clickable `LibrarySessionList`. Do not place the list inside the schedule panel.
+- Schedule placeholders are normal class pages under the standard registry, with breadcrumbs, `LibraryClassHeader`, recording/transcript availability sections and `ClassSequenceNavigation`. Replace placeholder messages only once source material has been verified.
+
+CI verifies exact counts (Course 16 = 10 verified recordings; Course 18 = 10 planned class slots), source dates, linked pages, and the absence of the unfinished Course 8 Reading section. This requirement does not change the production branch.
+
+## 8. Recording and transcript navigation (one shared controller)
+
+`TranscriptSync` is mounted once in `app/layout.tsx`. **This compact popup is the default automatically on every existing and future class page when timestamped paragraphs are imported**, with no per-class enable switch. It also retains the two navigation actions on untimed transcripts, while withholding Follow until player synchronization is available. Do not introduce another fixed navigation pill inside a class reader. Do not reintroduce `TranscriptQuickNav`, `timed-transcript-jump-back`, or the large "Video + transcript sync" explanation popup.
+
+After a student scrolls into a visible Reference Transcript, one compact toolbar offers **↑ Transcript** (back to transcript top) and **↑ Video** (back to the recording). If, and only if, an embedded recording is available for synchronization with paragraph timestamps, the same toolbar also offers **Follow off / Follow on**. Follow is off when a class opens, and choosing ↑ Video switches it off. Timestamps seek playback and the current paragraph highlights regardless of Follow; only Follow on scrolls automatically.
+
+On mobile, the toolbar appears above the bottom app navigation with 44px touch targets; on desktop it is a small bottom-right pill. It never overlaps another transcript navigation bar. Hidden tabs, missing transcript text and the initial recording view do not display this toolbar. The canonical CSS is in `app/transcript-reader-standard.css`.
+
+Run the transcript standard checks, then verify Eye of Courage Classes 1 and 2, ACI 17 Class 10, Course 8 with timestamps, an untimed Perfection of Wisdom session, and a class without a transcript, at desktop and mobile widths.

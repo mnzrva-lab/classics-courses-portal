@@ -1,10 +1,13 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import ClassSequenceNavigation from '@/components/class-sequence-navigation'
+import LibraryClassHeader from '@/components/library-class-header'
+import LibraryClassSection from '@/components/library-class-section'
+import TranscriptNotice from '@/components/transcript-notice'
 import ContentDownloadLinks from '@/components/content-download-links'
 import MarkdownContent from '@/components/markdown-content'
 import RecordingPlayer from '@/components/recording-player'
-import TranscriptControls from '@/components/transcript-controls'
+import LibraryTranscriptReader from '@/components/library-transcript-reader'
 import rawCourseData from '@/content/classics/course-08/taiwan-2026.json'
 import { course8StudyNotesForSession } from '@/content/classics/course-08/taiwan-2026/study-notes'
 import { course8TranscriptForSession } from '@/content/classics/course-08/taiwan-2026/transcripts'
@@ -49,17 +52,15 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
         <span>{session.label}</span>
       </div>
 
-      <section className="section">
-        <div className="eyebrow">Classics Course 8 · Taiwan 2026</div>
-        <h1>{session.label}</h1>
-        <p className="lead">{session.date}{session.teacher ? ` · ${session.teacher}` : ''}</p>
-      </section>
+      <LibraryClassHeader
+        eyebrow="Classics Course 8 · Taiwan 2026"
+        title={session.label}
+        meta={session.date + (session.teacher ? ' · ' + session.teacher : '')}
+      />
 
-      <section className="section" id="recording">
-        <div className="eyebrow">Recording</div>
-        <h2>{session.recordingUrl ? 'Class recording' : 'Recording not added yet'}</h2>
+      <LibraryClassSection id="recording" eyebrow="Recording" title={session.recordingUrl ? 'Class recording' : 'Recording not added yet'}>
         <RecordingPlayer recordingUrl={session.recordingUrl} title={`${courseData.course.fullTitle} · ${session.label}`} />
-      </section>
+      </LibraryClassSection>
 
       {studyNotes ? (
         <section className="section" id="study-notes" style={{ scrollMarginTop: 96 }}>
@@ -92,42 +93,21 @@ export default async function Course8TaiwanSessionPage({ params }: { params: Pro
         </section>
       ) : null}
 
-      <section className="section transcript-section-v12" id="transcript" style={{ scrollMarginTop: 96 }}>
-        <div className="eyebrow">Reference Transcript</div>
-        <h2>{transcriptRecovered ? 'Reference Transcript' : 'Transcript not added yet'}</h2>
+      <LibraryClassSection id="transcript" className="transcript-section-v12" eyebrow="Reference Transcript" title={transcriptRecovered ? 'Reference Transcript' : 'Transcript not added yet'}>
 
         {transcriptChapters.length > 0 ? (
           <>
             <ContentDownloadLinks collection="course8" sessionId={session.id} content="transcript" />
-            <div className="info-callout">
-              <strong>About this transcript</strong><br />
-              This transcript was created by a student with AI and should be used for reference only. Please check it against the video and audio for accuracy of content.
-            </div>
+            <TranscriptNotice />
 
-            <TranscriptControls chapters={transcriptChapters.map((chapter) => ({ id: chapter.id, label: chapter.title }))} />
-
-            <article className="transcript-v12-card">
-              {transcriptChapters.map((chapter) => (
-                <section key={chapter.id} id={chapter.id} style={{ scrollMarginTop: 96, marginBottom: 34 }}>
-                  <h3>{chapter.title}</h3>
-                  {chapter.paragraphs.map((paragraph) => (
-                    <div className="transcript-paragraph-v12" data-transcript-paragraph id={paragraph.id} key={paragraph.id} style={{ scrollMarginTop: 96 }}>
-                      <div className="transcript-copy">
-                        <strong>{paragraph.speaker}: </strong>
-                        <span style={{ whiteSpace: 'pre-wrap' }}>{paragraph.text}</span>
-                      </div>
-                    </div>
-                  ))}
-                </section>
-              ))}
-            </article>
+            <LibraryTranscriptReader chapters={transcriptChapters} programTitle={courseData.course.fullTitle} sessionTitle={session.label} sessionDate={session.date} sessionPath={`/courses/course-8/taiwan-2026/${session.slug}`} />
           </>
         ) : transcriptRecovered ? (
           <p>The transcript source has been recovered from the earlier Course 8 prototype and is being moved into the GitHub Library in verified batches.</p>
         ) : (
           <p>No transcript source is currently attached to this session. We will add it when the source material is provided.</p>
         )}
-      </section>
+      </LibraryClassSection>
 
       <ClassSequenceNavigation
         previous={previous ? { href: `/courses/course-8/taiwan-2026/${previous.slug}`, label: previous.label } : null}

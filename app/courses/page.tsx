@@ -1,6 +1,11 @@
+export const revalidate = 60
+
 import Link from 'next/link'
 import rawCatalog from '@/content/classics/catalog.json'
 import rawArchiveCatalog from '@/content/classics/archive-catalog.json'
+import { getACI17Manifest } from '@/lib/aci17-published-content'
+import { getManagedClassicsOfferings } from '@/lib/classics-managed-content'
+import { mergeCourseOfferings } from '@/lib/classics-offering-utils'
 
 type CatalogCourse = {
   canonicalNumber: number
@@ -37,7 +42,8 @@ function upcomingLabel(schedule: Array<{ label: string; date: string }>) {
   return `Upcoming · ${date}`
 }
 
-export default function CoursesPage() {
+export default async function CoursesPage() {
+  const [publishedACI17, managedByCourse] = await Promise.all([getACI17Manifest(), getManagedClassicsOfferings()])
   return (
     <main className="container page classics-library-page">
       <div className="eyebrow">Classics library</div>
@@ -47,13 +53,19 @@ export default function CoursesPage() {
       <section className="section classics-card-grid" aria-label="The 18 Classics Courses">
         {catalog.map((course) => {
           const archive = archiveByNumber.get(course.canonicalNumber)
-          const offerings = archive?.offerings ?? []
+          const legacy = (archive?.offerings ?? []).map(offering =>
+            course.canonicalNumber === 17 && offering.slug === publishedACI17.offering.slug
+              ? { ...offering, label: publishedACI17.offering.label } : offering)
+          const managed = (managedByCourse.get(course.canonicalNumber) ?? []).map(offering => ({
+            slug: offering.offeringSlug, label: offering.offeringLabel,
+          }))
+          const offerings = mergeCourseOfferings<ArchiveOffering>(legacy, managed)
           const schedule = archive?.schedule ?? []
 
           return (
             <article className="classics-card" key={course.canonicalNumber}>
               <div className="eyebrow">Course {course.canonicalNumber}</div>
-              <h2>{course.title}</h2>
+              <h2>{course.canonicalNumber === 17 ? publishedACI17.title : course.title}</h2>
 
               {offerings.length ? (
                 <div className="classics-card-offerings" aria-label={`Course ${course.canonicalNumber} offerings`}>
